@@ -1,0 +1,6 @@
+@DoAnWebAPI_HostAddress = http://localhost:5186
+
+GET {{DoAnWebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
