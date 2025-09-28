@@ -8,8 +8,8 @@
   "AllowedHosts": "*",
   "Cloudinary": {
     "CloudName": "dwupjj3ri",
-    "ApiKey": "735919434855938",
-    "ApiSecret": "ZHkAm8-1clTOEBmDQothQpUmyt8"
+    "ApiKey": "your-api-key",
+    "ApiSecret": "your-api-secret"
   },
   "Firebase": {
     "DatabaseUrl": "https://photogallerydb-196ef-default-rtdb.firebaseio.com/",

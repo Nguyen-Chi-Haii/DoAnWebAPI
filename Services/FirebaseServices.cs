@@ -3,7 +3,7 @@ using FireSharp;
 using FireSharp.Config;
 using FireSharp.Interfaces;
 
-namespace FirebaseWebApi.Services
+namespace DoAnWebAPI.Services
 {
     public class FirebaseService
     {
@@ -18,37 +18,23 @@ namespace FirebaseWebApi.Services
             _firebaseClient = new FirebaseClient(config);
         }
 
-        // Create a user
-        public async Task<User> CreateUserAsync(User user)
+        // Generic Save
+        public async Task SaveDataAsync<T>(string path, T data)
         {
-            await _firebaseClient.SetAsync($"users/user_{user.Id}", user);
-            return user;
+            await _firebaseClient.SetAsync(path, data);
         }
 
-        // Get a user by ID
-        public async Task<User> GetUserAsync(int id)
+        // Generic Get
+        public async Task<T?> GetDataAsync<T>(string path)
         {
-            var response = await _firebaseClient.GetAsync($"users/user_{id}");
-            return response.ResultAs<User>();
+            var response = await _firebaseClient.GetAsync(path);
+            return response.ResultAs<T>();
         }
 
-        // Create an image
-        public async Task<Image> CreateImageAsync(Image image)
+        // Generic Delete
+        public async Task DeleteDataAsync(string path)
         {
-            await _firebaseClient.SetAsync($"images/image_{image.Id}", image);
-            return image;
+            await _firebaseClient.DeleteAsync(path);
         }
-
-        // Get all images for a user
-        public async Task<List<Image>> GetImagesByUserAsync(int userId)
-        {
-            var response = await _firebaseClient.GetAsync("images");
-            var imagesDict = response.ResultAs<Dictionary<string, Image>>();
-            if (imagesDict == null)
-                return new List<Image>();
-            return imagesDict.Values.Where(x => x.UserId == userId).ToList();
-        }
-
-        // Add similar methods for other entities (PendingImages, Likes, etc.)
     }
 }

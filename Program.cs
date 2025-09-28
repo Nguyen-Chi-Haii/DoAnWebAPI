@@ -1,4 +1,7 @@
-﻿using FirebaseAdmin;
+﻿using DoAnWebAPI.Services;
+using DoAnWebAPI.Services.Repositories;
+using FirebaseAdmin;
+using FirebaseWebApi.Repositories;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,21 +9,24 @@ using Microsoft.Extensions.DependencyInjection;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Firebase credential
 var credentialPath = Path.Combine(builder.Environment.ContentRootPath, "firebase-adminsdk.json");
-
 var firebaseApp = FirebaseApp.Create(new AppOptions
 {
     Credential = GoogleCredential.FromFile(credentialPath),
 });
 builder.Services.AddSingleton(firebaseApp);
 
-builder.Services.AddSingleton<FirebaseWebApi.Services.FirebaseService>();
+// Đăng ký service
+builder.Services.AddSingleton<FirebaseService>();
+builder.Services.AddSingleton<CloudinaryService>();
+
+// Đăng ký repository
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 var app = builder.Build();
 
@@ -28,7 +34,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "DoAnWebAPI v1");
+    });
 }
 
 app.UseHttpsRedirection();
