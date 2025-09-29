@@ -1,4 +1,5 @@
 ﻿using DoAnWebAPI.Model.Domain;
+using FirebaseWebApi.Models;
 
 namespace FirebaseWebApi.Repositories
 {
@@ -7,7 +8,7 @@ namespace FirebaseWebApi.Repositories
         Task<User> CreateAsync(User user);
         Task<User?> GetByIdAsync(int id);
         Task<List<User>> GetAllAsync();
-        Task UpdateAsync(int id, User user);
+        Task UpdateAsync(User user);
         Task DeleteAsync(int id);
 
         // Custom business logic

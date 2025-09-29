@@ -1,4 +1,5 @@
 ﻿using DoAnWebAPI.Model.Domain;
+using FirebaseWebApi.Models;
 using FirebaseWebApi.Repositories;
 
 namespace DoAnWebAPI.Services.Repositories
@@ -30,9 +31,9 @@ namespace DoAnWebAPI.Services.Repositories
             return dict?.Values.ToList() ?? new List<User>();
         }
 
-        public async Task UpdateAsync(int id, User user)
+        public async Task UpdateAsync(User user)
         {
-            await _firebaseService.SaveDataAsync($"{Collection}/user_{id}", user);
+            await _firebaseService.SaveDataAsync($"{Collection}", user);
         }
 
         public async Task DeleteAsync(int id)
