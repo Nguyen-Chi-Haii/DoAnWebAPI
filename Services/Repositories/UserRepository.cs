@@ -1,4 +1,4 @@
-﻿using FirebaseWebApi.Models;
+﻿using DoAnWebAPI.Model.Domain;
 using FirebaseWebApi.Repositories;
 
 namespace DoAnWebAPI.Services.Repositories

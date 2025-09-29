@@ -1,4 +1,4 @@
-﻿using FirebaseWebApi.Models;
+﻿using DoAnWebAPI.Model.Domain;
 using FirebaseWebApi.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
