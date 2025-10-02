@@ -2,16 +2,16 @@
 {
     public class CreateImageDTO
     {
-        public int UserId { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
-        public string FileUrl { get; set; }
-        public string ThumbnailUrl { get; set; }
-        public long SizeBytes { get; set; }
-        public int Width { get; set; }
-        public int Height { get; set; }
-        public bool IsPublic { get; set; }
-        public List<int> TagIds { get; set; }
-        public List<int> TopicIds { get; set; }
+        public int UserId { get; set; }                  // Người upload
+        public string Title { get; set; } = string.Empty; // Tiêu đề ảnh
+        public string? Description { get; set; }         // Mô tả ảnh
+        public bool IsPublic { get; set; }               // Ảnh public/private
+
+        // File ảnh upload
+        public IFormFile File { get; set; } = null!;
+
+        // Gắn tag & topic
+        public List<int> TagIds { get; set; } = new();
+        public List<int> TopicIds { get; set; } = new();
     }
 }
