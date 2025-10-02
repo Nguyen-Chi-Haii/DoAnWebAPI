@@ -42,6 +42,7 @@ builder.Services.AddHttpClient();
 // Đăng ký repository
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
+builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddSingleton<FirebaseClient>(provider =>
     new FirebaseClient("https://photogallerydb-196ef-default-rtdb.firebaseio.com/"));
 builder.Services.AddCors(options =>
