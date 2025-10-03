@@ -6,6 +6,6 @@
         public int AdminId { get; set; }
         public string ActionType { get; set; }
         public int Target { get; set; }
-        public string Meta { get; set; }
+        public object Meta { get; set; }
     }
 }

@@ -27,6 +27,7 @@ builder.Services.AddSingleton<CloudinaryService>();
 
 // Đăng ký repository
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAdminLogRepository, AdminLogRepository>();
 
 var app = builder.Build();
 
