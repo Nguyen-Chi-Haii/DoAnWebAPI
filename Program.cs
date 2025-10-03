@@ -1,9 +1,12 @@
 ﻿using DoAnWebAPI.Services;
+using DoAnWebAPI.Services.Interface;
 using DoAnWebAPI.Services.Repositories;
+using Firebase.Database;
 using FirebaseAdmin;
 using FirebaseWebApi.Repositories;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,13 +26,27 @@ builder.Services.AddSingleton(firebaseApp);
 
 // Đăng ký service
 builder.Services.AddSingleton<FirebaseService>();
-builder.Services.AddSingleton<CloudinaryService>();
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+
+// Thêm Form Options
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 52428800; // 50MB
+    options.ValueLengthLimit = int.MaxValue;
+    options.MemoryBufferThreshold = int.MaxValue;
+});
+
+// Thêm HttpClient (quan trọng cho Cloudinary)
+builder.Services.AddHttpClient();
 
 // Đăng ký repository
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAdminLogRepository, AdminLogRepository>();
 
-var app = builder.Build();
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -41,7 +58,9 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
+
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 

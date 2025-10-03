@@ -1,5 +1,4 @@
 ﻿using DoAnWebAPI.Model.DTO.Tag;
-using DoAnWebAPI.Model.DTO.Tag;
 using DoAnWebAPI.Model.DTO.Topics;
 
 namespace DoAnWebAPI.Model.DTO.Image
