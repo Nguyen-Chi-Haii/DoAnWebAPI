@@ -24,6 +24,12 @@ namespace DoAnWebAPI.Services
             await _firebaseClient.SetAsync(path, data);
         }
 
+        // Generic SetData 
+        public async Task SetDataAsync<T>(string path, T data)
+        {
+            await SaveDataAsync(path, data);
+        }
+
         // Generic Get
         public async Task<T?> GetDataAsync<T>(string path)
         {

@@ -42,7 +42,12 @@ builder.Services.AddHttpClient();
 // Đăng ký repository
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAdminLogRepository, AdminLogRepository>();
+builder.Services.AddScoped<ITopicRepository, TopicRepository>();
 
+// BUILD APP NGAY SAU KHI THÊM SERVICES (đây là điểm sửa chính)
+var app = builder.Build();
+
+// BÂY GIỜ MỚI CẤU HÌNH PIPELINE (sử dụng app)
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
