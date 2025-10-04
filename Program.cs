@@ -1,4 +1,5 @@
-﻿using DoAnWebAPI.Services;
+﻿using DoAnWebAPI.Repositories;
+using DoAnWebAPI.Services;
 using DoAnWebAPI.Services.Interface;
 using DoAnWebAPI.Services.Repositories;
 using Firebase.Database;
@@ -8,15 +9,20 @@ using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// --------------------
+// 🧩 CẤU HÌNH CƠ BẢN
+// --------------------
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Firebase credential
+// --------------------
+// 🔥 CẤU HÌNH FIREBASE
+// --------------------
 var credentialPath = Path.Combine(builder.Environment.ContentRootPath, "firebase-adminsdk.json");
 var firebaseApp = FirebaseApp.Create(new AppOptions
 {
@@ -24,11 +30,21 @@ var firebaseApp = FirebaseApp.Create(new AppOptions
 });
 builder.Services.AddSingleton(firebaseApp);
 
-// Đăng ký service
+// Đăng ký FirebaseService (quản lý các thao tác Firebase)
 builder.Services.AddSingleton<FirebaseService>();
+
+// ✅ Đăng ký FirebaseClient cho Realtime Database
+builder.Services.AddSingleton(provider =>
+    new FirebaseClient("https://photogallerydb-196ef-default-rtdb.firebaseio.com/"));
+
+// --------------------
+// ☁️ CLOUDINARY SERVICE
+// --------------------
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
-// Thêm Form Options
+// --------------------
+// 📦 FORM OPTIONS (Upload file lớn)
+// --------------------
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 52428800; // 50MB
@@ -36,27 +52,62 @@ builder.Services.Configure<FormOptions>(options =>
     options.MemoryBufferThreshold = int.MaxValue;
 });
 
-// Thêm HttpClient (quan trọng cho Cloudinary)
+// --------------------
+// 🌐 HTTP CLIENT (cho Cloudinary)
+// --------------------
 builder.Services.AddHttpClient();
 
-// Đăng ký repository
+// --------------------
+// 🧱 REPOSITORIES
+// --------------------
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IImageRepository, ImageRepository>();
+builder.Services.AddScoped<ITagRepository, TagRepository>();
+builder.Services.AddScoped<IImageTopicRepository, ImageTopicRepository>();
+builder.Services.AddScoped<IImageTagRepository, ImageTagRepository>();
 builder.Services.AddScoped<IAdminLogRepository, AdminLogRepository>();
 builder.Services.AddScoped<ITopicRepository, TopicRepository>();
-builder.Services.AddScoped<IImageTopicRepository, ImageTopicRepository>();
 
+// --------------------
+// 🔓 CORS
+// --------------------
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
+// --------------------
+// 🚀 BUILD APP
+// --------------------
 var app = builder.Build();
 
-// BÂY GIỜ MỚI CẤU HÌNH PIPELINE (sử dụng app)
+// --------------------
+// ⚠️ GLOBAL ERROR HANDLING
+// --------------------
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"🔥 Global Exception: {ex}");
+        throw;
+    }
+});
+
+// --------------------
+// 🧑‍💻 DEV TOOLS
+// --------------------
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
-}
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
@@ -64,12 +115,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-//app.UseHttpsRedirection();
-
+// --------------------
+// 🌍 PIPELINE
+// --------------------
+// app.UseHttpsRedirection();
 app.UseCors("AllowAll");
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
