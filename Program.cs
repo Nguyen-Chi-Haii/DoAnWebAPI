@@ -43,8 +43,9 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAdminLogRepository, AdminLogRepository>();
 builder.Services.AddScoped<ITopicRepository, TopicRepository>();
+builder.Services.AddScoped<IImageTopicRepository, ImageTopicRepository>();
 
-// BUILD APP NGAY SAU KHI THÊM SERVICES (đây là điểm sửa chính)
+
 var app = builder.Build();
 
 // BÂY GIỜ MỚI CẤU HÌNH PIPELINE (sử dụng app)
