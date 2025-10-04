@@ -31,7 +31,7 @@ namespace DoAnWebAPI.Controllers
         [HttpPost("{imageId}/topics")]
         public async Task<ActionResult<ImageTopicDTO>> AddTopic(int imageId, [FromBody] UpdateImageTopicDTO request)
         {
-            // Validate mismatch giữa route và body (giữ nguyên, không phải validation DTO)
+            
             if (imageId != request.ImageId)
             {
                 return BadRequest("ImageId in route and body mismatch.");
