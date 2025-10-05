@@ -67,6 +67,10 @@ builder.Services.AddScoped<IImageTopicRepository, ImageTopicRepository>();
 builder.Services.AddScoped<IImageTagRepository, ImageTagRepository>();
 builder.Services.AddScoped<IAdminLogRepository, AdminLogRepository>();
 builder.Services.AddScoped<ITopicRepository, TopicRepository>();
+builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
+builder.Services.AddScoped<ICollectionImageRepository, CollectionImageRepository>();
+builder.Services.AddScoped<ILikeRepository, LikeRepository>();
+builder.Services.AddScoped<IStatRepository, StatRepository>();
 
 // --------------------
 // 🔓 CORS
