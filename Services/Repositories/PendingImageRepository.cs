@@ -50,25 +50,13 @@ namespace DoAnWebAPI.Services.Repositories
             }
         }
 
-        public async Task<PendingImage?> CreateAsync(CreatePendingImageDTO dto)
+        public async Task<PendingImage?> CreateAsync(PendingImage newImage) // Thay đổi tham số
         {
             try
             {
-                var newImage = new PendingImage
-                {
-                    Id = GenerateId(), 
-                    UserId = dto.UserId,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    FileUrl = dto.FileUrl,
-                    ThumbnailUrl = dto.ThumbnailUrl,
-                    SizeBytes = dto.SizeBytes,
-                    Width = dto.Width,
-                    Height = dto.Height,
-                    SubmittedAt = DateTime.UtcNow,
-                    ReviewedAt = null,
-                    Status = "pending"
-                };
+                newImage.Id = GenerateId(); // Gán ID tự động
+                newImage.SubmittedAt = DateTime.UtcNow; // Đảm bảo thời gian đúng
+                newImage.Status = "pending"; // Đặt status mặc định
 
                 var key = $"image_{newImage.Id}";
                 await _firebaseService.SetDataAsync($"{Collection}/{key}", newImage);

@@ -7,7 +7,7 @@ namespace DoAnWebAPI.Services.Interface
     {
         Task<List<PendingImage>> GetAllAsync();
         Task<PendingImage?> GetByIdAsync(int id);
-        Task<PendingImage?> CreateAsync(CreatePendingImageDTO dto);
+        Task<PendingImage?> CreateAsync(PendingImage newImage);
         Task<PendingImage?> UpdateStatusAsync(int id, string status, DateTime? reviewedAt);
     }
 }

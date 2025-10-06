@@ -1,4 +1,5 @@
-﻿using DoAnWebAPI.Model.DTO.PendingImage;
+﻿using DoAnWebAPI.Model.Domain;
+using DoAnWebAPI.Model.DTO.PendingImage;
 using DoAnWebAPI.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,10 +10,11 @@ namespace DoAnWebAPI.Controllers
     public class PendingImageController : ControllerBase
     {
         private readonly IPendingImageRepository _repository;
-
-        public PendingImageController(IPendingImageRepository repository)
+        private readonly ICloudinaryService _cloudinaryService;
+        public PendingImageController(IPendingImageRepository repository, ICloudinaryService cloudinaryService)
         {
             _repository = repository;
+            _cloudinaryService = cloudinaryService;
         }
 
         // GET /api/pending-images
@@ -53,14 +55,37 @@ namespace DoAnWebAPI.Controllers
 
         // POST /api/pending-images
         [HttpPost]
-        public async Task<ActionResult<PendingImageDTO>> Create([FromBody] CreatePendingImageDTO dto)
+        public async Task<ActionResult<PendingImageDTO>> Create([FromForm] CreatePendingImageDTO dto)
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid || dto.File == null || dto.File.Length == 0)
             {
-                return BadRequest(ModelState);
+                return BadRequest("Invalid input or file not provided");
             }
 
-            var created = await _repository.CreateAsync(dto);
+            // Upload file lên Cloudinary
+            var (fileUrl, thumbnailUrl, size, width, height) = await _cloudinaryService.UploadImageAsync(dto.File);
+            if (string.IsNullOrEmpty(fileUrl)) // Kiểm tra lỗi bằng cách kiểm tra fileUrl rỗng
+            {
+                return BadRequest("Upload failed");
+            }
+
+            var newImage = new PendingImage
+            {
+                Id = 0, // Sẽ được gán trong repository
+                UserId = dto.UserId,
+                Title = dto.Title,
+                Description = dto.Description,
+                FileUrl = fileUrl,
+                ThumbnailUrl = thumbnailUrl,
+                SizeBytes = size,
+                Width = width,
+                Height = height,
+                SubmittedAt = DateTime.UtcNow,
+                ReviewedAt = null,
+                Status = "pending"
+            };
+
+            var created = await _repository.CreateAsync(newImage);
             if (created == null)
             {
                 return BadRequest("Failed to create pending image");
