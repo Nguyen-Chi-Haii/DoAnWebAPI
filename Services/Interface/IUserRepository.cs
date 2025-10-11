@@ -13,5 +13,7 @@ namespace FirebaseWebApi.Repositories
 
         // Custom business logic
         Task<User?> GetUserByEmailAsync(string email);
+        Task<User?> GetByUsernameAsync(string username);
+        Task<int> GetNextIdAsync();
     }
 }

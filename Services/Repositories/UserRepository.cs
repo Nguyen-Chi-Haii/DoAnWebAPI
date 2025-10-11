@@ -33,7 +33,8 @@ namespace DoAnWebAPI.Services.Repositories
 
         public async Task UpdateAsync(User user)
         {
-            await _firebaseService.SaveDataAsync($"{Collection}", user);
+            user.UpdatedAt = DateTime.UtcNow.ToString("o");
+            await _firebaseService.SaveDataAsync($"{Collection}/user_{user.Id}", user);
         }
 
         public async Task DeleteAsync(int id)
@@ -45,6 +46,17 @@ namespace DoAnWebAPI.Services.Repositories
         {
             var dict = await _firebaseService.GetDataAsync<Dictionary<string, User>>(Collection);
             return dict?.Values.FirstOrDefault(x => x.Email == email);
+        }
+        public async Task<User?> GetByUsernameAsync(string username)
+        {
+            var users = await GetAllAsync();
+            return users.FirstOrDefault(x => x.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public async Task<int> GetNextIdAsync()
+        {
+            var users = await GetAllAsync();
+            return users.Any() ? users.Max(u => u.Id) + 1 : 1;
         }
     }
 

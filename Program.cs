@@ -86,6 +86,24 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = "FirebaseBearer";
+    options.DefaultChallengeScheme = "FirebaseBearer";
+})
+    .AddJwtBearer(options =>
+    {
+        options.Authority = "https://securetoken.google.com/photogallerydb-196ef";
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "https://securetoken.google.com/photogallerydb-196ef",
+            ValidateAudience = true,
+            ValidAudience = "photogallerydb-196ef",
+            ValidateLifetime = true,
+        };
+    });
+
 // --------------------
 // 🚀 BUILD APP
 // --------------------
@@ -125,6 +143,7 @@ if (app.Environment.IsDevelopment())
 // --------------------
 // app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
