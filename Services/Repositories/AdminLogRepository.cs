@@ -6,12 +6,13 @@ namespace DoAnWebAPI.Services.Repositories
     public class AdminLogRepository : IAdminLogRepository
     {
         private readonly FirebaseService _firebaseService;
-        private readonly ILogger<AdminLogRepository> _logger; // Thêm
+        private readonly ILogger<AdminLogRepository> _logger; 
         private const string Collection = "admin_logs";
 
-        public AdminLogRepository(FirebaseService firebaseService)
+        public AdminLogRepository(FirebaseService firebaseService, ILogger<AdminLogRepository> logger)
         {
             _firebaseService = firebaseService;
+            _logger = logger;
         }
 
         public async Task<List<AdminLog>> GetAllAsync()
@@ -19,18 +20,63 @@ namespace DoAnWebAPI.Services.Repositories
             try
             {
                 var dict = await _firebaseService.GetDataAsync<Dictionary<string, AdminLog>>(Collection);
-                return dict?.Values.ToList() ?? new List<AdminLog>();
+                var logs = dict?.Values.ToList() ?? new List<AdminLog>();
+
+                // Kiểm tra tính hợp lệ của từng log
+                var validLogs = logs.Where(log =>
+                    log.Id > 0 &&
+                    log.AdminId > 0 &&
+                    !string.IsNullOrEmpty(log.ActionType) &&
+                    log.ActionType.Length <= 50 &&
+                    log.Target > 0).ToList();
+
+                if (logs.Count != validLogs.Count)
+                {
+                    _logger.LogWarning("Some admin logs were filtered out due to invalid data.");
+                }
+
+                return validLogs;
             }
             catch (Exception ex)
             {
-                // Log và return empty hoặc throw custom
-                return new List<AdminLog>(); // Hoặc throw nếu critical
+                _logger.LogError(ex, "Error retrieving admin logs.");
+                return new List<AdminLog>();
             }
         }
 
         public async Task<AdminLog?> GetByIdAsync(int id)
         {
-            return await _firebaseService.GetDataAsync<AdminLog>($"{Collection}/log_{id}");
+            try
+            {
+                if (id <= 0)
+                {
+                    _logger.LogWarning("Invalid log ID: {Id}", id);
+                    return null;
+                }
+
+                var log = await _firebaseService.GetDataAsync<AdminLog>($"{Collection}/log_{id}");
+                if (log == null)
+                {
+                    return null;
+                }
+
+                // Kiểm tra tính hợp lệ của log
+                if (log.AdminId <= 0 ||
+                    string.IsNullOrEmpty(log.ActionType) ||
+                    log.ActionType.Length > 50 ||
+                    log.Target <= 0)
+                {
+                    _logger.LogWarning("Invalid admin log data for ID: {Id}", id);
+                    return null;
+                }
+
+                return log;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving admin log with ID: {Id}", id);
+                return null;
+            }
         }
     }
 }

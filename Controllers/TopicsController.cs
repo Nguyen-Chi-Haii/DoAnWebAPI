@@ -1,5 +1,6 @@
 ﻿using DoAnWebAPI.Model.DTO.Topics;
 using DoAnWebAPI.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DoAnWebAPI.Controllers
@@ -16,6 +17,7 @@ namespace DoAnWebAPI.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = "UserOrAdmin")]
         public async Task<ActionResult<List<TopicDTO>>> GetAll()
         {
             var topics = await _topicRepository.GetAllAsync();
@@ -24,16 +26,28 @@ namespace DoAnWebAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<TopicDTO>> Create(CreateTopicDTO createDto)
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<ActionResult<TopicDTO>> Create([FromBody] CreateTopicDTO createDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var created = await _topicRepository.CreateAsync(createDto);
             var dto = new TopicDTO { Id = created.Id, Name = created.Name };
-            return CreatedAtAction(nameof(GetAll), dto);
+            return CreatedAtAction(nameof(GetAll), new { id = created.Id }, dto);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<TopicDTO>> Update(int id, UpdateTopicDTO updateDto)
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<ActionResult<TopicDTO>> Update(int id, [FromBody] UpdateTopicDTO updateDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var updated = await _topicRepository.UpdateAsync(id, updateDto);
             if (updated == null) return NotFound();
             var dto = new TopicDTO { Id = updated.Id, Name = updated.Name };
@@ -41,6 +55,7 @@ namespace DoAnWebAPI.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var success = await _topicRepository.DeleteAsync(id);

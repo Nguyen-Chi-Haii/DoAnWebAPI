@@ -41,5 +41,18 @@ namespace DoAnWebAPI.Services
         {
             await _firebaseClient.DeleteAsync(path);
         }
+        public async Task<bool> IsAdminAsync(string userId)
+        {
+            try
+            {
+                var userData = await GetDataAsync<Dictionary<string, object>>($"users/{userId}");
+                return userData != null && userData.TryGetValue("role", out var role) && role.ToString() == "admin";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error checking admin role: {ex.Message}");
+                return false;
+            }
+        }
     }
 }
