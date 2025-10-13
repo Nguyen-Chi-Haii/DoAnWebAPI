@@ -1,93 +1,85 @@
 ﻿using DoAnWebAPI.Model;
-using Firebase.Database;
-using Firebase.Database.Query;
+using FireSharp; // ✅ THÊM using FireSharp
+using FireSharp.Response; // ✅ THÊM using FireSharp.Response
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace DoAnWebAPI.Repositories
 {
+    // Cần phải đổi namespace nếu file này không nằm trong Services.Repositories
     public class ImageTagRepository : IImageTagRepository
     {
-        private readonly FirebaseClient _firebase;
+        private readonly FireSharp.FirebaseClient _firebase; // ✅ FIX: Dùng FireSharp.FirebaseClient
+        private const string Collection = "imageTags";
 
-        public ImageTagRepository(FirebaseClient firebase)
+        public ImageTagRepository(FireSharp.FirebaseClient firebase) // ✅ FIX: Dùng FireSharp.FirebaseClient
         {
             _firebase = firebase;
         }
 
+        private string GetCollectionPath() => Collection;
+        private string GetKey(int imageId, int tagId) => $"img_{imageId}_tag_{tagId}";
+
         public async Task<bool> AddAsync(ImageTag imageTag)
         {
-            // Kiểm tra xem mối quan hệ đã tồn tại chưa
-            var existing = await _firebase
-                .Child("imageTags")
-                .OnceAsync<ImageTag>();
+            // ✅ FIX: Sử dụng FireSharp GetAsync để đọc toàn bộ collection
+            var response = await _firebase.GetAsync(GetCollectionPath());
 
-            if (existing.Any(x =>
-                x.Object.ImageId == imageTag.ImageId &&
-                x.Object.TagId == imageTag.TagId))
+            // Tìm trong bộ nhớ (inefficient nhưng khớp với logic cũ)
+            var existingDict = response.ResultAs<Dictionary<string, ImageTag>>();
+            if (existingDict != null && existingDict.Values.Any(x =>
+                x.ImageId == imageTag.ImageId &&
+                x.TagId == imageTag.TagId))
             {
                 return false; // Đã tồn tại
             }
 
-            await _firebase
-                .Child("imageTags")
-                .PostAsync(imageTag);
+            // ✅ FIX: Sử dụng FireSharp PushAsync (tạo key ngẫu nhiên)
+            await _firebase.PushAsync(GetCollectionPath(), imageTag);
 
             return true;
         }
 
         public async Task<bool> DeleteAsync(int imageId, int tagId)
         {
-            var items = await _firebase
-                .Child("imageTags")
-                .OnceAsync<ImageTag>();
+            // ✅ FIX: Sử dụng FireSharp GetAsync
+            var response = await _firebase.GetAsync(GetCollectionPath());
+            if (response.Body == "null") return false;
 
+            var items = response.ResultAs<Dictionary<string, ImageTag>>();
+
+            // Tìm key và object cần xóa
             var toDelete = items.FirstOrDefault(x =>
-                x.Object.ImageId == imageId &&
-                x.Object.TagId == tagId);
+                x.Value.ImageId == imageId &&
+                x.Value.TagId == tagId);
 
-            if (toDelete == null) return false;
+            if (toDelete.Key == null) return false;
 
-            await _firebase
-                .Child("imageTags")
-                .Child(toDelete.Key)
-                .DeleteAsync();
+            // ✅ FIX: Sử dụng FireSharp DeleteAsync
+            await _firebase.DeleteAsync($"{GetCollectionPath()}/{toDelete.Key}");
 
             return true;
         }
 
         public async Task<List<ImageTag>> GetAllAsync()
         {
-            var result = await _firebase
-                .Child("imageTags")
-                .OnceAsync<ImageTag>();
+            var response = await _firebase.GetAsync(GetCollectionPath());
+            if (response.Body == "null") return new List<ImageTag>();
 
-            return result.Select(x => x.Object).ToList();
+            return response.ResultAs<Dictionary<string, ImageTag>>()?.Values.ToList() ?? new List<ImageTag>();
         }
 
         public async Task<List<ImageTag>> GetByImageIdAsync(int imageId)
         {
-            var result = await _firebase
-                .Child("imageTags")
-                .OnceAsync<ImageTag>();
-
-            return result
-                .Select(x => x.Object)
-                .Where(x => x.ImageId == imageId)
-                .ToList();
+            var all = await GetAllAsync();
+            return all.Where(x => x.ImageId == imageId).ToList();
         }
 
         public async Task<List<ImageTag>> GetByTagIdAsync(int tagId)
         {
-            var result = await _firebase
-                .Child("imageTags")
-                .OnceAsync<ImageTag>();
-
-            return result
-                .Select(x => x.Object)
-                .Where(x => x.TagId == tagId)
-                .ToList();
+            var all = await GetAllAsync();
+            return all.Where(x => x.TagId == tagId).ToList();
         }
     }
 }

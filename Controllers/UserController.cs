@@ -1,13 +1,18 @@
 ﻿using DoAnWebAPI.Model.DTO.User;
-using DoAnWebAPI.Model.DTO.UserDTO;
-using FirebaseWebApi.Models;
-using FirebaseWebApi.Repositories;
+using DoAnWebAPI.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System;
 
-namespace FirebaseWebApi.Controllers
+namespace DoAnWebAPI.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/[controller]")] // api/users
+    [Authorize] // Mặc định yêu cầu xác thực trừ khi [AllowAnonymous]
     public class UsersController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
@@ -17,109 +22,133 @@ namespace FirebaseWebApi.Controllers
             _userRepository = userRepository;
         }
 
-        // POST api/users
+        // Helper để lấy ID người dùng đã xác thực
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            {
+                throw new UnauthorizedAccessException("Người dùng chưa được xác thực hoặc không tìm thấy ID.");
+            }
+            return userId;
+        }
+
+        // Helper để kiểm tra quyền Admin HOẶC chính người dùng đó
+        private bool IsAdminOrSameUser(int targetUserId)
+        {
+            if (User.IsInRole("Admin")) return true;
+            try
+            {
+                return GetCurrentUserId() == targetUserId;
+            }
+            catch { return false; }
+        }
+
+        // Helper để kiểm tra Admin
+        private bool IsAdmin()
+        {
+            return User.IsInRole("Admin");
+        }
+
+
+        // POST /api/users (Đăng ký)
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] CreateUserDTO dto)
+        [AllowAnonymous] // 🔑 Đăng ký là công khai
+        public async Task<ActionResult<UserDTO>> Register([FromBody] CreateUserDTO dto)
         {
-            var user = new User
+            // ✅ Data Validation: DTO Validation
+            if (!ModelState.IsValid)
             {
-                Username = dto.Username,
-                Email = dto.Email,
-                Role = dto.Role,
-                AvatarUrl = dto.AvatarUrl,
-                CreatedAt = DateTime.UtcNow.ToString("o"),
-                UpdatedAt = DateTime.UtcNow.ToString("o"),
-            };
+                return BadRequest(ModelState);
+            }
 
-            var createdUser = await _userRepository.CreateAsync(user);
-
-            var response = new UserDTO
+            var createdUser = await _userRepository.RegisterAsync(dto);
+            if (createdUser == null)
             {
-                Id = createdUser.Id,
-                Username = createdUser.Username,
-                Email = createdUser.Email,
-                Role = createdUser.Role,
-                AvatarUrl = createdUser.AvatarUrl,
-            };
+                return Conflict("Email hoặc Username đã tồn tại.");
+            }
 
-            return CreatedAtAction(nameof(GetUser), new { id = response.Id }, response);
+            return CreatedAtAction(nameof(GetById), new { id = createdUser.Id }, createdUser);
         }
 
-        // GET api/users/{id}
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetUser(int id)
-        {
-            var user = await _userRepository.GetByIdAsync(id);
-            if (user is null)
-                return NotFound();
-
-            var dto = new UserDTO
-            {
-                Id = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                Role = user.Role,
-                AvatarUrl = user.AvatarUrl
-            };
-
-            return Ok(dto);
-        }
-
-        // GET api/users
+        // GET /api/users
         [HttpGet]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<ActionResult<IEnumerable<UserDTO>>> GetAll()
         {
+            // 🔑 Phân quyền: Chỉ Admin mới được lấy danh sách tất cả người dùng
+            if (!IsAdmin())
+            {
+                return Forbid("Bạn không có quyền xem danh sách người dùng.");
+            }
+
             var users = await _userRepository.GetAllAsync();
-
-            var dtoList = users.Select(user => new UserDTO
-            {
-                Id = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                Role = user.Role,
-                AvatarUrl = user.AvatarUrl
-            }).ToList();
-
-            return Ok(dtoList);
+            return Ok(users);
         }
 
-        // PUT api/users/{id}
+        // GET /api/users/{id}
+        [HttpGet("{id}")]
+        public async Task<ActionResult<UserDTO>> GetById(int id)
+        {
+            // ✅ Data Validation
+            if (id <= 0)
+            {
+                return BadRequest("ID User không hợp lệ.");
+            }
+
+            // 🔑 Phân quyền: Admin HOẶC Same User
+            if (!IsAdminOrSameUser(id))
+            {
+                return Forbid("Bạn không có quyền xem hồ sơ người dùng này.");
+            }
+
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null) return NotFound();
+            return Ok(user);
+        }
+
+        // PUT /api/users/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDTO dto)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateUserDTO dto)
         {
-            var existing = await _userRepository.GetByIdAsync(id);
-            if (existing is null)
-                return NotFound();
-
-            existing.Username = dto.Username ?? existing.Username;
-            existing.Role = dto.Role ?? existing.Role;
-            existing.AvatarUrl = dto.AvatarUrl ?? existing.AvatarUrl;
-            existing.UpdatedAt = DateTime.UtcNow.ToString("o");
-
-            await _userRepository.UpdateAsync(existing);
-            var updatedUser = existing;
-            var response = new UserDTO
+            // ✅ Data Validation
+            if (id <= 0)
             {
-                Id = updatedUser.Id,
-                Username = updatedUser.Username,
-                Email = updatedUser.Email,
-                Role = updatedUser.Role,
-                AvatarUrl = updatedUser.AvatarUrl,
-            };
+                return BadRequest("ID User không hợp lệ.");
+            }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-            return Ok(response);
+            // 🔑 Phân quyền: Admin HOẶC Same User
+            if (!IsAdminOrSameUser(id))
+            {
+                return Forbid("Bạn không có quyền cập nhật hồ sơ người dùng này.");
+            }
+
+            var result = await _userRepository.UpdateAsync(id, dto);
+            if (!result) return NotFound("Không tìm thấy người dùng.");
+            return NoContent();
         }
 
-        // DELETE api/users/{id}
+        // DELETE /api/users/{id}
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var existing = await _userRepository.GetByIdAsync(id);
-            if (existing is null)
-                return NotFound();
+            // ✅ Data Validation
+            if (id <= 0)
+            {
+                return BadRequest("ID User không hợp lệ.");
+            }
 
-            await _userRepository.DeleteAsync(id);
+            // 🔑 Phân quyền: Admin HOẶC Same User
+            if (!IsAdminOrSameUser(id))
+            {
+                return Forbid("Bạn không có quyền xóa hồ sơ người dùng này.");
+            }
 
+            var result = await _userRepository.DeleteAsync(id);
+            if (!result) return NotFound();
             return NoContent();
         }
     }

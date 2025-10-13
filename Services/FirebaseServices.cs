@@ -1,21 +1,20 @@
-﻿using FirebaseWebApi.Models;
-using FireSharp;
+﻿using FireSharp; // ✅ THÊM
 using FireSharp.Config;
 using FireSharp.Interfaces;
+using FirebaseWebApi.Models; // Giữ nguyên
 
 namespace DoAnWebAPI.Services
 {
     public class FirebaseService
     {
-        private readonly FirebaseClient _firebaseClient;
-        public FirebaseService()
+        // ✅ FIX: Thay đổi kiểu dữ liệu để sử dụng FireSharp client
+        private readonly FireSharp.FirebaseClient _firebaseClient;
+
+        // ✅ FIX: Sử dụng Dependency Injection (Constructor Injection)
+        // Nhận client đã được cấu hình đúng từ Program.cs
+        public FirebaseService(FireSharp.FirebaseClient firebaseClient)
         {
-            IFirebaseConfig config = new FirebaseConfig
-            {
-                AuthSecret = "ault-rtdb\tHgylkpY9BA0zLFPzyrfgo6BFNfKp4pjuv3zkeFVl",
-                BasePath = "https://photogallerydb-196ef-default-rtdb.firebaseio.com/"
-            };
-            _firebaseClient = new FirebaseClient(config);
+            _firebaseClient = firebaseClient;
         }
 
         // Generic Save

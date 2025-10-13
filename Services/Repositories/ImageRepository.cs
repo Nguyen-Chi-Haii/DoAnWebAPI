@@ -2,45 +2,67 @@
 using DoAnWebAPI.Model.DTO.Tag;
 using DoAnWebAPI.Model.DTO.Topics;
 using DoAnWebAPI.Services.Interface;
-using Firebase.Database;
-using Firebase.Database.Query;
-using FirebaseWebApi.Models;
+using FireSharp; // ✅ THÊM using FireSharp
+using FireSharp.Response; // ✅ THÊM using FireSharp.Response
+using FirebaseWebApi.Models; // Assumed namespace for Image model
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace DoAnWebAPI.Services.Repositories
 {
     public class ImageRepository : IImageRepository
     {
-        private readonly FirebaseClient _firebase;
+        private readonly FireSharp.FirebaseClient _firebase; // ✅ FIX: Dùng FireSharp.FirebaseClient
         private readonly ICloudinaryService _cloudinaryService;
+        private const string Collection = "images";
 
-        public ImageRepository(FirebaseClient firebase, ICloudinaryService cloudinaryService)
+        public ImageRepository(FireSharp.FirebaseClient firebase, ICloudinaryService cloudinaryService) // ✅ FIX: Dùng FireSharp.FirebaseClient
         {
             _firebase = firebase;
             _cloudinaryService = cloudinaryService;
         }
-        public async Task<ImageDTO> CreateAsync(CreateImageDTO dto, string fileUrl,string thumbnailUrl,long size,int width,int height)
+
+        private string GetPath(string id) => $"{Collection}/{id}";
+        private string GetCollectionPath() => Collection;
+
+        // Logic CreateAsync
+        public async Task<ImageDTO> CreateAsync(
+            int userId,
+            string title,
+            string? description,
+            bool isPublic,
+            List<int> tagIds,
+            List<int> topicIds,
+            string fileUrl,
+            string thumbnailUrl,
+            long size,
+            int width,
+            int height
+        )
         {
             var image = new Image
             {
-                Id = new Random().Next(1, 999999), // Firebase auto-gen cũng được
-                UserId = dto.UserId,
-                Title = dto.Title,
-                Description = dto.Description,
+                Id = new Random().Next(1, 999999),
+                UserId = userId,
+                Title = title,
+                Description = description ?? string.Empty,
                 FileUrl = fileUrl,
                 ThumbnailUrl = thumbnailUrl,
                 SizeBytes = size,
                 Width = width,
                 Height = height,
-                IsPublic = dto.IsPublic,
+                IsPublic = isPublic,
                 Status = "Pending",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
-            await _firebase
-                .Child("images")
-                .Child(image.Id.ToString())
-                .PutAsync(image);
+            // ✅ FIX: Sử dụng FireSharp SetAsync
+            await _firebase.SetAsync(GetPath(image.Id.ToString()), image);
+
+            // TODO: (Đề xuất) Thêm logic lưu TagIds và TopicIds vào các bảng liên kết ở đây
 
             return new ImageDTO
             {
@@ -56,45 +78,48 @@ namespace DoAnWebAPI.Services.Repositories
             };
         }
 
-
-        public async Task<bool> DeleteAsync(int id) 
+        public async Task<bool> DeleteAsync(string id)
         {
-            var existing = await _firebase.Child("images").Child(id.ToString()).OnceSingleAsync<Image>();
-            if (existing == null) return false;
+            // ✅ FIX: Kiểm tra sự tồn tại bằng FireSharp GetAsync
+            var checkResponse = await _firebase.GetAsync(GetPath(id));
+            if (checkResponse.Body == "null") return false;
 
-            await _firebase.Child("images").Child(id.ToString()).DeleteAsync();
-            // Nếu muốn, gọi thêm Cloudinary API để xóa file gốc + thumbnail
+            // ✅ FIX: Sử dụng FireSharp DeleteAsync
+            await _firebase.DeleteAsync(GetPath(id));
             return true;
         }
 
         public async Task<IEnumerable<ImageDTO>> GetAllAsync()
         {
-            var data = await _firebase
-               .Child("images")
-               .OnceAsync<Image>();
+            // ✅ FIX: Sử dụng FireSharp GetAsync để đọc toàn bộ collection
+            var response = await _firebase.GetAsync(GetCollectionPath());
 
-            return data.Select(d => new ImageDTO
+            if (response.Body == "null") return new List<ImageDTO>();
+
+            var data = response.ResultAs<Dictionary<string, Image>>();
+
+            return data?.Values.Select(d => new ImageDTO
             {
-                Id = d.Object.Id,
-                UserId = d.Object.UserId,
-                Title = d.Object.Title,
-                FileUrl = d.Object.FileUrl,
-                ThumbnailUrl = d.Object.ThumbnailUrl,
-                IsPublic = d.Object.IsPublic,
-                Status = d.Object.Status,
-                Tags = new List<TagDTO>(),    // TODO: Map Tag nếu có
-                Topics = new List<TopicDTO>() // TODO: Map Topic nếu có
-            }).ToList();
+                Id = d.Id,
+                UserId = d.UserId,
+                Title = d.Title,
+                FileUrl = d.FileUrl,
+                ThumbnailUrl = d.ThumbnailUrl,
+                IsPublic = d.IsPublic,
+                Status = d.Status,
+                Tags = new List<TagDTO>(),
+                Topics = new List<TopicDTO>()
+            }).ToList() ?? new List<ImageDTO>();
         }
 
         public async Task<ImageDTO> GetByIdAsync(int id)
         {
-            var image = await _firebase
-                .Child("images")
-                .Child(id.ToString())
-                .OnceSingleAsync<Image>();
+            // ✅ FIX: Sử dụng FireSharp GetAsync
+            var response = await _firebase.GetAsync(GetPath(id));
 
-            if (image == null) return null;
+            if (response.Body == "null") return null;
+
+            var image = response.ResultAs<Image>();
 
             return new ImageDTO
             {
@@ -112,19 +137,22 @@ namespace DoAnWebAPI.Services.Repositories
 
         public async Task<bool> UpdateAsync(int id, UpdateImageDTO dto) 
         {
-            var existing = await _firebase.Child("images").Child(id.ToString()).OnceSingleAsync<Image>();
-            if (existing == null) return false;
+            var existingResponse = await _firebase.GetAsync(GetPath(id));
+            if (existingResponse.Body == "null") return false;
 
-            existing.Title = dto.Title ?? existing.Title;
-            existing.Description = dto.Description ?? existing.Description;
-            existing.IsPublic = dto.IsPublic ?? existing.IsPublic;
-            existing.Status = dto.Status ?? existing.Status;
+            var existing = existingResponse.ResultAs<Image>();
+
+            // Cập nhật các trường
+            if (dto.Title != null) existing.Title = dto.Title;
+            if (dto.Description != null) existing.Description = dto.Description;
+            if (dto.IsPublic.HasValue) existing.IsPublic = dto.IsPublic.Value;
+            if (dto.Status != null) existing.Status = dto.Status;
             existing.UpdatedAt = DateTime.UtcNow;
 
-            await _firebase
-                .Child("images")
-                .Child(id.ToString())
-                .PutAsync(existing);
+            // ✅ FIX: Sử dụng FireSharp SetAsync
+            await _firebase.SetAsync(GetPath(id), existing);
+
+            // TODO: (Đề xuất) Thêm logic sync TagIds và TopicIds
 
             return true;
         }

@@ -10,6 +10,8 @@ namespace DoAnWebAPI.Services.Interface
         Task<Stat> CreateStatAsync(int imageId);
         Task<Stat> IncrementViewsAsync(int imageId);
         Task<Stat> IncrementDownloadsAsync(int imageId);
+        Task<Stat> IncrementLikesAsync(int imageId);
+        Task<Stat> DecrementLikesAsync(int imageId); 
         Task<StatDTO?> GetStatDTOByImageIdAsync(int imageId);
     }
 }
