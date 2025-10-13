@@ -1,68 +1,136 @@
 ﻿using DoAnWebAPI.Model;
 using DoAnWebAPI.Model.DTO.ImageTopic;
+using DoAnWebAPI.Services;
 using DoAnWebAPI.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DoAnWebAPI.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/images/{imageId}/topics")]
     public class ImageTopicController : ControllerBase
     {
         private readonly IImageTopicRepository _repository;
-        public ImageTopicController(IImageTopicRepository repository)
+        private readonly FirebaseService _firebaseService;
+
+        public ImageTopicController(IImageTopicRepository repository, FirebaseService firebaseService)
         {
             _repository = repository;
+            _firebaseService = firebaseService;
         }
 
-        [HttpGet("{imageId}/topics")]
+        [HttpGet]
+        [Authorize(Policy = "UserOrAdmin")]
         public async Task<ActionResult<List<ImageTopicDTO>>> GetTopics(int imageId)
         {
-            var topics = await _repository.GetTopicsByImageIdAsync(imageId);
-            var dtos = topics.Select(t => new ImageTopicDTO
+            // Validate imageId
+            if (imageId <= 0)
             {
-                ImageId = t.ImageId,
-                TopicId = t.TopicId,
-                CreatedAt = t.CreatedAt
-            }).ToList();
-            return Ok(dtos);
+                return BadRequest("Invalid image ID.");
+            }
+
+            try
+            {
+                var topics = await _repository.GetTopicsByImageIdAsync(imageId);
+                if (topics == null || !topics.Any())
+                {
+                    return NotFound("No topics found for the specified image.");
+                }
+
+                var dtos = topics.Select(t => new ImageTopicDTO
+                {
+                    ImageId = t.ImageId,
+                    TopicId = t.TopicId,
+                    CreatedAt = t.CreatedAt
+                }).ToList();
+
+                // Optional: Validate DTOs (though unlikely to fail since we're mapping from valid data)
+                foreach (var dto in dtos)
+                {
+                    if (!TryValidateModel(dto))
+                    {
+                        return BadRequest(ModelState);
+                    }
+                }
+
+                return Ok(dtos);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
-        [HttpPost("{imageId}/topics")]
+        [HttpPost]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<ImageTopicDTO>> AddTopic(int imageId, [FromBody] UpdateImageTopicDTO request)
         {
-            
+            // Validate model state
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Validate route and body consistency
             if (imageId != request.ImageId)
             {
-                return BadRequest("ImageId in route and body mismatch.");
+                return BadRequest("Image ID in route and body must match.");
             }
 
-            var added = await _repository.AddTopicToImageAsync(request.ImageId, request.TopicId);
-            if (added == null)
+            try
             {
-                return Conflict("Association already exists.");
+                var added = await _repository.AddTopicToImageAsync(request.ImageId, request.TopicId);
+                if (added == null)
+                {
+                    return Conflict("Topic already associated with this image.");
+                }
+
+                var dto = new ImageTopicDTO
+                {
+                    ImageId = added.ImageId,
+                    TopicId = added.TopicId,
+                    CreatedAt = added.CreatedAt
+                };
+
+                // Validate DTO before returning
+                if (!TryValidateModel(dto))
+                {
+                    return BadRequest(ModelState);
+                }
+
+                return CreatedAtAction(nameof(GetTopics), new { imageId }, dto);
             }
-
-            // Map sang DTO để return
-            var dto = new ImageTopicDTO
+            catch (Exception ex)
             {
-                ImageId = added.ImageId,
-                TopicId = added.TopicId,
-                CreatedAt = added.CreatedAt
-            };
-
-            return CreatedAtAction(nameof(GetTopics), new { imageId }, dto);
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
-        [HttpDelete("{imageId}/topics/{topicId}")]
+        [HttpDelete("{topicId}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> RemoveTopic(int imageId, int topicId)
         {
-            var removed = await _repository.RemoveTopicFromImageAsync(imageId, topicId);
-            if (!removed)
+            // Validate input
+            if (imageId <= 0 || topicId <= 0)
             {
-                return NotFound("Association not found.");
+                return BadRequest("Invalid image ID or topic ID.");
             }
-            return NoContent();
+
+            try
+            {
+                var removed = await _repository.RemoveTopicFromImageAsync(imageId, topicId);
+                if (!removed)
+                {
+                    return NotFound("Topic association not found.");
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
     }
 }

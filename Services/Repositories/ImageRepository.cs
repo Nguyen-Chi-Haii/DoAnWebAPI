@@ -1,179 +1,254 @@
-﻿using DoAnWebAPI.Model.DTO.Image;
-using DoAnWebAPI.Model.DTO.Tag;
-using DoAnWebAPI.Model.DTO.Topics;
+using CloudinaryDotNet.Actions;
+using DoAnWebAPI.Model.DTO.Image;
+using DoAnWebAPI.Services;
 using DoAnWebAPI.Services.Interface;
-using FireSharp;
-using FireSharp.Response;
-using FirebaseWebApi.Models; // Namespace chứa Image model
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using System;
+using System.Net.Http;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 
-namespace DoAnWebAPI.Services.Repositories
+namespace DoAnWebAPI.Controllers
 {
-    public class ImageRepository : IImageRepository
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public class ImagesController : ControllerBase
     {
-        private readonly FireSharp.FirebaseClient _firebase;
+        private readonly IImageRepository _repository;
         private readonly ICloudinaryService _cloudinaryService;
-        private const string Collection = "images";
 
-        public ImageRepository(FireSharp.FirebaseClient firebase, ICloudinaryService cloudinaryService)
+        public ImagesController(IImageRepository repository, ICloudinaryService cloudinaryService)
         {
-            _firebase = firebase;
+            _repository = repository;
             _cloudinaryService = cloudinaryService;
         }
 
-        private string GetPath(string id) => $"{Collection}/{id}";
-        private string GetCollectionPath() => Collection;
-
-        // Helper để ánh xạ từ Domain Model sang DTO (Đã sửa)
-        private ImageDTO? MapToDTO(Image image)
+        // ✅ FIX LỖI 401: Lấy Local ID (integer) từ Custom Claim "local_id"
+        private int GetCurrentUserId()
         {
-            if (image == null) return null;
+            // 💡 Tìm kiếm Custom Claim "local_id" (được thiết lập trong AuthController)
+            var userIdClaim = User.FindFirst("local_id");
 
-            return new ImageDTO
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
             {
-                Id = image.Id,
-                UserId = image.UserId,
-                Title = image.Title,
-                Description = image.Description, // ✅ ĐÃ SỬA: Ánh xạ Description
-                FileUrl = image.FileUrl,
-                ThumbnailUrl = image.ThumbnailUrl,
-                IsPublic = image.IsPublic,
-                Status = image.Status,
-                Tags = new List<TagDTO>(),
-                Topics = new List<TopicDTO>()
-            };
+                // Thông báo cụ thể hơn để biết cần phải tạo token mới
+                throw new UnauthorizedAccessException("Người dùng chưa được xác thực hoặc không tìm thấy Local ID (int) trong token. Vui lòng login lại.");
+            }
+            return userId;
         }
 
-        public async Task<ImageDTO> CreateAsync(
-            int userId,
-            string title,
-            string? description,
-            bool isPublic,
-            List<int> tagIds,
-            List<int> topicIds,
-            string fileUrl,
-            string thumbnailUrl,
-            long size,
-            int width,
-            int height
-        )
+        private bool IsAdmin()
         {
-            var image = new Image
+            return User.IsInRole("Admin");
+        }
+
+
+        // GET /api/images
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<ImageDTO>>> GetAll()
+        {
+            var currentUserId = 0;
+            if (User.Identity.IsAuthenticated)
             {
-                Id = new Random().Next(1, 999999),
-                UserId = userId,
-                Title = title,
-                Description = description ?? string.Empty,
-                FileUrl = fileUrl,
-                ThumbnailUrl = thumbnailUrl,
-                SizeBytes = size,
-                Width = width,
-                Height = height,
-                IsPublic = isPublic,
-                Status = "Pending",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+                try
+                {
+                    currentUserId = GetCurrentUserId();
+                }
+                catch
+                {
+                    currentUserId = 0;
+                }
+            }
 
-            await _firebase.SetAsync(GetPath(image.Id.ToString()), image);
-            return MapToDTO(image)!;
+            var allImages = await _repository.GetAllAsync();
+
+            if (IsAdmin())
+            {
+                return Ok(allImages);
+            }
+
+            var filteredImages = allImages.Where(image =>
+                image.IsPublic || (image.UserId == currentUserId && currentUserId != 0)
+            );
+
+            return Ok(filteredImages);
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        // GET /api/images/{id}
+        [HttpGet("{id}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ImageDTO>> GetById(string id)
         {
-            var checkResponse = await _firebase.GetAsync(GetPath(id));
-            if (checkResponse.Body == "null") return false;
+            var image = await _repository.GetByIdAsync(id);
+            if (image == null) return NotFound();
 
-            await _firebase.DeleteAsync(GetPath(id));
-            return true;
+            var currentUserId = 0;
+            if (User.Identity.IsAuthenticated)
+            {
+                try { currentUserId = GetCurrentUserId(); } catch { /* Bỏ qua lỗi parsing */ }
+            }
+
+            // 🔑 Phân quyền: Nếu không Public VÀ không phải Admin VÀ không phải chủ sở hữu -> Forbidden
+            if (!image.IsPublic && image.UserId != currentUserId && !IsAdmin())
+            {
+                // ✅ ĐÃ SỬA: Trả về StatusCode(403) thay vì Forbid("message")
+                return StatusCode(403, new { Message = "Bạn không có quyền truy cập ảnh private này." });
+            }
+
+            return Ok(image);
         }
 
-        // ✅ ĐÃ SỬA: GetAllAsync (Xử lý Dictionary Deserialization và Logging)
-        public async Task<IEnumerable<ImageDTO>> GetAllAsync()
+        // POST /api/images
+        [HttpPost]
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(52428800)]
+        public async Task<ActionResult<ImageDTO>> Create([FromForm] CreateImageDTO dto)
         {
-            var response = await _firebase.GetAsync(GetCollectionPath());
+            Console.WriteLine("\n========== POST IMAGE REQUEST ==========");
 
-            if (response.Body == "null" || string.IsNullOrWhiteSpace(response.Body))
-                return new List<ImageDTO>();
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
+            int currentUserId;
             try
             {
-                var data = response.ResultAs<Dictionary<string, Image>>();
-
-                if (data == null)
-                {
-                    Console.WriteLine("ImageRepository Error: Deserialization failed for images collection.");
-                    Console.WriteLine($"Raw Firebase response body: {response.Body}");
-                    return new List<ImageDTO>();
-                }
-
-                return data.Values
-                       .Where(d => d != null)
-                       .Select(MapToDTO)
-                       .Where(dto => dto != null)
-                       .ToList()!;
+                currentUserId = GetCurrentUserId(); // Lấy Local ID đã sửa lỗi
             }
-            catch (Exception ex)
+            catch (UnauthorizedAccessException ex)
             {
-                Console.WriteLine($"ImageRepository Error: Exception during GetAllAsync: {ex.Message}");
-                return new List<ImageDTO>();
-            }
-        }
-
-        // ✅ ĐÃ SỬA: GetByIdAsync (Xử lý Deserialization và Logging)
-        public async Task<ImageDTO?> GetByIdAsync(string id)
-        {
-            var path = GetPath(id);
-            var response = await _firebase.GetAsync(path);
-
-            if (response.Body == "null")
-            {
-                Console.WriteLine($"ImageRepository Info: Image ID {id} not found at path {path}.");
-                return null;
+                return Unauthorized(ex.Message);
             }
 
             try
             {
-                var image = response.ResultAs<Image>();
-
-                if (image == null)
+                Console.WriteLine("Step 1: Validating file...");
+                if (dto.File == null || dto.File.Length == 0)
                 {
-                    Console.WriteLine($"ImageRepository Error: Deserialization failed for ID {id}.");
-                    Console.WriteLine($"Raw Firebase response body: {response.Body}");
-                    return null;
+                    return BadRequest("File ảnh là bắt buộc.");
                 }
+                Console.WriteLine($"✓ File received: {dto.File.FileName}");
 
-                return MapToDTO(image);
+                Console.WriteLine("Step 2: Validating file type...");
+                var allowedTypes = new[] { "image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp" };
+                if (!allowedTypes.Contains(dto.File.ContentType?.ToLower()))
+                {
+                    return BadRequest($"File type không hợp lệ. Chỉ chấp nhận: {string.Join(", ", allowedTypes)}");
+                }
+                Console.WriteLine("✓ File type valid");
+
+
+                Console.WriteLine("Step 3: Uploading to Cloudinary...");
+                var uploadResult = await _cloudinaryService.UploadImageAsync(dto.File);
+                Console.WriteLine($"✓ Cloudinary upload successful!");
+
+                Console.WriteLine("Step 4: Saving metadata to Firebase...");
+
+                var created = await _repository.CreateAsync(
+                    currentUserId,
+                    dto.Title,
+                    dto.Description,
+                    dto.IsPublic,
+                    dto.TagIds,
+                    dto.TopicIds,
+                    uploadResult.fileUrl,
+                    uploadResult.thumbnailUrl,
+                    uploadResult.size,
+                    uploadResult.width,
+                    uploadResult.height
+                );
+
+                Console.WriteLine($"✓ Image saved to Firebase with ID: {created.Id}");
+                Console.WriteLine("========== SUCCESS ==========\n");
+
+                return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ImageRepository Error: Exception during GetByIdAsync for ID {id}: {ex.Message}");
-                return null;
+                Console.WriteLine($"❌ ERROR: {ex.GetType().Name}");
+                if (ex is HttpRequestException httpEx)
+                {
+                    return StatusCode(503, new { error = "Không thể kết nối đến Cloudinary", details = httpEx.Message });
+                }
+                else if (ex is TaskCanceledException timeoutEx)
+                {
+                    return StatusCode(504, new { error = "Upload timeout - File quá lớn hoặc kết nối chậm", details = timeoutEx.Message });
+                }
+
+                return StatusCode(500, new
+                {
+                    error = ex.Message,
+                    type = ex.GetType().Name,
+                    innerError = ex.InnerException?.Message
+                });
             }
         }
 
-        public async Task<bool> UpdateAsync(string id, UpdateImageDTO dto)
+        // PUT /api/images/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(string id, [FromBody] UpdateImageDTO dto)
         {
-            var existingResponse = await _firebase.GetAsync(GetPath(id));
-            if (existingResponse.Body == "null") return false;
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-            var existing = existingResponse.ResultAs<Image>();
+            int currentUserId;
+            try
+            {
+                currentUserId = GetCurrentUserId();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
 
-            if (existing == null) return false;
+            var existingImage = await _repository.GetByIdAsync(id);
+            if (existingImage == null) return NotFound();
 
-            // Cập nhật các trường
-            if (dto.Title != null) existing.Title = dto.Title;
-            if (dto.Description != null) existing.Description = dto.Description;
-            if (dto.IsPublic.HasValue) existing.IsPublic = dto.IsPublic.Value;
-            if (dto.Status != null) existing.Status = dto.Status;
-            existing.UpdatedAt = DateTime.UtcNow;
+            if (existingImage.UserId != currentUserId && !IsAdmin())
+            {
+                // ✅ ĐÃ SỬA: Trả về StatusCode(403) thay vì Forbid("message")
+                return StatusCode(403, new { Message = "Bạn chỉ có thể chỉnh sửa ảnh của chính mình hoặc phải có quyền Admin." });
+            }
 
-            await _firebase.SetAsync(GetPath(id), existing);
+            var result = await _repository.UpdateAsync(id, dto);
+            if (!result) return NotFound();
+            return NoContent();
+        }
 
-            return true;
+        // DELETE /api/images/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            int currentUserId;
+            try
+            {
+                currentUserId = GetCurrentUserId();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+
+            var existingImage = await _repository.GetByIdAsync(id);
+            if (existingImage == null) return NotFound();
+
+            if (existingImage.UserId != currentUserId && !IsAdmin())
+            {
+                // ✅ ĐÃ SỬA: Trả về StatusCode(403) thay vì Forbid("message")
+                return StatusCode(403, new { Message = "Bạn chỉ có thể xóa ảnh của chính mình hoặc phải có quyền Admin." });
+            }
+
+            var result = await _repository.DeleteAsync(id);
+            if (!result) return NotFound();
+            return NoContent();
         }
     }
 }
