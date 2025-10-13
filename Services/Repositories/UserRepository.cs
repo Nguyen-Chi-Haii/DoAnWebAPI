@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-// Giả định FirebaseWebApi.Models được thay bằng DoAnWebAPI.Model.Domain
 
 namespace DoAnWebAPI.Services.Repositories
 {
@@ -45,13 +44,13 @@ namespace DoAnWebAPI.Services.Repositories
             return maxId + 1;
         }
 
-        // ✅ Phương thức mới đã được thêm vào Interface
+        // ✅ Thêm mới người dùng (dành cho hệ thống nội bộ)
         public async Task CreateAsync(User user)
         {
             await _firebaseService.SaveDataAsync($"{Collection}/user_{user.Id}", user);
         }
 
-        // Phương thức mới cho Đăng ký
+        // ✅ Đăng ký người dùng mới (DTO)
         public async Task<UserDTO?> RegisterAsync(CreateUserDTO dto)
         {
             if (await GetUserByEmailAsync(dto.Email) != null) return null;
@@ -61,7 +60,6 @@ namespace DoAnWebAPI.Services.Repositories
                 Id = await GetNextIdAsync(),
                 Username = dto.Username,
                 Email = dto.Email,
-                // ✅ FIX: Chỉ lưu Mật khẩu gốc (mock)
                 PasswordHash = dto.Password,
                 Role = "User",
                 AvatarUrl = dto.AvatarUrl ?? "default_avatar.png",
@@ -90,6 +88,7 @@ namespace DoAnWebAPI.Services.Repositories
             return dict?.Values.Select(MapToDTO).ToList() ?? new List<UserDTO>();
         }
 
+        // ✅ Bản đúng (theo nhánh kiet1)
         public async Task<bool> UpdateAsync(int id, UpdateUserDTO dto)
         {
             var existingUser = await GetUserDomainByIdAsync(id);
@@ -100,7 +99,6 @@ namespace DoAnWebAPI.Services.Repositories
 
             if (dto.NewPassword != null)
             {
-                // ✅ FIX: Cập nhật mật khẩu mới cũng không có tiền tố
                 existingUser.PasswordHash = dto.NewPassword;
             }
 
@@ -125,11 +123,11 @@ namespace DoAnWebAPI.Services.Repositories
             return dict?.Values.FirstOrDefault(x => x.Email == email);
         }
 
-        // ✅ Sửa lỗi trả về DTO
         public async Task<User?> GetByUsernameAsync(string username)
         {
             var dict = await _firebaseService.GetDataAsync<Dictionary<string, User>>(Collection);
-            return dict?.Values.FirstOrDefault(x => x.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
+            return dict?.Values.FirstOrDefault(x =>
+                x.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

@@ -98,7 +98,6 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
-
 // --------------------
 // 🔓 CẤU HÌNH PHÂN QUYỀN
 // --------------------
@@ -108,13 +107,10 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("UserOrAdmin", policy => policy.RequireClaim("role", "user", "admin"));
 });
 
-
 // --------------------
 // ☁️ CLOUDINARY SERVICE
 // --------------------
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
-
-// ... (Các cấu hình khác giữ nguyên) ...
 
 // --------------------
 // 📦 FORM OPTIONS (Upload file lớn)
@@ -202,5 +198,6 @@ app.UseCors("AllowAll");
 // ✅ FIX: Thêm UseAuthentication trước UseAuthorization
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();

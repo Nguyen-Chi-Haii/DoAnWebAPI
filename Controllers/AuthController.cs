@@ -9,12 +9,13 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
-
+using FirebaseWebApi.Repositories; // ⚠️ Thêm nếu dự án đang dùng
+using FirebaseWebApi.Models;       // ⚠️ Thêm nếu dự án có Models liên quan
 
 namespace DoAnWebAPI.Controllers
 {
     [ApiController]
-    [Route("api/auth")] // api/auth
+    [Route("api/auth")]
     public class AuthController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
@@ -39,7 +40,7 @@ namespace DoAnWebAPI.Controllers
             return userId;
         }
 
-        // POST api/auth/register (Logic từ master - Firebase Auth)
+        // POST api/auth/register (Firebase Auth + Mock JWT)
         [HttpPost("register")]
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
@@ -101,8 +102,7 @@ namespace DoAnWebAPI.Controllers
                     Id = await _userRepository.GetNextIdAsync(),
                     Username = dto.Username,
                     Email = dto.Email,
-                    // ⚠️ FIX: LƯU MẬT KHẨU GỐC VÀO PasswordHash
-                    // Điều này cho phép hàm Login (Mock JWT) hoạt động.
+                    // ⚠️ FIX: Lưu mật khẩu gốc để mock login hoạt động
                     PasswordHash = dto.Password,
                     Role = targetRole,
                     AvatarUrl = dto.AvatarUrl ?? "default-avatar.png",
@@ -133,12 +133,9 @@ namespace DoAnWebAPI.Controllers
                 return BadRequest(ModelState);
             }
 
-            User? user;
-            AuthResponseDTO response;
+            var user = await _userRepository.GetUserByEmailAsync(dto.Email);
 
-            user = await _userRepository.GetUserByEmailAsync(dto.Email);
-
-            // Kiểm tra: user phải tồn tại VÀ PasswordHash (đã lưu ở Register) phải khớp với mật khẩu nhập vào
+            // Kiểm tra user và mật khẩu
             if (user == null || user.PasswordHash != dto.Password)
             {
                 return Unauthorized(new { error = "Thông tin đăng nhập không hợp lệ." });
@@ -147,7 +144,7 @@ namespace DoAnWebAPI.Controllers
             var token = "mock_jwt_token_" + user.Id;
             var expires = DateTime.UtcNow.AddHours(2);
 
-            response = new AuthResponseDTO
+            var response = new AuthResponseDTO
             {
                 Token = token,
                 UserId = user.Id.ToString(),
@@ -159,7 +156,7 @@ namespace DoAnWebAPI.Controllers
             return Ok(response);
         }
 
-        // POST /api/auth/logout (Body Token)
+        // POST /api/auth/logout
         [HttpPost("logout")]
         [AllowAnonymous]
         public IActionResult Logout([FromBody] TokenDTO dto)
@@ -170,8 +167,7 @@ namespace DoAnWebAPI.Controllers
             }
 
             var tokenToRevoke = dto.Token;
-
-            return Ok(new { message = $"Đăng xuất/Vô hiệu hóa token thành công. Token: {tokenToRevoke} ." });
+            return Ok(new { message = $"Đăng xuất/Vô hiệu hóa token thành công. Token: {tokenToRevoke}." });
         }
     }
 }
