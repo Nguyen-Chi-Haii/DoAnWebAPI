@@ -91,7 +91,7 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = "FirebaseBearer";
     options.DefaultChallengeScheme = "FirebaseBearer";
 })
-    .AddJwtBearer(options =>
+    .AddJwtBearer("FirebaseBearer", options =>
     {
         options.Authority = "https://securetoken.google.com/photogallerydb-196ef";
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
@@ -102,6 +102,10 @@ builder.Services.AddAuthentication(options =>
             ValidAudience = "photogallerydb-196ef",
             ValidateLifetime = true,
         };
+    });
+builder.Services.AddAuthorization(options => 
+    { 
+        options.AddPolicy("AdminOnly", policy => policy.RequireClaim("role", "admin")); options.AddPolicy("UserOrAdmin", policy => policy.RequireClaim("role", "user", "admin")); 
     });
 
 // --------------------
@@ -143,7 +147,7 @@ if (app.Environment.IsDevelopment())
 // --------------------
 // app.UseHttpsRedirection();
 app.UseCors("AllowAll");
-
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
