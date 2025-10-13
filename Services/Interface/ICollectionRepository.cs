@@ -9,7 +9,8 @@ namespace DoAnWebAPI.Services.Interface
     {
         Task<List<Collection>> GetAllAsync();
         Task<Collection?> GetByIdAsync(int id);
-        Task<Collection> CreateAsync(CreateCollectionDTO dto);
+        // ✅ Cập nhật chữ ký: Nhận Domain Model Collection và List<int> ImageIds
+        Task<Collection> CreateAsync(Collection collection, List<int> imageIds);
         Task<Collection?> UpdateAsync(int id, UpdateCollectionDTO dto);
         Task<bool> DeleteAsync(int id);
         Task<List<Collection>> GetByUserIdAsync(int userId);

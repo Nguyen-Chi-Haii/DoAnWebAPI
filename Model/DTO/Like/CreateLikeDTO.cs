@@ -2,7 +2,7 @@
 {
     public class CreateLikeDTO
     {
-        public int UserId { get; set; }
+        // 🚨 ĐÃ LOẠI BỎ UserId: Server sẽ lấy UserId an toàn từ token.
         public int ImageId { get; set; }
     }
 }

@@ -2,7 +2,7 @@
 using DoAnWebAPI.Services;
 using DoAnWebAPI.Services.Interface;
 using DoAnWebAPI.Services.Repositories;
-using Firebase.Database;
+using Firebase.Database; // <-- Giữ nguyên, nhưng không sử dụng client từ đây
 using FirebaseAdmin;
 using FirebaseWebApi.Repositories;
 using Google.Apis.Auth.OAuth2;
@@ -10,6 +10,13 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using FireSharp.Config;
+using System.IO;
+using System;
+using FireSharp;
+using Microsoft.AspNetCore.Authentication.JwtBearer; // ✅ THÊM
+using Microsoft.IdentityModel.Tokens; // ✅ THÊM
+using System.Text; // ✅ THÊM
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,9 +40,39 @@ builder.Services.AddSingleton(firebaseApp);
 // Đăng ký FirebaseService (quản lý các thao tác Firebase)
 builder.Services.AddSingleton<FirebaseService>();
 
-// ✅ Đăng ký FirebaseClient cho Realtime Database
+// 🔑 LẤY GIÁ TRỊ CẤU HÌNH TỪ APPSETTINGS
+var firebaseBaseUrl = builder.Configuration["Firebase:DatabaseUrl"];
+var firebaseSecret = builder.Configuration["Firebase:DatabaseSecret"];
+
+// ✅ Đăng ký FirebaseClient cho Realtime Database (ĐÃ SỬ DỤNG TÊN ĐẦY ĐỦ)
 builder.Services.AddSingleton(provider =>
-    new FirebaseClient("https://photogallerydb-196ef-default-rtdb.firebaseio.com/"));
+    new FireSharp.FirebaseClient(new FirebaseConfig
+    {
+        AuthSecret = firebaseSecret,
+        BasePath = firebaseBaseUrl
+    }));
+
+// --------------------
+// 🔑 CẤU HÌNH XÁC THỰC JWT BEARER (Đã thêm ở bước trước)
+// --------------------
+var jwtSecretKey = builder.Configuration["Jwt:Key"] ?? "ThisIsAStrongDefaultSecretKeyForTesting";
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+
+            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "YourApiIssuer",
+            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "YourApiAudience",
+
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey))
+        };
+    });
 
 // --------------------
 // ☁️ CLOUDINARY SERVICE
@@ -87,12 +124,12 @@ builder.Services.AddCors(options =>
 });
 
 // --------------------
-// 🚀 BUILD APP
+// 🚀 BUILD APP (Đây là nơi biến 'app' được tạo ra)
 // --------------------
 var app = builder.Build();
 
 // --------------------
-// ⚠️ GLOBAL ERROR HANDLING
+// ⚠️ GLOBAL ERROR HANDLING (Sử dụng 'app' sau khi Build)
 // --------------------
 app.Use(async (context, next) =>
 {
@@ -108,7 +145,7 @@ app.Use(async (context, next) =>
 });
 
 // --------------------
-// 🧑‍💻 DEV TOOLS
+// 🧑‍💻 DEV TOOLS (Sử dụng 'app' sau khi Build)
 // --------------------
 if (app.Environment.IsDevelopment())
 {
@@ -121,10 +158,12 @@ if (app.Environment.IsDevelopment())
 }
 
 // --------------------
-// 🌍 PIPELINE
+// 🌍 PIPELINE (Sử dụng 'app' sau khi Build)
 // --------------------
 // app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+// ✅ FIX: Thêm UseAuthentication trước UseAuthorization
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

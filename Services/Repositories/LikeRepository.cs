@@ -1,68 +1,85 @@
 ﻿using DoAnWebAPI.Model;
 using DoAnWebAPI.Model.DTO.Like;
 using DoAnWebAPI.Services.Interface;
-using Firebase.Database;
-using Firebase.Database.Query;
+using FireSharp; // ✅ THÊM using FireSharp
+using FireSharp.Response; // ✅ THÊM using FireSharp.Response
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System; // Cần thiết cho DateTime
 
 namespace DoAnWebAPI.Services.Repositories
 {
     public class LikeRepository : ILikeRepository
     {
-        private readonly FirebaseClient _firebase;
+        private readonly FireSharp.FirebaseClient _firebase; // ✅ FIX: Dùng FireSharp.FirebaseClient
         private const string Collection = "likes";
 
-        public LikeRepository(FirebaseClient firebase)
+        public LikeRepository(FireSharp.FirebaseClient firebase) // ✅ FIX: Dùng FireSharp.FirebaseClient
         {
             _firebase = firebase;
         }
 
-        // Use a composite key for Firebase RTDB
+        // Helper để tạo key và path
         private string GetKey(int imageId, int userId) => $"like_{imageId}_user_{userId}";
+        private string GetPath(int imageId, int userId) => $"{Collection}/{GetKey(imageId, userId)}";
+        private string GetCollectionPath() => Collection;
 
-        public async Task<Like> CreateLikeAsync(CreateLikeDTO dto)
+        public async Task<Like> CreateLikeAsync(int userId, int imageId)
         {
             var like = new Like
             {
                 Id = 0, // Placeholder
-                UserId = dto.UserId,
-                ImageId = dto.ImageId,
+                UserId = userId,
+                ImageId = imageId,
                 CreatedAt = DateTime.UtcNow
             };
 
-            var key = GetKey(dto.ImageId, dto.UserId);
-            await _firebase.Child(Collection).Child(key).PutAsync(like);
+            var path = GetPath(imageId, userId);
+            // ✅ FIX: Sử dụng FireSharp SetAsync
+            await _firebase.SetAsync(path, like);
 
             return like;
         }
 
         public async Task<bool> DeleteLikeAsync(int imageId, int userId)
         {
-            var key = GetKey(imageId, userId);
-            var existing = await _firebase.Child(Collection).Child(key).OnceSingleAsync<Like>();
+            var path = GetPath(imageId, userId);
 
-            if (existing == null) return false;
+            // ✅ FIX: Kiểm tra sự tồn tại bằng FireSharp GetAsync
+            var checkResponse = await _firebase.GetAsync(path);
+            if (checkResponse.Body == "null") return false;
 
-            await _firebase.Child(Collection).Child(key).DeleteAsync();
+            // ✅ FIX: Sử dụng FireSharp DeleteAsync
+            await _firebase.DeleteAsync(path);
             return true;
         }
 
         public async Task<Like?> GetLikeByImageAndUserAsync(int imageId, int userId)
         {
-            var key = GetKey(imageId, userId);
-            return await _firebase.Child(Collection).Child(key).OnceSingleAsync<Like>();
+            var path = GetPath(imageId, userId);
+            // ✅ FIX: Sử dụng FireSharp GetAsync
+            var response = await _firebase.GetAsync(path);
+
+            if (response.Body == "null") return null;
+            return response.ResultAs<Like>();
         }
 
         public async Task<List<Like>> GetLikesByImageIdAsync(int imageId)
         {
-            var data = await _firebase.Child(Collection)
-               .OnceAsync<Like>();
+            // ✅ FIX: Sử dụng FireSharp GetAsync để đọc toàn bộ node
+            var response = await _firebase.GetAsync(GetCollectionPath());
 
-            return data
-                .Where(x => x.Object != null && x.Object.ImageId == imageId)
-                .Select(x => x.Object)
+            if (response.Body == "null")
+                return new List<Like>();
+
+            var likesDict = response.ResultAs<Dictionary<string, Like>>();
+
+            if (likesDict == null)
+                return new List<Like>();
+
+            return likesDict.Values
+                .Where(x => x != null && x.ImageId == imageId)
                 .ToList();
         }
     }

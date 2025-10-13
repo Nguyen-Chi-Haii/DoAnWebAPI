@@ -2,11 +2,13 @@
 using DoAnWebAPI.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DoAnWebAPI.Controllers
 {
     [ApiController]
     [Route("api/images/{imageId}/stats")] // Base route for stats
+    [AllowAnonymous] // Cho phép tất cả người dùng truy cập thống kê
     public class StatsController : ControllerBase
     {
         private readonly IStatRepository _statRepository;
@@ -20,16 +22,23 @@ namespace DoAnWebAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<StatDTO>> GetStats(int imageId)
         {
+            // ✅ Data Validation
+            if (imageId <= 0)
+            {
+                return BadRequest("ImageId không hợp lệ.");
+            }
+
             var dto = await _statRepository.GetStatDTOByImageIdAsync(imageId);
             if (dto == null)
             {
-                // If no stats exist, return a default/empty DTO
+                // Trả về DTO mặc định/rỗng (bao gồm LikesCount=0)
                 return Ok(new StatDTO
                 {
-                    Id = 0, // Placeholder
+                    Id = imageId,
                     ImageId = imageId,
                     ViewsCount = 0,
-                    DownloadCount = 0
+                    DownloadCount = 0,
+                    LikesCount = 0 
                 });
             }
             return Ok(dto);
@@ -39,13 +48,20 @@ namespace DoAnWebAPI.Controllers
         [HttpPost("view")]
         public async Task<IActionResult> IncrementViewCount(int imageId)
         {
+            // ✅ Data Validation
+            if (imageId <= 0)
+            {
+                return BadRequest("ImageId không hợp lệ.");
+            }
+
             var updatedStat = await _statRepository.IncrementViewsAsync(imageId);
             var dto = new StatDTO
             {
                 Id = updatedStat.Id,
                 ImageId = updatedStat.ImageId,
                 ViewsCount = updatedStat.ViewsCount,
-                DownloadCount = updatedStat.DownloadCount
+                DownloadCount = updatedStat.DownloadCount,
+                LikesCount = updatedStat.LikesCount
             };
             return Ok(dto);
         }
@@ -54,13 +70,20 @@ namespace DoAnWebAPI.Controllers
         [HttpPost("download")]
         public async Task<IActionResult> IncrementDownloadCount(int imageId)
         {
+            // ✅ Data Validation
+            if (imageId <= 0)
+            {
+                return BadRequest("ImageId không hợp lệ.");
+            }
+
             var updatedStat = await _statRepository.IncrementDownloadsAsync(imageId);
             var dto = new StatDTO
             {
                 Id = updatedStat.Id,
                 ImageId = updatedStat.ImageId,
                 ViewsCount = updatedStat.ViewsCount,
-                DownloadCount = updatedStat.DownloadCount
+                DownloadCount = updatedStat.DownloadCount,
+                LikesCount = updatedStat.LikesCount
             };
             return Ok(dto);
         }

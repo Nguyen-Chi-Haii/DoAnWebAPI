@@ -1,6 +1,13 @@
 ﻿using DoAnWebAPI.Model.Domain;
+using DoAnWebAPI.Model.DTO.User;
+using DoAnWebAPI.Services;
+using DoAnWebAPI.Services.Interface;
 using FirebaseWebApi.Models;
-using FirebaseWebApi.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+// Giả định FirebaseWebApi.Models được thay bằng DoAnWebAPI.Model.Domain
 
 namespace DoAnWebAPI.Services.Repositories
 {
@@ -14,31 +21,97 @@ namespace DoAnWebAPI.Services.Repositories
             _firebaseService = firebaseService;
         }
 
-        public async Task<User> CreateAsync(User user)
+        // Helper để map Domain Model sang DTO
+        private UserDTO MapToDTO(User user)
         {
-            await _firebaseService.SaveDataAsync($"{Collection}/user_{user.Id}", user);
-            return user;
+            return new UserDTO
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                AvatarUrl = user.AvatarUrl,
+                Role = user.Role
+            };
         }
 
-        public async Task<User?> GetByIdAsync(int id)
+        private async Task<int> GetNextIdAsync()
+        {
+            // ... (Logic GetNextId) ...
+            var dict = await _firebaseService.GetDataAsync<Dictionary<string, User>>(Collection);
+            if (dict == null || dict.Count == 0) return 1;
+
+            var maxId = dict.Keys
+                .Select(k => int.TryParse(k.Replace("user_", ""), out var id) ? id : 0)
+                .Max();
+            return maxId + 1;
+        }
+
+        // Phương thức mới cho Đăng ký
+        public async Task<UserDTO?> RegisterAsync(CreateUserDTO dto)
+        {
+            if (await GetUserByEmailAsync(dto.Email) != null) return null;
+
+            var newUser = new User
+            {
+                Id = await GetNextIdAsync(),
+                Username = dto.Username,
+                Email = dto.Email,
+                // ✅ FIX: Chỉ lưu Mật khẩu gốc (mock)
+                PasswordHash = dto.Password,
+                Role = "User",
+                AvatarUrl = dto.AvatarUrl ?? "default_avatar.png",
+                CreatedAt = DateTime.UtcNow.ToString("o"),
+                UpdatedAt = DateTime.UtcNow.ToString("o")
+            };
+
+            await _firebaseService.SaveDataAsync($"{Collection}/user_{newUser.Id}", newUser);
+            return MapToDTO(newUser);
+        }
+
+        public async Task<UserDTO?> GetByIdAsync(int id)
+        {
+            var user = await GetUserDomainByIdAsync(id);
+            return user != null ? MapToDTO(user) : null;
+        }
+
+        public async Task<User?> GetUserDomainByIdAsync(int id)
         {
             return await _firebaseService.GetDataAsync<User>($"{Collection}/user_{id}");
         }
 
-        public async Task<List<User>> GetAllAsync()
+        public async Task<List<UserDTO>> GetAllAsync()
         {
             var dict = await _firebaseService.GetDataAsync<Dictionary<string, User>>(Collection);
-            return dict?.Values.ToList() ?? new List<User>();
+            return dict?.Values.Select(MapToDTO).ToList() ?? new List<UserDTO>();
         }
 
-        public async Task UpdateAsync(User user)
+        public async Task<bool> UpdateAsync(int id, UpdateUserDTO dto)
         {
-            await _firebaseService.SaveDataAsync($"{Collection}", user);
+            var existingUser = await GetUserDomainByIdAsync(id);
+            if (existingUser == null) return false;
+
+            if (dto.Username != null) existingUser.Username = dto.Username;
+            if (dto.AvatarUrl != null) existingUser.AvatarUrl = dto.AvatarUrl;
+
+            if (dto.NewPassword != null)
+            {
+                // ✅ FIX: Cập nhật mật khẩu mới cũng không có tiền tố
+                existingUser.PasswordHash = dto.NewPassword;
+            }
+
+            existingUser.UpdatedAt = DateTime.UtcNow.ToString("o");
+
+            await _firebaseService.SaveDataAsync($"{Collection}/user_{id}", existingUser);
+            return true;
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
+            var existingUser = await GetUserDomainByIdAsync(id);
+            if (existingUser == null) return false;
+
             await _firebaseService.DeleteDataAsync($"{Collection}/user_{id}");
+            return true;
         }
 
         public async Task<User?> GetUserByEmailAsync(string email)
@@ -47,5 +120,4 @@ namespace DoAnWebAPI.Services.Repositories
             return dict?.Values.FirstOrDefault(x => x.Email == email);
         }
     }
-
 }

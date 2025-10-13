@@ -1,4 +1,4 @@
-﻿namespace DoAnWebAPI.Model.DTO.UserDTO
+﻿namespace DoAnWebAPI.Model.DTO.User 
 {
     public class UserDTO
     {
