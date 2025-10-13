@@ -2,9 +2,9 @@
 using DoAnWebAPI.Services;
 using DoAnWebAPI.Services.Interface;
 using DoAnWebAPI.Services.Repositories;
-using Firebase.Database; // <-- Giữ nguyên, nhưng không sử dụng client từ đây
+using Firebase.Database; // <-- Giữ nguyên
 using FirebaseAdmin;
-using FirebaseWebApi.Repositories;
+using FirebaseWebApi.Repositories; // Thư viện cũ, có thể không cần
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Features;
@@ -17,6 +17,7 @@ using FireSharp;
 using Microsoft.AspNetCore.Authentication.JwtBearer; // ✅ THÊM
 using Microsoft.IdentityModel.Tokens; // ✅ THÊM
 using System.Text; // ✅ THÊM
+using Microsoft.Extensions.Logging; // Thêm Logging
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddLogging(); // Thêm Logging
 
 // --------------------
 // 🔥 CẤU HÌNH FIREBASE
@@ -44,7 +46,7 @@ builder.Services.AddSingleton<FirebaseService>();
 var firebaseBaseUrl = builder.Configuration["Firebase:DatabaseUrl"];
 var firebaseSecret = builder.Configuration["Firebase:DatabaseSecret"];
 
-// ✅ Đăng ký FirebaseClient cho Realtime Database (ĐÃ SỬ DỤNG TÊN ĐẦY ĐỦ)
+// ✅ Đăng ký FirebaseClient cho Realtime Database
 builder.Services.AddSingleton(provider =>
     new FireSharp.FirebaseClient(new FirebaseConfig
     {
@@ -53,10 +55,11 @@ builder.Services.AddSingleton(provider =>
     }));
 
 // --------------------
-// 🔑 CẤU HÌNH XÁC THỰC JWT BEARER (Đã thêm ở bước trước)
+// 🔑 CẤU HÌNH XÁC THỰC (Hợp nhất cả Mock JWT và Firebase Bearer)
 // --------------------
 var jwtSecretKey = builder.Configuration["Jwt:Key"] ?? "ThisIsAStrongDefaultSecretKeyForTesting";
 
+// Cấu hình Mock JWT Bearer (Cho Login endpoint cũ)
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -74,10 +77,44 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Thêm cấu hình Firebase Bearer mới (Tên Scheme khác để không bị conflict)
+builder.Services.AddAuthentication(options =>
+{
+    // Đặt mặc định là FirebaseBearer (ưu tiên cơ chế mới)
+    options.DefaultAuthenticateScheme = "FirebaseBearer";
+    options.DefaultChallengeScheme = "FirebaseBearer";
+})
+    .AddJwtBearer("FirebaseBearer", options =>
+    {
+        // Thông tin cố định cho Firebase Auth
+        options.Authority = "https://securetoken.google.com/photogallerydb-196ef";
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "https://securetoken.google.com/photogallerydb-196ef",
+            ValidateAudience = true,
+            ValidAudience = "photogallerydb-196ef",
+            ValidateLifetime = true,
+        };
+    });
+
+
+// --------------------
+// 🔓 CẤU HÌNH PHÂN QUYỀN
+// --------------------
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireClaim("role", "admin"));
+    options.AddPolicy("UserOrAdmin", policy => policy.RequireClaim("role", "user", "admin"));
+});
+
+
 // --------------------
 // ☁️ CLOUDINARY SERVICE
 // --------------------
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+
+// ... (Các cấu hình khác giữ nguyên) ...
 
 // --------------------
 // 📦 FORM OPTIONS (Upload file lớn)
@@ -124,12 +161,12 @@ builder.Services.AddCors(options =>
 });
 
 // --------------------
-// 🚀 BUILD APP (Đây là nơi biến 'app' được tạo ra)
+// 🚀 BUILD APP
 // --------------------
 var app = builder.Build();
 
 // --------------------
-// ⚠️ GLOBAL ERROR HANDLING (Sử dụng 'app' sau khi Build)
+// ⚠️ GLOBAL ERROR HANDLING
 // --------------------
 app.Use(async (context, next) =>
 {
@@ -145,7 +182,7 @@ app.Use(async (context, next) =>
 });
 
 // --------------------
-// 🧑‍💻 DEV TOOLS (Sử dụng 'app' sau khi Build)
+// 🧑‍💻 DEV TOOLS
 // --------------------
 if (app.Environment.IsDevelopment())
 {
@@ -158,7 +195,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // --------------------
-// 🌍 PIPELINE (Sử dụng 'app' sau khi Build)
+// 🌍 PIPELINE
 // --------------------
 // app.UseHttpsRedirection();
 app.UseCors("AllowAll");

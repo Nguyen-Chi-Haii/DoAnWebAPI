@@ -1,12 +1,15 @@
-﻿using DoAnWebAPI.Model.Domain;
+﻿using DoAnWebAPI.Model.Domain; // ✅ Đảm bảo lớp User được import
 using DoAnWebAPI.Model.DTO.Auth;
+using DoAnWebAPI.Services;
 using DoAnWebAPI.Services.Interface;
-using FirebaseWebApi.Models;
+using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
+
 
 namespace DoAnWebAPI.Controllers
 {
@@ -15,13 +18,17 @@ namespace DoAnWebAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
+        private readonly FirebaseService _firebaseService;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IUserRepository userRepository)
+        public AuthController(IUserRepository userRepository, FirebaseService firebaseService, ILogger<AuthController> logger)
         {
             _userRepository = userRepository;
+            _firebaseService = firebaseService;
+            _logger = logger;
         }
 
-        // Helper để lấy ID người dùng đã xác thực (chỉ dùng cho Logout nếu dùng [Authorize])
+        // Helper để lấy ID người dùng đã xác thực (chỉ dùng nếu sử dụng [Authorize] với JWT)
         private int GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
@@ -32,35 +39,114 @@ namespace DoAnWebAPI.Controllers
             return userId;
         }
 
-        // POST /api/auth/login
-        [HttpPost("login")]
+        // POST api/auth/register (Logic từ master - Firebase Auth)
+        [HttpPost("register")]
         [AllowAnonymous]
-        public async Task<ActionResult<AuthResponseDTO>> Login([FromBody] LoginDTO dto)
+        public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
         {
-            // ✅ 1. Data Validation
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            // FIX: Khai báo biến trước để đảm bảo phạm vi sử dụng (Scope)
+            // 1. Kiểm tra tồn tại
+            var existingUserByEmail = await _userRepository.GetUserByEmailAsync(dto.Email);
+            if (existingUserByEmail != null)
+            {
+                return BadRequest(new { Message = "Email already exists" });
+            }
+
+            var existingUserByUsername = await _userRepository.GetByUsernameAsync(dto.Username);
+            if (existingUserByUsername != null)
+            {
+                return BadRequest(new { Message = "Username already exists" });
+            }
+
+            // 2. Kiểm tra quyền gán role
+            var currentUsername = User.Identity?.Name;
+            var currentUser = (User.Identity?.IsAuthenticated == true && currentUsername != null)
+                              ? await _userRepository.GetByUsernameAsync(currentUsername) : null;
+
+            string targetRole = dto.Role;
+
+            if (targetRole != "User" && (currentUser == null || currentUser.Role != "Admin"))
+            {
+                if (targetRole != "User")
+                {
+                    return Unauthorized(new { Message = "Only admins can assign 'Admin' or 'Moderator' roles" });
+                }
+            }
+
+            try
+            {
+                // 3. Tạo user trong Firebase Authentication
+                var userRecordArgs = new UserRecordArgs
+                {
+                    Email = dto.Email,
+                    Password = dto.Password,
+                    DisplayName = dto.Username
+                };
+                var userRecord = await FirebaseAuth.DefaultInstance.CreateUserAsync(userRecordArgs);
+
+                // Gán custom claims cho role
+                var claims = new System.Collections.Generic.Dictionary<string, object>
+                {
+                    { "role", targetRole }
+                };
+                await FirebaseAuth.DefaultInstance.SetCustomUserClaimsAsync(userRecord.Uid, claims);
+
+                // 4. Tạo user trong Realtime Database
+                var newUser = new User
+                {
+                    Id = await _userRepository.GetNextIdAsync(),
+                    Username = dto.Username,
+                    Email = dto.Email,
+                    // ⚠️ FIX: LƯU MẬT KHẨU GỐC VÀO PasswordHash
+                    // Điều này cho phép hàm Login (Mock JWT) hoạt động.
+                    PasswordHash = dto.Password,
+                    Role = targetRole,
+                    AvatarUrl = dto.AvatarUrl ?? "default-avatar.png",
+                    CreatedAt = DateTime.UtcNow.ToString("o"),
+                    UpdatedAt = DateTime.UtcNow.ToString("o")
+                };
+
+                await _userRepository.CreateAsync(newUser);
+
+                _logger.LogInformation($"User registered: {dto.Username} with role {targetRole}");
+
+                return Ok(new { Message = "Registration successful", UserId = newUser.Id, Role = newUser.Role, FirebaseUid = userRecord.Uid });
+            }
+            catch (FirebaseAuthException ex)
+            {
+                _logger.LogError($"Firebase Auth Error: {ex.Message}");
+                return BadRequest(new { Message = $"Registration failed: {ex.Message}" });
+            }
+        }
+
+        // POST /api/auth/login (Mock JWT)
+        [HttpPost("login")]
+        [AllowAnonymous]
+        public async Task<ActionResult<AuthResponseDTO>> Login([FromBody] LoginDTO dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             User? user;
             AuthResponseDTO response;
 
-            // 2. Tìm người dùng theo Email
             user = await _userRepository.GetUserByEmailAsync(dto.Email);
 
-            // 3. Kiểm tra người dùng và Mật khẩu
+            // Kiểm tra: user phải tồn tại VÀ PasswordHash (đã lưu ở Register) phải khớp với mật khẩu nhập vào
             if (user == null || user.PasswordHash != dto.Password)
             {
                 return Unauthorized(new { error = "Thông tin đăng nhập không hợp lệ." });
             }
 
-            // 4. Tạo JWT Token (MOCK)
             var token = "mock_jwt_token_" + user.Id;
             var expires = DateTime.UtcNow.AddHours(2);
 
-            // 5. Tạo đối tượng Response
             response = new AuthResponseDTO
             {
                 Token = token,
@@ -70,24 +156,20 @@ namespace DoAnWebAPI.Controllers
                 ExpiresAt = expires
             };
 
-            // Trả về đối tượng Response
             return Ok(response);
         }
 
-        // POST /api/auth/logout
+        // POST /api/auth/logout (Body Token)
         [HttpPost("logout")]
-        [AllowAnonymous] // 🔑 Đã thay thế [Authorize] để nhận token qua Body
-        public IActionResult Logout([FromBody] TokenDTO dto) // 🔑 Nhận TokenDTO từ Body
+        [AllowAnonymous]
+        public IActionResult Logout([FromBody] TokenDTO dto)
         {
-            // ✅ 1. Data Validation (Tự động)
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
             var tokenToRevoke = dto.Token;
-
-            // ⚠️ Cần triển khai logic blacklist/revoke token thực tế tại đây
 
             return Ok(new { message = $"Đăng xuất/Vô hiệu hóa token thành công. Token: {tokenToRevoke} ." });
         }

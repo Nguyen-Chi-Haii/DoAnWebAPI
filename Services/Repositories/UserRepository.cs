@@ -34,9 +34,8 @@ namespace DoAnWebAPI.Services.Repositories
             };
         }
 
-        private async Task<int> GetNextIdAsync()
+        public async Task<int> GetNextIdAsync()
         {
-            // ... (Logic GetNextId) ...
             var dict = await _firebaseService.GetDataAsync<Dictionary<string, User>>(Collection);
             if (dict == null || dict.Count == 0) return 1;
 
@@ -44,6 +43,12 @@ namespace DoAnWebAPI.Services.Repositories
                 .Select(k => int.TryParse(k.Replace("user_", ""), out var id) ? id : 0)
                 .Max();
             return maxId + 1;
+        }
+
+        // ✅ Phương thức mới đã được thêm vào Interface
+        public async Task CreateAsync(User user)
+        {
+            await _firebaseService.SaveDataAsync($"{Collection}/user_{user.Id}", user);
         }
 
         // Phương thức mới cho Đăng ký
@@ -118,6 +123,13 @@ namespace DoAnWebAPI.Services.Repositories
         {
             var dict = await _firebaseService.GetDataAsync<Dictionary<string, User>>(Collection);
             return dict?.Values.FirstOrDefault(x => x.Email == email);
+        }
+
+        // ✅ Sửa lỗi trả về DTO
+        public async Task<User?> GetByUsernameAsync(string username)
+        {
+            var dict = await _firebaseService.GetDataAsync<Dictionary<string, User>>(Collection);
+            return dict?.Values.FirstOrDefault(x => x.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
         }
     }
 }
