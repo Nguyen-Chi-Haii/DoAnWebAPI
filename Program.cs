@@ -1,15 +1,23 @@
-﻿using DoAnWebAPI.Repositories;
+using DoAnWebAPI.Repositories;
 using DoAnWebAPI.Services;
 using DoAnWebAPI.Services.Interface;
 using DoAnWebAPI.Services.Repositories;
-using Firebase.Database;
+using Firebase.Database; // <-- Giữ nguyên
 using FirebaseAdmin;
-using FirebaseWebApi.Repositories;
+using FirebaseWebApi.Repositories; // Thư viện cũ, có thể không cần
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using FireSharp.Config;
+using System.IO;
+using System;
+using FireSharp;
+using Microsoft.AspNetCore.Authentication.JwtBearer; // ✅ THÊM
+using Microsoft.IdentityModel.Tokens; // ✅ THÊM
+using System.Text; // ✅ THÊM
+using Microsoft.Extensions.Logging; // Thêm Logging
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +27,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddLogging(); // Thêm Logging
 
 // --------------------
 // 🔥 CẤU HÌNH FIREBASE
@@ -33,9 +42,70 @@ builder.Services.AddSingleton(firebaseApp);
 // Đăng ký FirebaseService (quản lý các thao tác Firebase)
 builder.Services.AddSingleton<FirebaseService>();
 
+// 🔑 LẤY GIÁ TRỊ CẤU HÌNH TỪ APPSETTINGS
+var firebaseBaseUrl = builder.Configuration["Firebase:DatabaseUrl"];
+var firebaseSecret = builder.Configuration["Firebase:DatabaseSecret"];
+
 // ✅ Đăng ký FirebaseClient cho Realtime Database
 builder.Services.AddSingleton(provider =>
-    new FirebaseClient("https://photogallerydb-196ef-default-rtdb.firebaseio.com/"));
+    new FireSharp.FirebaseClient(new FirebaseConfig
+    {
+        AuthSecret = firebaseSecret,
+        BasePath = firebaseBaseUrl
+    }));
+
+// --------------------
+// 🔑 CẤU HÌNH XÁC THỰC (Hợp nhất cả Mock JWT và Firebase Bearer)
+// --------------------
+var jwtSecretKey = builder.Configuration["Jwt:Key"] ?? "ThisIsAStrongDefaultSecretKeyForTesting";
+
+// Cấu hình Mock JWT Bearer (Cho Login endpoint cũ)
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+
+            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "YourApiIssuer",
+            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "YourApiAudience",
+
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey))
+        };
+    });
+
+// Thêm cấu hình Firebase Bearer mới (Tên Scheme khác để không bị conflict)
+builder.Services.AddAuthentication(options =>
+{
+    // Đặt mặc định là FirebaseBearer (ưu tiên cơ chế mới)
+    options.DefaultAuthenticateScheme = "FirebaseBearer";
+    options.DefaultChallengeScheme = "FirebaseBearer";
+})
+    .AddJwtBearer("FirebaseBearer", options =>
+    {
+        // Thông tin cố định cho Firebase Auth
+        options.Authority = "https://securetoken.google.com/photogallerydb-196ef";
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "https://securetoken.google.com/photogallerydb-196ef",
+            ValidateAudience = true,
+            ValidAudience = "photogallerydb-196ef",
+            ValidateLifetime = true,
+        };
+    });
+
+// --------------------
+// 🔓 CẤU HÌNH PHÂN QUYỀN
+// --------------------
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireClaim("role", "admin"));
+    options.AddPolicy("UserOrAdmin", policy => policy.RequireClaim("role", "user", "admin"));
+});
 
 // --------------------
 // ☁️ CLOUDINARY SERVICE
@@ -86,28 +156,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = "FirebaseBearer";
-    options.DefaultChallengeScheme = "FirebaseBearer";
-})
-    .AddJwtBearer("FirebaseBearer", options =>
-    {
-        options.Authority = "https://securetoken.google.com/photogallerydb-196ef";
-        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = "https://securetoken.google.com/photogallerydb-196ef",
-            ValidateAudience = true,
-            ValidAudience = "photogallerydb-196ef",
-            ValidateLifetime = true,
-        };
-    });
-builder.Services.AddAuthorization(options => 
-    { 
-        options.AddPolicy("AdminOnly", policy => policy.RequireClaim("role", "admin")); options.AddPolicy("UserOrAdmin", policy => policy.RequireClaim("role", "user", "admin")); 
-    });
-
 // --------------------
 // 🚀 BUILD APP
 // --------------------
@@ -147,7 +195,9 @@ if (app.Environment.IsDevelopment())
 // --------------------
 // app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+// ✅ FIX: Thêm UseAuthentication trước UseAuthorization
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();

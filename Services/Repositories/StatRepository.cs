@@ -1,55 +1,69 @@
 ﻿using DoAnWebAPI.Model;
 using DoAnWebAPI.Model.DTO.Stats;
 using DoAnWebAPI.Services.Interface;
-using Firebase.Database;
-using Firebase.Database.Query;
+using FireSharp; // ✅ THÊM using FireSharp
+using FireSharp.Response; // ✅ THÊM using FireSharp.Response
 using System.Linq;
 using System.Threading.Tasks;
+using System;
 
 namespace DoAnWebAPI.Services.Repositories
 {
     public class StatRepository : IStatRepository
     {
-        private readonly FirebaseClient _firebase;
+        private readonly FireSharp.FirebaseClient _firebase; // ✅ FIX: Dùng FireSharp.FirebaseClient
         private const string Collection = "stats";
 
-        public StatRepository(FirebaseClient firebase)
+        public StatRepository(FireSharp.FirebaseClient firebase) // ✅ FIX: Dùng FireSharp.FirebaseClient
         {
             _firebase = firebase;
         }
 
-        // Stats are keyed by ImageId in Firebase
+        private string GetPath(int imageId) => $"{Collection}/{imageId}";
+
+        private async Task<Stat?> GetStatDomainByImageIdAsync(int imageId)
+        {
+            var path = GetPath(imageId);
+            // ✅ FIX: Sử dụng FireSharp GetAsync
+            var response = await _firebase.GetAsync(path);
+
+            if (response.Body == "null") return null;
+            return response.ResultAs<Stat>();
+        }
+
         public async Task<Stat> CreateStatAsync(int imageId)
         {
             var stat = new Stat
             {
-                Id = imageId, // Use ImageId as a key for quick lookup
+                Id = imageId,
                 ImageId = imageId,
                 ViewsCount = 0,
                 DownloadCount = 0,
+                LikesCount = 0,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
-            await _firebase.Child(Collection).Child(imageId.ToString()).PutAsync(stat);
+            // ✅ FIX: Sử dụng FireSharp SetAsync
+            await _firebase.SetAsync(GetPath(imageId), stat);
             return stat;
         }
 
         private async Task<Stat> GetOrCreateStatAsync(int imageId)
         {
-            var existing = await GetStatByImageIdAsync(imageId);
+            var existing = await GetStatDomainByImageIdAsync(imageId);
             if (existing != null) return existing;
             return await CreateStatAsync(imageId);
         }
 
         public async Task<Stat?> GetStatByImageIdAsync(int imageId)
         {
-            return await _firebase.Child(Collection).Child(imageId.ToString()).OnceSingleAsync<Stat>();
+            return await GetStatDomainByImageIdAsync(imageId);
         }
 
         public async Task<StatDTO?> GetStatDTOByImageIdAsync(int imageId)
         {
-            var stat = await GetStatByImageIdAsync(imageId);
+            var stat = await GetStatDomainByImageIdAsync(imageId);
             if (stat == null) return null;
 
             return new StatDTO
@@ -57,26 +71,47 @@ namespace DoAnWebAPI.Services.Repositories
                 Id = stat.Id,
                 ImageId = stat.ImageId,
                 ViewsCount = stat.ViewsCount,
-                DownloadCount = stat.DownloadCount
+                DownloadCount = stat.DownloadCount,
+                LikesCount = stat.LikesCount
             };
         }
 
-        public async Task<Stat> IncrementViewsAsync(int imageId)
+        // Helper method cho logic update lặp lại
+        private async Task<Stat> UpdateStatField(int imageId, Action<Stat> updateAction)
         {
             var stat = await GetOrCreateStatAsync(imageId);
-            stat.ViewsCount++;
+            updateAction(stat);
             stat.UpdatedAt = DateTime.UtcNow;
-            await _firebase.Child(Collection).Child(imageId.ToString()).PutAsync(stat);
+
+            // ✅ FIX: Sử dụng FireSharp SetAsync
+            await _firebase.SetAsync(GetPath(imageId), stat);
             return stat;
         }
 
-        public async Task<Stat> IncrementDownloadsAsync(int imageId)
+
+        public Task<Stat> IncrementViewsAsync(int imageId)
         {
-            var stat = await GetOrCreateStatAsync(imageId);
-            stat.DownloadCount++;
-            stat.UpdatedAt = DateTime.UtcNow;
-            await _firebase.Child(Collection).Child(imageId.ToString()).PutAsync(stat);
-            return stat;
+            return UpdateStatField(imageId, stat => stat.ViewsCount++);
+        }
+
+        public Task<Stat> IncrementDownloadsAsync(int imageId)
+        {
+            return UpdateStatField(imageId, stat => stat.DownloadCount++);
+        }
+
+        public Task<Stat> IncrementLikesAsync(int imageId)
+        {
+            return UpdateStatField(imageId, stat => stat.LikesCount++);
+        }
+
+        public Task<Stat> DecrementLikesAsync(int imageId)
+        {
+            return UpdateStatField(imageId, stat => {
+                if (stat.LikesCount > 0)
+                {
+                    stat.LikesCount--;
+                }
+            });
         }
     }
 }

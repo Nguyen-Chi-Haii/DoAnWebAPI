@@ -1,52 +1,63 @@
 ﻿using DoAnWebAPI.Model;
 using DoAnWebAPI.Services.Interface;
-using Firebase.Database;
-using Firebase.Database.Query;
+using FireSharp; // ✅ THÊM using FireSharp
+using FireSharp.Response; // ✅ THÊM using FireSharp.Response
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System; // Cần thiết cho DateTime
 
 namespace DoAnWebAPI.Services.Repositories
 {
     public class CollectionImageRepository : ICollectionImageRepository
     {
-        private readonly FirebaseClient _firebase;
+        private readonly FireSharp.FirebaseClient _firebase; // ✅ FIX: Dùng FireSharp.FirebaseClient
         private const string Collection = "collection_images";
 
-        public CollectionImageRepository(FirebaseClient firebase)
+        public CollectionImageRepository(FireSharp.FirebaseClient firebase) // ✅ FIX: Dùng FireSharp.FirebaseClient
         {
             _firebase = firebase;
         }
 
+        private string GetPath(int collectionId, int imageId) => $"{Collection}/col_{collectionId}_img_{imageId}";
+        private string GetCollectionPath() => Collection;
+
         public async Task<List<CollectionImage>> GetImagesByCollectionIdAsync(int collectionId)
         {
-            var data = await _firebase.Child(Collection)
-                .OnceAsync<CollectionImage>();
+            // ✅ FIX: Sử dụng FireSharp GetAsync
+            var response = await _firebase.GetAsync(GetCollectionPath());
 
-            return data
-                .Where(x => x.Object != null && x.Object.CollectionId == collectionId)
-                .Select(x => x.Object)
-                .ToList();
+            if (response.Body == "null") return new List<CollectionImage>();
+
+            var data = response.ResultAs<Dictionary<string, CollectionImage>>();
+
+            return data?.Values
+                .Where(x => x != null && x.CollectionId == collectionId)
+                .ToList() ?? new List<CollectionImage>();
         }
 
         public async Task<List<CollectionImage>> GetCollectionsByImageIdAsync(int imageId)
         {
-            var data = await _firebase.Child(Collection)
-                .OnceAsync<CollectionImage>();
+            // ✅ FIX: Sử dụng FireSharp GetAsync
+            var response = await _firebase.GetAsync(GetCollectionPath());
 
-            return data
-                .Where(x => x.Object != null && x.Object.ImageId == imageId)
-                .Select(x => x.Object)
-                .ToList();
+            if (response.Body == "null") return new List<CollectionImage>();
+
+            var data = response.ResultAs<Dictionary<string, CollectionImage>>();
+
+            return data?.Values
+                .Where(x => x != null && x.ImageId == imageId)
+                .ToList() ?? new List<CollectionImage>();
         }
 
         public async Task<CollectionImage?> AddImageToCollectionAsync(int collectionId, int imageId)
         {
             var key = $"col_{collectionId}_img_{imageId}";
+            var path = GetPath(collectionId, imageId);
 
-            // Check if already exists
-            var existing = await _firebase.Child(Collection).Child(key).OnceSingleAsync<CollectionImage>();
-            if (existing != null) return null;
+            // ✅ FIX: Kiểm tra sự tồn tại bằng FireSharp GetAsync
+            var existingResponse = await _firebase.GetAsync(path);
+            if (existingResponse.Body != "null") return null;
 
             var newEntry = new CollectionImage
             {
@@ -55,18 +66,22 @@ namespace DoAnWebAPI.Services.Repositories
                 AddedAt = DateTime.UtcNow
             };
 
-            await _firebase.Child(Collection).Child(key).PutAsync(newEntry);
+            // ✅ FIX: Sử dụng FireSharp SetAsync
+            await _firebase.SetAsync(path, newEntry);
             return newEntry;
         }
 
         public async Task<bool> RemoveImageFromCollectionAsync(int collectionId, int imageId)
         {
-            var key = $"col_{collectionId}_img_{imageId}";
-            var existing = await _firebase.Child(Collection).Child(key).OnceSingleAsync<CollectionImage>();
+            var path = GetPath(collectionId, imageId);
 
-            if (existing == null) return false;
+            // ✅ FIX: Kiểm tra sự tồn tại bằng FireSharp GetAsync
+            var existingResponse = await _firebase.GetAsync(path);
 
-            await _firebase.Child(Collection).Child(key).DeleteAsync();
+            if (existingResponse.Body == "null") return false;
+
+            // ✅ FIX: Sử dụng FireSharp DeleteAsync
+            await _firebase.DeleteAsync(path);
             return true;
         }
 

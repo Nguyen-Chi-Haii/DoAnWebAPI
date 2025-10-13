@@ -1,18 +1,24 @@
-﻿using DoAnWebAPI.Model.Domain;
+using DoAnWebAPI.Model.Domain;
+using DoAnWebAPI.Model.DTO.User;
 using FirebaseWebApi.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace FirebaseWebApi.Repositories
+namespace DoAnWebAPI.Services.Interface
 {
     public interface IUserRepository
     {
-        Task<User> CreateAsync(User user);
-        Task<User?> GetByIdAsync(int id);
-        Task<List<User>> GetAllAsync();
-        Task UpdateAsync(User user);
-        Task DeleteAsync(int id);
+        Task<UserDTO?> RegisterAsync(CreateUserDTO dto);
+        Task<UserDTO?> GetByIdAsync(int id);
+        Task<List<UserDTO>> GetAllAsync();
+        Task<bool> UpdateAsync(int id, UpdateUserDTO dto);
+        Task<bool> DeleteAsync(int id);
 
-        // Custom business logic
+        Task CreateAsync(User user);
+
+        // Tất cả đều trả về User?
         Task<User?> GetUserByEmailAsync(string email);
+        Task<User?> GetUserDomainByIdAsync(int id);
         Task<User?> GetByUsernameAsync(string username);
         Task<int> GetNextIdAsync();
     }

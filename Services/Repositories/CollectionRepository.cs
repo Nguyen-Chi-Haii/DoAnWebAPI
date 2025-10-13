@@ -1,69 +1,89 @@
 ﻿using DoAnWebAPI.Model;
 using DoAnWebAPI.Model.DTO.Collection;
 using DoAnWebAPI.Services.Interface;
-using Firebase.Database;
-using Firebase.Database.Query;
+using FireSharp; // ✅ THÊM using FireSharp
+using FireSharp.Response; // ✅ THÊM using FireSharp.Response
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System; // Cần thiết cho DateTime
 
 namespace DoAnWebAPI.Services.Repositories
 {
     public class CollectionRepository : ICollectionRepository
     {
-        private readonly FirebaseClient _firebase;
+        private readonly FireSharp.FirebaseClient _firebase; // ✅ FIX: Dùng FireSharp.FirebaseClient
         private readonly ICollectionImageRepository _collectionImageRepository;
         private const string Collection = "collections";
 
-        public CollectionRepository(FirebaseClient firebase, ICollectionImageRepository collectionImageRepository)
+        public CollectionRepository(FireSharp.FirebaseClient firebase, ICollectionImageRepository collectionImageRepository) // ✅ FIX: Dùng FireSharp.FirebaseClient
         {
             _firebase = firebase;
             _collectionImageRepository = collectionImageRepository;
         }
 
+        // Helper để lấy path
+        private string GetPath(int id) => $"{Collection}/{id}";
+        private string GetCollectionPath() => Collection;
+
         private async Task<int> GetNextIdAsync()
         {
-            var data = await _firebase.Child(Collection).OnceAsync<Collection>();
-            return data.Any() ? data.Max(d => d.Object.Id) + 1 : 1;
+            // ✅ FIX: Sử dụng FireSharp GetAsync để đọc toàn bộ collection
+            var response = await _firebase.GetAsync(GetCollectionPath());
+            if (response.Body == "null") return 1;
+
+            var data = response.ResultAs<Dictionary<string, Model.Collection>>();
+            if (data == null || data.Count == 0) return 1;
+
+            return data.Values.Max(d => d.Id) + 1;
         }
 
         public async Task<List<Collection>> GetAllAsync()
         {
-            var data = await _firebase.Child(Collection).OnceAsync<Collection>();
-            return data.Select(d => d.Object).ToList();
+            var response = await _firebase.GetAsync(GetCollectionPath());
+            if (response.Body == "null") return new List<Collection>();
+
+            var data = response.ResultAs<Dictionary<string, Collection>>();
+            return data?.Values.ToList() ?? new List<Collection>();
         }
 
         public async Task<Collection?> GetByIdAsync(int id)
         {
-            return await _firebase.Child(Collection).Child(id.ToString()).OnceSingleAsync<Collection>();
+            var response = await _firebase.GetAsync(GetPath(id));
+            if (response.Body == "null") return null;
+
+            return response.ResultAs<Collection>();
         }
+
+        // ... (GetByUserIdAsync cần logic lọc phức tạp, nhưng giữ nguyên pattern FireSharp GetAsync) ...
 
         public async Task<List<Collection>> GetByUserIdAsync(int userId)
         {
-            var data = await _firebase.Child(Collection).OnceAsync<Collection>();
-            return data.Where(d => d.Object != null && d.Object.UserId == userId).Select(d => d.Object).ToList();
+            var response = await _firebase.GetAsync(GetCollectionPath());
+            if (response.Body == "null") return new List<Collection>();
+
+            var data = response.ResultAs<Dictionary<string, Collection>>();
+            return data?.Values
+                .Where(d => d.UserId == userId)
+                .ToList() ?? new List<Collection>();
         }
 
-        public async Task<Collection> CreateAsync(CreateCollectionDTO dto)
+
+        public async Task<Collection> CreateAsync(Collection collection, List<int> imageIds)
         {
             var nextId = await GetNextIdAsync();
-            var collection = new Collection
-            {
-                Id = nextId,
-                UserId = dto.UserId,
-                Name = dto.Name,
-                Description = dto.Description,
-                IsPublic = dto.IsPublic,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
 
-            await _firebase.Child(Collection).Child(nextId.ToString()).PutAsync(collection);
+            collection.Id = nextId;
+            collection.CreatedAt = DateTime.UtcNow;
+            collection.UpdatedAt = DateTime.UtcNow;
+
+            // ✅ FIX: Sử dụng FireSharp SetAsync
+            await _firebase.SetAsync(GetPath(nextId), collection);
 
             // Add images if provided
-            if (dto.ImageIds != null && dto.ImageIds.Any())
+            if (imageIds != null && imageIds.Any())
             {
-                await _collectionImageRepository.SyncImagesInCollectionAsync(nextId, dto.ImageIds);
+                await _collectionImageRepository.SyncImagesInCollectionAsync(nextId, imageIds);
             }
 
             return collection;
@@ -79,7 +99,8 @@ namespace DoAnWebAPI.Services.Repositories
             if (dto.IsPublic.HasValue) existing.IsPublic = dto.IsPublic.Value;
             existing.UpdatedAt = DateTime.UtcNow;
 
-            await _firebase.Child(Collection).Child(id.ToString()).PutAsync(existing);
+            // ✅ FIX: Sử dụng FireSharp SetAsync (hoặc UpdateAsync nếu có)
+            await _firebase.SetAsync(GetPath(id), existing);
 
             // Sync images
             if (dto.ImageIds != null)
@@ -95,8 +116,8 @@ namespace DoAnWebAPI.Services.Repositories
             var existing = await GetByIdAsync(id);
             if (existing == null) return false;
 
-            // Delete collection
-            await _firebase.Child(Collection).Child(id.ToString()).DeleteAsync();
+            // ✅ FIX: Sử dụng FireSharp DeleteAsync
+            await _firebase.DeleteAsync(GetPath(id));
 
             // NOTE: Ideally, clean up associated collection_images entries.
 
