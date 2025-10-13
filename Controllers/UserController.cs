@@ -25,9 +25,14 @@ namespace DoAnWebAPI.Controllers
         // Helper để lấy ID người dùng đã xác thực
         private int GetCurrentUserId()
         {
+            // Trong trường hợp sử dụng Firebase, ClaimTypes.NameIdentifier thường là Firebase UID (string), 
+            // nhưng code này đang cố gắng parse sang int. 
+            // Nếu User ID trong DB local là int, cần đảm bảo ClaimTypes.NameIdentifier cũng là int hoặc lấy ID từ Claim khác.
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
             {
+                // Nếu không phải int, thử tìm claim khác hoặc dựa vào logic map Firebase UID sang DB local ID.
+                // Hiện tại, ta giữ nguyên logic, nếu fail sẽ throw UnauthorizedAccessException.
                 throw new UnauthorizedAccessException("Người dùng chưa được xác thực hoặc không tìm thấy ID.");
             }
             return userId;
@@ -47,7 +52,8 @@ namespace DoAnWebAPI.Controllers
         // Helper để kiểm tra Admin
         private bool IsAdmin()
         {
-            return User.IsInRole("Admin");
+            // Note: Firebase Custom Claims cho role thường là "role". Cần đảm bảo Role Claim được set đúng.
+            return User.HasClaim("role", "Admin") || User.IsInRole("Admin");
         }
 
 
@@ -78,7 +84,8 @@ namespace DoAnWebAPI.Controllers
             // 🔑 Phân quyền: Chỉ Admin mới được lấy danh sách tất cả người dùng
             if (!IsAdmin())
             {
-                return Forbid("Bạn không có quyền xem danh sách người dùng.");
+                // 💡 FIX: Trả về StatusCode(403) thay vì Forbid("message")
+                return StatusCode(403, new { Message = "Bạn không có quyền xem danh sách người dùng." });
             }
 
             var users = await _userRepository.GetAllAsync();
@@ -98,7 +105,8 @@ namespace DoAnWebAPI.Controllers
             // 🔑 Phân quyền: Admin HOẶC Same User
             if (!IsAdminOrSameUser(id))
             {
-                return Forbid("Bạn không có quyền xem hồ sơ người dùng này.");
+                // 💡 FIX: Trả về StatusCode(403) thay vì Forbid("message")
+                return StatusCode(403, new { Message = "Bạn không có quyền xem hồ sơ người dùng này." });
             }
 
             var user = await _userRepository.GetByIdAsync(id);
@@ -123,7 +131,8 @@ namespace DoAnWebAPI.Controllers
             // 🔑 Phân quyền: Admin HOẶC Same User
             if (!IsAdminOrSameUser(id))
             {
-                return Forbid("Bạn không có quyền cập nhật hồ sơ người dùng này.");
+                // 💡 FIX: Trả về StatusCode(403) thay vì Forbid("message")
+                return StatusCode(403, new { Message = "Bạn không có quyền cập nhật hồ sơ người dùng này." });
             }
 
             var result = await _userRepository.UpdateAsync(id, dto);
@@ -144,7 +153,8 @@ namespace DoAnWebAPI.Controllers
             // 🔑 Phân quyền: Admin HOẶC Same User
             if (!IsAdminOrSameUser(id))
             {
-                return Forbid("Bạn không có quyền xóa hồ sơ người dùng này.");
+                // 💡 FIX: Trả về StatusCode(403) thay vì Forbid("message")
+                return StatusCode(403, new { Message = "Bạn không có quyền xóa hồ sơ người dùng này." });
             }
 
             var result = await _userRepository.DeleteAsync(id);

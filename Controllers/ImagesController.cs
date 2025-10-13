@@ -15,7 +15,7 @@ namespace DoAnWebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // 🔐 Yêu cầu xác thực cho tất cả endpoints theo mặc định
+    [Authorize]
     public class ImagesController : ControllerBase
     {
         private readonly IImageRepository _repository;
@@ -27,45 +27,51 @@ namespace DoAnWebAPI.Controllers
             _cloudinaryService = cloudinaryService;
         }
 
-        // Helper để lấy ID người dùng đã xác thực
+        // ✅ FIX LỖI 401: Lấy Local ID (integer) từ Custom Claim "local_id"
         private int GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            // 💡 Tìm kiếm Custom Claim "local_id" (được thiết lập trong AuthController)
+            var userIdClaim = User.FindFirst("local_id");
+
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
             {
-                throw new UnauthorizedAccessException("Người dùng chưa được xác thực hoặc không tìm thấy ID.");
+                // Thông báo cụ thể hơn để biết cần phải tạo token mới
+                throw new UnauthorizedAccessException("Người dùng chưa được xác thực hoặc không tìm thấy Local ID (int) trong token. Vui lòng login lại.");
             }
             return userId;
         }
 
-        // Helper để kiểm tra Admin (Giả định Role Claim tồn tại)
         private bool IsAdmin()
         {
-            // 🔑 Kiểm tra Role "Admin" từ Claims (Giả định đã cấu hình Role)
             return User.IsInRole("Admin");
         }
 
 
         // GET /api/images
         [HttpGet]
-        [AllowAnonymous] // Cho phép xem public images mà không cần đăng nhập
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<ImageDTO>>> GetAll()
         {
             var currentUserId = 0;
             if (User.Identity.IsAuthenticated)
             {
-                try { currentUserId = GetCurrentUserId(); } catch { /* Bỏ qua lỗi parsing */ }
+                try
+                {
+                    currentUserId = GetCurrentUserId();
+                }
+                catch
+                {
+                    currentUserId = 0;
+                }
             }
 
             var allImages = await _repository.GetAllAsync();
 
             if (IsAdmin())
             {
-                // Admin thấy tất cả ảnh
                 return Ok(allImages);
             }
 
-            // User/Guest filter: Public images HOẶC ảnh của chính người dùng hiện tại
             var filteredImages = allImages.Where(image =>
                 image.IsPublic || (image.UserId == currentUserId && currentUserId != 0)
             );
@@ -75,7 +81,7 @@ namespace DoAnWebAPI.Controllers
 
         // GET /api/images/{id}
         [HttpGet("{id}")]
-        [AllowAnonymous] // Cho phép xem public images mà không cần đăng nhập
+        [AllowAnonymous]
         public async Task<ActionResult<ImageDTO>> GetById(string id)
         {
             var image = await _repository.GetByIdAsync(id);
@@ -90,7 +96,8 @@ namespace DoAnWebAPI.Controllers
             // 🔑 Phân quyền: Nếu không Public VÀ không phải Admin VÀ không phải chủ sở hữu -> Forbidden
             if (!image.IsPublic && image.UserId != currentUserId && !IsAdmin())
             {
-                return Forbid("Bạn không có quyền truy cập ảnh private này."); // 403 Forbidden
+                // ✅ ĐÃ SỬA: Trả về StatusCode(403) thay vì Forbid("message")
+                return StatusCode(403, new { Message = "Bạn không có quyền truy cập ảnh private này." });
             }
 
             return Ok(image);
@@ -99,13 +106,11 @@ namespace DoAnWebAPI.Controllers
         // POST /api/images
         [HttpPost]
         [Consumes("multipart/form-data")]
-        [RequestSizeLimit(52428800)] // 50MB
-        // 🔐 Yêu cầu đăng nhập (sử dụng [Authorize] ở cấp Controller)
+        [RequestSizeLimit(52428800)]
         public async Task<ActionResult<ImageDTO>> Create([FromForm] CreateImageDTO dto)
         {
             Console.WriteLine("\n========== POST IMAGE REQUEST ==========");
 
-            // ✅ Data Validation (kiểm tra Data Annotations)
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -114,8 +119,7 @@ namespace DoAnWebAPI.Controllers
             int currentUserId;
             try
             {
-                // 🔑 Lấy UserId từ token (NGUỒN ĐÁNG TIN CẬY)
-                currentUserId = GetCurrentUserId();
+                currentUserId = GetCurrentUserId(); // Lấy Local ID đã sửa lỗi
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -124,7 +128,6 @@ namespace DoAnWebAPI.Controllers
 
             try
             {
-                // 1. Validate file (Đã có sẵn logic)
                 Console.WriteLine("Step 1: Validating file...");
                 if (dto.File == null || dto.File.Length == 0)
                 {
@@ -132,7 +135,6 @@ namespace DoAnWebAPI.Controllers
                 }
                 Console.WriteLine($"✓ File received: {dto.File.FileName}");
 
-                // 2. Validate file type
                 Console.WriteLine("Step 2: Validating file type...");
                 var allowedTypes = new[] { "image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp" };
                 if (!allowedTypes.Contains(dto.File.ContentType?.ToLower()))
@@ -142,17 +144,14 @@ namespace DoAnWebAPI.Controllers
                 Console.WriteLine("✓ File type valid");
 
 
-                // 3. Upload to Cloudinary
                 Console.WriteLine("Step 3: Uploading to Cloudinary...");
                 var uploadResult = await _cloudinaryService.UploadImageAsync(dto.File);
                 Console.WriteLine($"✓ Cloudinary upload successful!");
 
-                // 4. Save to Firebase
                 Console.WriteLine("Step 4: Saving metadata to Firebase...");
 
-                // ✅ Gọi CreateAsync với chữ ký mới, truyền UserId an toàn
                 var created = await _repository.CreateAsync(
-                    currentUserId, // 🔑 UserId an toàn
+                    currentUserId,
                     dto.Title,
                     dto.Description,
                     dto.IsPublic,
@@ -191,13 +190,10 @@ namespace DoAnWebAPI.Controllers
             }
         }
 
-
         // PUT /api/images/{id}
         [HttpPut("{id}")]
-        // 🔐 Chỉ Admin hoặc Chủ sở hữu mới được cập nhật
         public async Task<IActionResult> Update(string id, [FromBody] UpdateImageDTO dto)
         {
-            // ✅ Data Validation
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -216,10 +212,10 @@ namespace DoAnWebAPI.Controllers
             var existingImage = await _repository.GetByIdAsync(id);
             if (existingImage == null) return NotFound();
 
-            // 🔑 Phân quyền: Kiểm tra quyền sở hữu HOẶC Admin
             if (existingImage.UserId != currentUserId && !IsAdmin())
             {
-                return Forbid("Bạn chỉ có thể chỉnh sửa ảnh của chính mình hoặc phải có quyền Admin."); // 403 Forbidden
+                // ✅ ĐÃ SỬA: Trả về StatusCode(403) thay vì Forbid("message")
+                return StatusCode(403, new { Message = "Bạn chỉ có thể chỉnh sửa ảnh của chính mình hoặc phải có quyền Admin." });
             }
 
             var result = await _repository.UpdateAsync(id, dto);
@@ -229,7 +225,6 @@ namespace DoAnWebAPI.Controllers
 
         // DELETE /api/images/{id}
         [HttpDelete("{id}")]
-        // 🔐 Chỉ Admin hoặc Chủ sở hữu mới được xóa
         public async Task<IActionResult> Delete(string id)
         {
             int currentUserId;
@@ -245,10 +240,10 @@ namespace DoAnWebAPI.Controllers
             var existingImage = await _repository.GetByIdAsync(id);
             if (existingImage == null) return NotFound();
 
-            // 🔑 Phân quyền: Kiểm tra quyền sở hữu HOẶC Admin
             if (existingImage.UserId != currentUserId && !IsAdmin())
             {
-                return Forbid("Bạn chỉ có thể xóa ảnh của chính mình hoặc phải có quyền Admin."); // 403 Forbidden
+                // ✅ ĐÃ SỬA: Trả về StatusCode(403) thay vì Forbid("message")
+                return StatusCode(403, new { Message = "Bạn chỉ có thể xóa ảnh của chính mình hoặc phải có quyền Admin." });
             }
 
             var result = await _repository.DeleteAsync(id);

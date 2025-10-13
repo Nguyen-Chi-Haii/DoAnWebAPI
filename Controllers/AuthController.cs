@@ -1,16 +1,16 @@
-using DoAnWebAPI.Model.Domain; // ✅ Đảm bảo lớp User được import
+using DoAnWebAPI.Model.Domain;
 using DoAnWebAPI.Model.DTO.Auth;
-using DoAnWebAPI.Services;
 using DoAnWebAPI.Services.Interface;
 using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration; // ✅ ĐÃ THÊM
 using System;
-using System.Security.Claims;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using FirebaseWebApi.Repositories; // ⚠️ Thêm nếu dự án đang dùng
-using FirebaseWebApi.Models;       // ⚠️ Thêm nếu dự án có Models liên quan
+using System.Net.Http;
+using System.Net.Http.Json;
 
 namespace DoAnWebAPI.Controllers
 {
@@ -19,155 +19,206 @@ namespace DoAnWebAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
-        private readonly FirebaseService _firebaseService;
         private readonly ILogger<AuthController> _logger;
+        private readonly IConfiguration _configuration; // ✅ ĐÃ THÊM
 
-        public AuthController(IUserRepository userRepository, FirebaseService firebaseService, ILogger<AuthController> logger)
+        // Record cho Login (Fixed 500 error)
+        private record FirebaseLoginResult(string idToken, string localId);
+
+        public AuthController(IUserRepository userRepository, ILogger<AuthController> logger, IConfiguration configuration) // ✅ ĐÃ SỬA
         {
             _userRepository = userRepository;
-            _firebaseService = firebaseService;
             _logger = logger;
+            _configuration = configuration;
         }
 
-        // Helper để lấy ID người dùng đã xác thực (chỉ dùng nếu sử dụng [Authorize] với JWT)
-        private int GetCurrentUserId()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
-            {
-                throw new UnauthorizedAccessException("Người dùng chưa được xác thực hoặc không tìm thấy ID.");
-            }
-            return userId;
-        }
-
-        // POST api/auth/register (Firebase Auth + Mock JWT)
+        // ✅ Đăng ký bằng Firebase
         [HttpPost("register")]
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
-
-            // 1. Kiểm tra tồn tại
-            var existingUserByEmail = await _userRepository.GetUserByEmailAsync(dto.Email);
-            if (existingUserByEmail != null)
-            {
-                return BadRequest(new { Message = "Email already exists" });
-            }
-
-            var existingUserByUsername = await _userRepository.GetByUsernameAsync(dto.Username);
-            if (existingUserByUsername != null)
-            {
-                return BadRequest(new { Message = "Username already exists" });
-            }
-
-            // 2. Kiểm tra quyền gán role
-            var currentUsername = User.Identity?.Name;
-            var currentUser = (User.Identity?.IsAuthenticated == true && currentUsername != null)
-                              ? await _userRepository.GetByUsernameAsync(currentUsername) : null;
-
-            string targetRole = dto.Role;
-
-            if (targetRole != "User" && (currentUser == null || currentUser.Role != "Admin"))
-            {
-                if (targetRole != "User")
-                {
-                    return Unauthorized(new { Message = "Only admins can assign 'Admin' or 'Moderator' roles" });
-                }
-            }
 
             try
             {
-                // 3. Tạo user trong Firebase Authentication
-                var userRecordArgs = new UserRecordArgs
+                var emailExists = await _userRepository.GetUserByEmailAsync(dto.Email);
+                if (emailExists != null)
+                    return BadRequest(new { Message = "Email already exists" });
+
+                var usernameExists = await _userRepository.GetByUsernameAsync(dto.Username);
+                if (usernameExists != null)
+                    return BadRequest(new { Message = "Username already exists" });
+
+                // ✅ Tạo user trong Firebase
+                var args = new UserRecordArgs
                 {
                     Email = dto.Email,
                     Password = dto.Password,
                     DisplayName = dto.Username
                 };
-                var userRecord = await FirebaseAuth.DefaultInstance.CreateUserAsync(userRecordArgs);
+                var userRecord = await FirebaseAuth.DefaultInstance.CreateUserAsync(args);
 
-                // Gán custom claims cho role
-                var claims = new System.Collections.Generic.Dictionary<string, object>
-                {
-                    { "role", targetRole }
-                };
-                await FirebaseAuth.DefaultInstance.SetCustomUserClaimsAsync(userRecord.Uid, claims);
-
-                // 4. Tạo user trong Realtime Database
+                // Lưu vào DB local
                 var newUser = new User
                 {
-                    Id = await _userRepository.GetNextIdAsync(),
+                    Id = await _userRepository.GetNextIdAsync(), // <-- Local Integer ID
                     Username = dto.Username,
                     Email = dto.Email,
-                    // ⚠️ FIX: Lưu mật khẩu gốc để mock login hoạt động
+                    Role = dto.Role,
                     PasswordHash = dto.Password,
-                    Role = targetRole,
                     AvatarUrl = dto.AvatarUrl ?? "default-avatar.png",
                     CreatedAt = DateTime.UtcNow.ToString("o"),
                     UpdatedAt = DateTime.UtcNow.ToString("o")
                 };
-
                 await _userRepository.CreateAsync(newUser);
 
-                _logger.LogInformation($"User registered: {dto.Username} with role {targetRole}");
+                // 🔑 FIX LỖI 401: Gán quyền VÀ Local ID vào Custom Claims
+                var claims = new Dictionary<string, object>
+                {
+                    { "role", dto.Role },
+                    { "local_id", newUser.Id } // 💡 THÊM LOCAL INTEGER ID VÀO CLAIM
+                };
+                await FirebaseAuth.DefaultInstance.SetCustomUserClaimsAsync(userRecord.Uid, claims);
 
-                return Ok(new { Message = "Registration successful", UserId = newUser.Id, Role = newUser.Role, FirebaseUid = userRecord.Uid });
+                return Ok(new
+                {
+                    Message = "Registration successful",
+                    FirebaseUid = userRecord.Uid
+                });
             }
             catch (FirebaseAuthException ex)
             {
-                _logger.LogError($"Firebase Auth Error: {ex.Message}");
-                return BadRequest(new { Message = $"Registration failed: {ex.Message}" });
+                _logger.LogError($"Firebase error: {ex.Message}");
+                return BadRequest(new { Message = "Firebase registration failed", Error = ex.Message });
             }
         }
 
-        // POST /api/auth/login (Mock JWT)
+        // ✅ Đăng nhập bằng email & password (Firebase)
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<ActionResult<AuthResponseDTO>> Login([FromBody] LoginDTO dto)
+        public async Task<IActionResult> Login([FromBody] LoginDTO dto)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
-            var user = await _userRepository.GetUserByEmailAsync(dto.Email);
-
-            // Kiểm tra user và mật khẩu
-            if (user == null || user.PasswordHash != dto.Password)
+            try
             {
-                return Unauthorized(new { error = "Thông tin đăng nhập không hợp lệ." });
+                using var http = new HttpClient();
+                var apiKey = _configuration["Firebase:WebApiKey"]; // ✅ ĐÃ SỬA: Đọc API Key từ Config
+
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    _logger.LogError("Firebase Web API Key is missing in configuration.");
+                    return StatusCode(500, new { Message = "Server configuration error: Firebase API Key missing." });
+                }
+
+                var body = new
+                {
+                    email = dto.Email,
+                    password = dto.Password,
+                    returnSecureToken = true
+                };
+
+                var response = await http.PostAsJsonAsync(
+                    $"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={apiKey}", body);
+
+                if (!response.IsSuccessStatusCode)
+                    return Unauthorized(new { Message = "Invalid email or password" });
+
+                var result = await response.Content.ReadFromJsonAsync<FirebaseLoginResult>(); // ✅ ĐÃ SỬA: Fix lỗi 500 JsonElement
+
+                if (result == null)
+                {
+                    _logger.LogError("Firebase response content is empty or malformed.");
+                    return StatusCode(500, new { Message = "Login failed", Error = "Malformed response from Firebase." });
+                }
+
+                string idToken = result.idToken;
+                string localId = result.localId; // Firebase UID
+
+                var user = await _userRepository.GetUserByEmailAsync(dto.Email);
+
+                // Cập nhật Custom Claims (để đảm bảo token luôn có local_id)
+                if (user != null)
+                {
+                    var claims = new Dictionary<string, object>
+                    {
+                        { "role", user.Role },
+                        { "local_id", user.Id }
+                    };
+                    await FirebaseAuth.DefaultInstance.SetCustomUserClaimsAsync(localId, claims);
+                }
+
+
+                return Ok(new AuthResponseDTO
+                {
+                    Token = idToken,
+                    UserId = user?.Id.ToString() ?? localId,
+                    Username = user?.Username ?? dto.Email,
+                    Role = user?.Role ?? "User",
+                    ExpiresAt = DateTime.UtcNow.AddHours(1)
+                });
             }
-
-            var token = "mock_jwt_token_" + user.Id;
-            var expires = DateTime.UtcNow.AddHours(2);
-
-            var response = new AuthResponseDTO
+            catch (Exception ex)
             {
-                Token = token,
-                UserId = user.Id.ToString(),
-                Username = user.Username,
-                Role = user.Role,
-                ExpiresAt = expires
-            };
-
-            return Ok(response);
+                _logger.LogError(ex, "Login failed");
+                return StatusCode(500, new { Message = "Login failed", Error = ex.Message });
+            }
         }
 
-        // POST /api/auth/logout
-        [HttpPost("logout")]
+        // ✅ Xác minh token Firebase (Giữ nguyên)
+        [HttpPost("verify-token")]
         [AllowAnonymous]
-        public IActionResult Logout([FromBody] TokenDTO dto)
+        public async Task<IActionResult> VerifyToken([FromBody] string idToken)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                var decoded = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(idToken);
+                return Ok(new
+                {
+                    Message = "Token valid",
+                    Uid = decoded.Uid,
+                    Claims = decoded.Claims
+                });
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Invalid Firebase token");
+                return Unauthorized(new { Message = "Invalid token", Error = ex.Message });
+            }
+        }
 
-            var tokenToRevoke = dto.Token;
-            return Ok(new { message = $"Đăng xuất/Vô hiệu hóa token thành công. Token: {tokenToRevoke}." });
+        // ✅ Logout (Giữ nguyên)
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            try
+            {
+                var uid = User.FindFirst("user_id")?.Value;
+                if (uid == null)
+                    return BadRequest(new { Message = "User ID not found" });
+
+                await FirebaseAuth.DefaultInstance.RevokeRefreshTokensAsync(uid);
+                return Ok(new { Message = "Logout successful (Firebase tokens revoked)" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Logout failed");
+                return StatusCode(500, new { Message = "Logout failed", Error = ex.Message });
+            }
+        }
+
+        // ✅ Lấy thông tin user hiện tại (Giữ nguyên)
+        [Authorize]
+        [HttpGet("me")]
+        public IActionResult Me()
+        {
+            var uid = User.FindFirst("user_id")?.Value;
+            var email = User.FindFirst("email")?.Value;
+            var localId = User.FindFirst("local_id")?.Value; // Để kiểm tra claim mới
+            return Ok(new { Uid = uid, Email = email, LocalId = localId, Message = "Authenticated successfully" });
         }
     }
 }
