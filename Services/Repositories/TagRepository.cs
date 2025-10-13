@@ -31,11 +31,11 @@ namespace DoAnWebAPI.Services.Repositories
             }).ToList();
         }
 
-        public async Task<TagDTO?> GetByIdAsync(string id)
+        public async Task<TagDTO?> GetByIdAsync(int id)
         {
             var tag = await _firebase
                 .Child("tags")
-                .Child(id)
+                .Child(id.ToString())
                 .OnceSingleAsync<Tag>();
 
             if (tag == null) return null;
@@ -69,11 +69,11 @@ namespace DoAnWebAPI.Services.Repositories
             };
         }
 
-        public async Task<bool> UpdateAsync(string id, UpdateTagDTO dto)
+        public async Task<bool> UpdateAsync(int id, UpdateTagDTO dto) 
         {
             var existing = await _firebase
                 .Child("tags")
-                .Child(id)
+                .Child(id.ToString())
                 .OnceSingleAsync<Tag>();
 
             if (existing == null) return false;
@@ -82,24 +82,24 @@ namespace DoAnWebAPI.Services.Repositories
 
             await _firebase
                 .Child("tags")
-                .Child(id)
+                .Child(id.ToString())
                 .PutAsync(existing);
 
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(int id) 
         {
             var existing = await _firebase
                 .Child("tags")
-                .Child(id)
+                .Child(id.ToString())
                 .OnceSingleAsync<Tag>();
 
             if (existing == null) return false;
 
             await _firebase
                 .Child("tags")
-                .Child(id)
+                .Child(id.ToString())
                 .DeleteAsync();
 
             return true;

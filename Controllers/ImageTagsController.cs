@@ -1,6 +1,8 @@
 ﻿using DoAnWebAPI.Model;
 using DoAnWebAPI.Model.DTO.ImageTag;
 using DoAnWebAPI.Repositories;
+using DoAnWebAPI.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DoAnWebAPI.Controllers
@@ -9,50 +11,91 @@ namespace DoAnWebAPI.Controllers
     [Route("api/[controller]")]
     public class ImageTagsController : ControllerBase
     {
-        private readonly IImageTagRepository _repository;
+        private readonly IImageTagRepository _imageTagRepository;
+        private readonly IImageRepository _imageRepository;
+        private readonly ITagRepository _tagRepository;
 
-        public ImageTagsController(IImageTagRepository repository)
+        public ImageTagsController(
+            IImageTagRepository imageTagRepository,
+            IImageRepository imageRepository,
+            ITagRepository tagRepository)
         {
-            _repository = repository;
+            _imageTagRepository = imageTagRepository;
+            _imageRepository = imageRepository;
+            _tagRepository = tagRepository;
         }
 
         /// <summary>
-        /// Lấy tất cả các quan hệ ảnh - tag.
+        /// Get all image-tag relationships.
         /// </summary>
         [HttpGet]
+        [Authorize(Policy = "UserOrAdmin")]
         public async Task<IActionResult> GetAll()
         {
-            var result = await _repository.GetAllAsync();
+            var result = await _imageTagRepository.GetAllAsync();
             return Ok(result);
         }
 
         /// <summary>
-        /// Lấy danh sách tag theo ảnh.
+        /// Get tags for a specific image.
         /// </summary>
         [HttpGet("image/{imageId}")]
+        [Authorize(Policy = "UserOrAdmin")]
         public async Task<IActionResult> GetByImageId(int imageId)
         {
-            var result = await _repository.GetByImageIdAsync(imageId);
+            // Validate imageId
+            if (imageId <= 0)
+                return BadRequest("Image ID must be a positive integer.");
+
+            // Check if image exists
+            var image = await _imageRepository.GetByIdAsync(imageId);
+            if (image == null)
+                return NotFound("Image not found.");
+
+            var result = await _imageTagRepository.GetByImageIdAsync(imageId);
             return Ok(result);
         }
 
         /// <summary>
-        /// Lấy danh sách ảnh theo tag.
+        /// Get images for a specific tag.
         /// </summary>
         [HttpGet("tag/{tagId}")]
+        [Authorize(Policy = "UserOrAdmin")]
         public async Task<IActionResult> GetByTagId(int tagId)
         {
-            var result = await _repository.GetByTagIdAsync(tagId);
+            // Validate tagId
+            if (tagId <= 0)
+                return BadRequest("Tag ID must be a positive integer.");
+
+            // Check if tag exists
+            var tag = await _tagRepository.GetByIdAsync(tagId);
+            if (tag == null)
+                return NotFound("Tag not found.");
+
+            var result = await _imageTagRepository.GetByTagIdAsync(tagId);
             return Ok(result);
         }
 
         /// <summary>
-        /// Thêm mối quan hệ ảnh - tag.
+        /// Add an image-tag relationship.
         /// </summary>
         [HttpPost]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Add([FromBody] UpdateImageTagDTO dto)
         {
-            if (dto == null) return BadRequest("Invalid request.");
+            // Validate DTO
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Check if image exists
+            var image = await _imageRepository.GetByIdAsync(dto.ImageId);
+            if (image == null)
+                return NotFound("Image not found.");
+
+            // Check if tag exists
+            var tag = await _tagRepository.GetByIdAsync(dto.TagId);
+            if (tag == null)
+                return NotFound("Tag not found.");
 
             var imageTag = new ImageTag
             {
@@ -60,26 +103,39 @@ namespace DoAnWebAPI.Controllers
                 TagId = dto.TagId
             };
 
-            var success = await _repository.AddAsync(imageTag);
+            var success = await _imageTagRepository.AddAsync(imageTag);
             if (!success)
                 return Conflict("This image-tag relationship already exists.");
 
-            return Ok(new { message = "Added successfully." });
+            return Ok(new { message = "Tag added to image successfully." });
         }
 
         /// <summary>
-        /// Xóa mối quan hệ ảnh - tag.
+        /// Delete an image-tag relationship.
         /// </summary>
         [HttpDelete]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete([FromBody] UpdateImageTagDTO dto)
         {
-            if (dto == null) return BadRequest("Invalid request.");
+            // Validate DTO
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            var success = await _repository.DeleteAsync(dto.ImageId, dto.TagId);
+            // Check if image exists
+            var image = await _imageRepository.GetByIdAsync(dto.ImageId);
+            if (image == null)
+                return NotFound("Image not found.");
+
+            // Check if tag exists
+            var tag = await _tagRepository.GetByIdAsync(dto.TagId);
+            if (tag == null)
+                return NotFound("Tag not found.");
+
+            var success = await _imageTagRepository.DeleteAsync(dto.ImageId, dto.TagId);
             if (!success)
-                return NotFound("Relationship not found.");
+                return NotFound("Image-tag relationship not found.");
 
-            return Ok(new { message = "Deleted successfully." });
+            return Ok(new { message = "Tag removed from image successfully." });
         }
     }
 }

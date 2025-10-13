@@ -34,7 +34,7 @@ namespace DoAnWebAPI.Controllers
 
         // PUT: api/tags/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, UpdateTagDTO dto)
+        public async Task<IActionResult> Update(int id, UpdateTagDTO dto) 
         {
             var result = await _tagRepository.UpdateAsync(id, dto);
             if (!result) return NotFound();
@@ -43,7 +43,7 @@ namespace DoAnWebAPI.Controllers
 
         // DELETE: api/tags/{id}
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(int id) 
         {
             var result = await _tagRepository.DeleteAsync(id);
             if (!result) return NotFound();

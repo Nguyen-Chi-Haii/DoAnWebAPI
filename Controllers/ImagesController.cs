@@ -27,7 +27,7 @@ namespace DoAnWebAPI.Controllers
         }
 
         [HttpGet("{id}")]                           // GET /api/images/{id}
-        public async Task<ActionResult<ImageDTO>> GetById(string id)
+        public async Task<ActionResult<ImageDTO>> GetById(int id)
         {
             var image = await _repository.GetByIdAsync(id);
             if (image == null) return NotFound();
@@ -130,7 +130,7 @@ namespace DoAnWebAPI.Controllers
 
 
         [HttpPut("{id}")]                           // PUT /api/images/{id}
-        public async Task<IActionResult> Update(string id, [FromBody] UpdateImageDTO dto)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateImageDTO dto)
         {
             var result = await _repository.UpdateAsync(id, dto);
             if (!result) return NotFound();
@@ -138,7 +138,7 @@ namespace DoAnWebAPI.Controllers
         }
 
         [HttpDelete("{id}")]                        // DELETE /api/images/{id}
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(int id)
         {
             var result = await _repository.DeleteAsync(id);
             if (!result) return NotFound();

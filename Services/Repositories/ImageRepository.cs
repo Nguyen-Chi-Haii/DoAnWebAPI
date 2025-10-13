@@ -57,12 +57,12 @@ namespace DoAnWebAPI.Services.Repositories
         }
 
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(int id) 
         {
-            var existing = await _firebase.Child("images").Child(id).OnceSingleAsync<Image>();
+            var existing = await _firebase.Child("images").Child(id.ToString()).OnceSingleAsync<Image>();
             if (existing == null) return false;
 
-            await _firebase.Child("images").Child(id).DeleteAsync();
+            await _firebase.Child("images").Child(id.ToString()).DeleteAsync();
             // Nếu muốn, gọi thêm Cloudinary API để xóa file gốc + thumbnail
             return true;
         }
@@ -87,11 +87,11 @@ namespace DoAnWebAPI.Services.Repositories
             }).ToList();
         }
 
-        public async Task<ImageDTO> GetByIdAsync(string id)
+        public async Task<ImageDTO> GetByIdAsync(int id)
         {
             var image = await _firebase
                 .Child("images")
-                .Child(id)
+                .Child(id.ToString())
                 .OnceSingleAsync<Image>();
 
             if (image == null) return null;
@@ -110,9 +110,9 @@ namespace DoAnWebAPI.Services.Repositories
             };
         }
 
-        public async Task<bool> UpdateAsync(string id, UpdateImageDTO dto)
+        public async Task<bool> UpdateAsync(int id, UpdateImageDTO dto) 
         {
-            var existing = await _firebase.Child("images").Child(id).OnceSingleAsync<Image>();
+            var existing = await _firebase.Child("images").Child(id.ToString()).OnceSingleAsync<Image>();
             if (existing == null) return false;
 
             existing.Title = dto.Title ?? existing.Title;
@@ -123,7 +123,7 @@ namespace DoAnWebAPI.Services.Repositories
 
             await _firebase
                 .Child("images")
-                .Child(id)
+                .Child(id.ToString())
                 .PutAsync(existing);
 
             return true;
