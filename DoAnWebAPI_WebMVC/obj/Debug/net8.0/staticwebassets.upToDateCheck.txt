@@ -22,6 +22,7 @@ wwwroot\js\AdminStats.js
 wwwroot\js\AdminTags_Topics.js
 wwwroot\js\AdminUsers.js
 wwwroot\js\Collection.js
+wwwroot\js\CollectionDetail.js
 wwwroot\js\editCollection.js
 wwwroot\js\editImage.js
 wwwroot\js\Filter.js
@@ -92,4 +93,3 @@ wwwroot\lib\jquery\dist\jquery.min.js
 wwwroot\lib\jquery\dist\jquery.min.map
 wwwroot\lib\jquery\LICENSE.txt
 wwwroot\Logo.png
-wwwroot\js\CollectionDetail.js

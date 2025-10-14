@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Code\\Web2\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj",
+      "projectUniqueName": "D:\\Code\\Web2\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj",
       "projectName": "DoAnWebAPI_WebMVC",
-      "projectPath": "D:\\Code\\Web2\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj",
+      "projectPath": "D:\\Code\\Web2\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj",
       "packagesPath": "C:\\Users\\haila\\.nuget\\packages\\",
-      "outputPath": "D:\\Code\\Web2\\DoAnWebAPI_WebMVC\\obj\\",
+      "outputPath": "D:\\Code\\Web2\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
