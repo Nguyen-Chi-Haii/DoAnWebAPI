@@ -1,0 +1,6 @@
+﻿/* sidebar.css: Dùng cho các style tuỳ chỉnh không có trong Tailwind */
+
+/* Ví dụ: Thêm hiệu ứng bo viền khi active */
+.sidebar-item.active {
+    box-shadow: inset 3px 0 0 0 #3b82f6; /* Viền xanh bên trái */
+}

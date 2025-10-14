@@ -1,0 +1,300 @@
+﻿/* --- Layout quản trị --- */
+.admin-layout-body {
+    background-color: #1f2937; /* bg-gray-800 */
+    color: #f3f4f6; /* text-gray-200 */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.admin-layout-main {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Căn lề trên */
+}
+
+.admin-layout-footer {
+    flex-shrink: 0;
+    text-align: center;
+    padding: 1rem;
+    color: #9ca3af;
+}
+
+/* --- Container của Form --- */
+.form-container {
+    width: 100%;
+    background-color: #ffffff;
+    color: #111827; /* text-black */
+    border-radius: 0.75rem; /* rounded-xl */
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.form-title {
+    font-size: 1.25rem; /* text-xl */
+    font-weight: 600; /* font-semibold */
+}
+
+.form-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem; /* Tăng khoảng cách */
+}
+
+/* --- Các thành phần của Form --- */
+.form-label {
+    display: block;
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500; /* font-medium */
+    margin-bottom: 0.25rem;
+}
+
+.label-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-input, .form-textarea {
+    width: 100%;
+    border: 1px solid #d1d5db; /* border-gray-300 */
+    border-radius: 0.5rem; /* rounded-lg */
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+}
+
+    .form-input:focus, .form-textarea:focus {
+        box-shadow: 0 0 0 2px #3b82f6; /* ring-2 ring-blue-500 */
+    }
+
+.form-textarea {
+    resize: vertical; /* Cho phép thay đổi chiều cao */
+}
+
+/* --- Nút bật/tắt Công khai --- */
+.privacy-toggle-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f3f4f6; /* bg-gray-100 */
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+}
+
+/* --- Tải ảnh --- */
+.hidden-input {
+    display: none;
+}
+
+.image-preview-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.image-preview-item {
+    position: relative;
+    width: 6rem; /* w-24 */
+    height: 6rem; /* h-24 */
+}
+
+    .image-preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+    }
+
+.remove-image-btn {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 9999px;
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+    .remove-image-btn:hover {
+        background-color: rgba(0, 0, 0, 0.7);
+    }
+
+.add-image-placeholder {
+    width: 6rem;
+    height: 6rem;
+    border: 2px dashed #d1d5db;
+    border-radius: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #6b7280; /* text-gray-500 */
+    background-color: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+    .add-image-placeholder:hover {
+        color: #3b82f6; /* hover:text-blue-500 */
+        border-color: #60a5fa; /* hover:border-blue-400 */
+    }
+
+.add-image-text {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* --- Các nút bấm chung --- */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-blue {
+    background-color: #2563eb;
+    color: white;
+}
+
+    .btn-blue:hover {
+        background-color: #1d4ed8;
+    }
+
+.btn-gray {
+    background-color: #e5e7eb;
+    color: #1f2937;
+}
+
+    .btn-gray:hover {
+        background-color: #d1d5db;
+    }
+.image-upload-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.image-preview {
+    width: 12rem; /* w-48 */
+    height: 12rem; /* h-48 */
+    object-fit: cover;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+}
+
+    .image-preview.hidden {
+        display: none;
+    }
+
+.add-image-placeholder--single {
+    border: 2px dashed #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #6b7280;
+    background-color: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+    .add-image-placeholder--single:hover {
+        color: #3b82f6;
+        border-color: #60a5fa;
+    }
+
+/* ====> BỔ SUNG: CSS CHO TAG/TOPIC INPUT <==== */
+.tag-input-container {
+    position: relative;
+}
+
+.suggestion-box {
+    position: absolute;
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-top: 0.25rem;
+    width: 100%;
+    z-index: 10;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+    .suggestion-item:hover {
+        background-color: #dbeafe; /* bg-blue-100 */
+    }
+
+.suggestion-box:empty {
+    display: none; /* Ẩn đi khi không có gợi ý */
+}
+
+.selected-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.tag-pill, .topic-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+}
+
+.tag-pill {
+    background-color: #dbeafe; /* bg-blue-100 */
+    color: #1d4ed8; /* text-blue-700 */
+}
+
+.topic-pill {
+    background-color: #dcfce7; /* bg-green-100 */
+    color: #166534; /* text-green-700 */
+}
+
+.pill-remove-btn {
+    cursor: pointer;
+    line-height: 1;
+}
+
+    .pill-remove-btn:hover {
+        color: #ef4444; /* text-red-500 */
+    }

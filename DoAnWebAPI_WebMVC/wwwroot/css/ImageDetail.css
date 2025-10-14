@@ -1,0 +1,303 @@
+﻿/* --- Thiết lập cơ bản (Giữ nguyên) --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- Lớp phủ và căn giữa Modal --- */
+/* Đổi tên từ .modal-overlay thành .image-detail-modal__overlay cho nhất quán */
+.image-detail-modal__overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    z-index: 50;
+    /* Thêm hiệu ứng mờ dần */
+    opacity: 1;
+    transition: opacity 150ms ease-in-out;
+}
+
+    .image-detail-modal__overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+
+/* --- Container chính của Modal --- */
+.image-detail-modal__container {
+    width: 100%;
+    max-width: 1200px;
+    background-color: #f9fafb;
+    color: #111827;
+    border-radius: 12px;
+    padding: 1.5rem;
+    overflow-y: auto;
+    max-height: 95vh;
+    /* Thêm hiệu ứng trượt vào */
+    transform: scale(1);
+    transition: transform 150ms ease-in-out;
+}
+
+.image-detail-modal__overlay.hidden .image-detail-modal__container {
+    transform: scale(0.95);
+}
+
+
+/* --- Header --- */
+.image-detail-modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.image-detail-modal__heading {
+    font-size: 1.875rem;
+    font-weight: 700;
+}
+
+.image-detail-modal__exit-button {
+    padding: 0.5rem;
+    color: #6b7280;
+    border: none;
+    background: none;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background-color 150ms, color 150ms;
+}
+
+    .image-detail-modal__exit-button:hover {
+        color: #111827;
+        background-color: #e5e7eb;
+    }
+
+/* --- Body Layout --- */
+.image-detail-modal__body {
+    display: flex;
+    gap: 1.5rem;
+    flex-direction: column; /* Mobile-first */
+}
+
+/* --- Cột ảnh --- */
+.image-detail-modal__image-column {
+    width: 100%;
+    background-color: #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    flex-shrink: 0;
+}
+
+.image-detail-modal__main-image {
+    width: 100%;
+    height: auto;
+    max-height: 70vh;
+    object-fit: cover;
+    transition: transform 300ms;
+}
+
+    .image-detail-modal__main-image:hover {
+        transform: scale(1.01);
+    }
+
+/* --- Cột thông tin --- */
+.image-detail-modal__info-column {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.image-detail-modal__info-group {
+    margin-bottom: 0.5rem;
+}
+
+.image-detail-modal__info-group--separator {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1rem;
+}
+
+.image-detail-modal__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+}
+
+.image-detail-modal__id {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.image-detail-modal__section-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.75rem;
+}
+/* Biến thể có icon */
+.image-detail-modal__section-title--with-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+    .image-detail-modal__section-title--with-icon i {
+        color: #6b7280;
+    }
+
+.image-detail-modal__description {
+    color: #4b5563;
+    font-size: 1rem;
+    line-height: 1.625;
+    background-color: #f3f4f6;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+/* --- Tags & Topics --- */
+.image-detail-modal__tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+/* Giữ nguyên các class cho tag-item vì chúng có thể được tái sử dụng */
+.tag-item {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 9999px;
+    font-weight: 500;
+    border: 1px solid;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.image-detail-modal__tag-list .placeholder {
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-style: italic;
+}
+/* Colors for tags (giữ nguyên) */
+.tag-blue {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+    border-color: #93c5fd;
+}
+
+.tag-yellow {
+    background-color: #fef9c3;
+    color: #a16207;
+    border-color: #fde047;
+}
+
+.tag-green {
+    background-color: #dcfce7;
+    color: #166534;
+    border-color: #86efac;
+}
+
+.tag-purple {
+    background-color: #ede9fe;
+    color: #5b21b6;
+    border-color: #c4b5fd;
+}
+
+
+/* --- Nút hành động --- */
+.image-detail-modal__actions {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.modal-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    padding: 0.75rem 0;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    transition: background-color 150ms;
+    border: none;
+    cursor: pointer;
+}
+/* Nút Like mặc định */
+.modal-button {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+    .modal-button:hover {
+        background-color: #d1d5db;
+    }
+    /* Trạng thái đã thích */
+    .modal-button.liked {
+        background-color: #ef4444;
+        color: white;
+    }
+
+        .modal-button.liked:hover {
+            background-color: #dc2626;
+        }
+
+/* Các biến thể màu sắc */
+.modal-button--green {
+    background-color: #22c55e;
+    color: white;
+}
+
+    .modal-button--green:hover {
+        background-color: #16a34a;
+    }
+
+.modal-button--indigo {
+    background-color: #6366f1;
+    color: white;
+}
+
+    .modal-button--indigo:hover {
+        background-color: #4f46e5;
+    }
+
+.modal-button--blue {
+    background-color: #3b82f6;
+    color: white;
+}
+
+    .modal-button--blue:hover {
+        background-color: #2563eb;
+    }
+
+/* --- Responsive cho Desktop --- */
+@media (min-width: 768px) {
+    .image-detail-modal__body {
+        flex-direction: row;
+    }
+
+    .image-detail-modal__image-column {
+        width: 60%;
+    }
+
+    .image-detail-modal__info-column {
+        width: 40%;
+    }
+
+    .image-detail-modal__heading {
+        font-size: 1.5rem;
+    }
+}

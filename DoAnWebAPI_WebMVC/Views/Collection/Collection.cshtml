@@ -1,0 +1,27 @@
+﻿@{
+    ViewData["Title"] = "Bộ sưu tập";
+    Layout = "_CollectionLayout";
+}
+<div class="management-container">
+    <div class="section-header">
+        <h2 class="section-title">Bộ sưu tập của bạn</h2>
+        <div id="collections-buttons" class="button-group"></div>
+    </div>
+    <hr class="divider">
+    <div id="collections-grid" class="item-grid"></div>
+
+    <hr class="divider section-divider">
+
+    <div class="section-header">
+        <h2 class="section-title">Ảnh của tôi</h2>
+        <div id="images-buttons" class="button-group"></div>
+    </div>
+    <hr class="divider">
+    <div id="images-grid" class="item-grid"></div>
+</div>
+@section Scripts {
+    <script src="~/js/ImageDetail.js" asp-append-version="true"></script>
+    <script src="~/js/Collection.js"></script>
+    
+}
+@await Html.PartialAsync("~/Views/Image/ImageDetail.cshtml")

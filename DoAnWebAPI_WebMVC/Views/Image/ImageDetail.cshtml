@@ -1,0 +1,71 @@
+﻿@{
+    // Nút Sửa sẽ hiển thị mặc định (true), trừ khi có trang nào đó đặt ViewData["ShowEditButton"] = false
+    bool showEditButton = (ViewData["ShowEditButton"] as bool?) ?? true;
+}
+<div id="image-detail-modal" class="image-detail-modal__overlay hidden">
+
+    <div class="image-detail-modal__container">
+
+        <div class="image-detail-modal__header">
+            <h1 class="image-detail-modal__heading">Chi Tiết Ảnh</h1>
+            <button id="modal-exit-button" class="image-detail-modal__exit-button">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <div class="image-detail-modal__body">
+
+            <div class="image-detail-modal__image-column">
+                <img id="modal-main-image" class="image-detail-modal__main-image" src="" alt=""
+                     onerror="this.onerror=null;this.src='https://placehold.co/800x600/CCCCCC/333333?text=Image+Load+Error';" />
+            </div>
+
+            <div class="image-detail-modal__info-column">
+
+                <div class="image-detail-modal__info-group">
+                    <h2 id="modal-image-title" class="image-detail-modal__title"></h2>
+                    <div id="modal-image-id" class="image-detail-modal__id"></div>
+                </div>
+
+                <div class="image-detail-modal__info-group">
+                    <p class="image-detail-modal__section-title">Mô tả</p>
+                    <p id="modal-image-description" class="image-detail-modal__description"></p>
+                </div>
+
+                <div class="image-detail-modal__info-group image-detail-modal__info-group--separator">
+                    <p class="image-detail-modal__section-title image-detail-modal__section-title--with-icon"><i data-lucide="tag"></i> Thẻ (Tags)</p>
+                    <div id="modal-tags-container" class="image-detail-modal__tag-list">
+                    </div>
+                </div>
+
+                <div class="image-detail-modal__info-group image-detail-modal__info-group--separator">
+                    <p class="image-detail-modal__section-title image-detail-modal__section-title--with-icon"><i data-lucide="globe"></i> Chủ đề (Topics)</p>
+                    <div id="modal-topics-container" class="image-detail-modal__tag-list">
+                    </div>
+                </div>
+
+                <div class="image-detail-modal__actions">
+                    <button id="modal-like-button" class="modal-button">
+                        <i data-lucide="heart"></i> <span id="modal-like-text">Thích</span> (<span id="modal-like-count">0</span>)
+                    </button>
+                    <button id="modal-download-button" class="modal-button modal-button--green">
+                        <i data-lucide="download"></i> Tải xuống
+                    </button>
+                    <button id="modal-collection-button" class="modal-button modal-button--indigo">
+                        <i data-lucide="folder-plus"></i> Thêm vào Bộ sưu tập
+                    </button>
+                   
+                    @if (showEditButton)
+                    {
+                        <button id="modal-edit-button" class="modal-button modal-button--blue">
+                            <i data-lucide="edit"></i> Chỉnh sửa thông tin
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/ImageDetail.js" asp-append-version="true"></script>
+}

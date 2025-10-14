@@ -1,0 +1,36 @@
+﻿@model DoAnWebAPI_WebMVC.ViewModels.LoginViewModel // Trỏ đến ViewModel bạn vừa tạo
+@{
+    ViewData["Title"] = "Đăng nhập";
+    Layout = "_AuthLayout"; // <-- DÒNG QUAN TRỌNG NHẤT
+}
+<div class="login-container">
+    <h2>Đăng nhập tài khoản</h2>
+    <p>Chào mừng bạn quay lại!</p>
+
+    <form id="login-form" asp-controller="Account" asp-action="Login" method="post" class="login-form">
+
+        <div asp-validation-summary="ModelOnly" class="error-summary"></div>
+
+        <div class="input-group">
+            <input asp-for="Email" placeholder="Email" />
+            <span asp-validation-for="Email" class="error-message"></span>
+        </div>
+
+        <div class="input-group">
+            <input asp-for="Password" placeholder="Mật khẩu" />
+            <span asp-validation-for="Password" class="error-message"></span>
+        </div>
+
+        <button type="submit">
+            Đăng nhập
+        </button>
+
+        <div class="forgot-password">
+            <a asp-controller="Account" asp-action="ForgotPassword">Quên mật khẩu?</a>
+        </div>
+    </form>
+
+    <div class="register-link">
+        Bạn chưa có tài khoản? <a asp-controller="Account" asp-action="Register">Đăng ký tài khoản mới</a>
+    </div>
+</div>

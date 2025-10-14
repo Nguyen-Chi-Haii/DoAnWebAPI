@@ -1,0 +1,73 @@
+﻿<!-- MAIN CONTENT -->
+@{
+        ViewData["Title"] = "Thông báo hệ thống";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<main class="flex-1 overflow-y-auto p-4 sm:p-6 pt-20 lg:pt-6">
+    <h1 class="text-2xl font-bold mb-4 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+        Thông báo hệ thống
+    </h1>
+
+    <!-- THANH TÌM KIẾM + LỌC -->
+    <div class="flex flex-col sm:flex-row items-center gap-3 mb-6">
+        <!-- Ô tìm kiếm -->
+        <div class="flex items-center bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm w-full sm:w-auto sm:flex-grow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500 mr-2"><circle cx="11" cy="11" r="8" /><line x1="21" x2="16.65" y1="21" y2="16.65" /></svg>
+            <input type="text"
+                   id="search-input"
+                   placeholder="Tìm theo người dùng hoặc nội dung..."
+                   class="flex-1 outline-none text-sm text-gray-700 bg-transparent" />
+        </div>
+
+        <!-- Lọc theo loại -->
+        <div class="flex items-center bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm w-full sm:w-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500 mr-2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
+            <select id="filter-type" class="outline-none text-sm text-gray-700 bg-transparent">
+                <option value="Tất cả">Tất cả loại</option>
+                <option value="Ảnh tải lên">Ảnh tải lên</option>
+                <option value="Chờ duyệt">Chờ duyệt</option>
+                <option value="Nhật ký mới">Nhật ký mới</option>
+            </select>
+        </div>
+
+        <!-- Lọc theo ngày -->
+        <div class="flex items-center bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm w-full sm:w-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500 mr-2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
+            <input type="date" id="date-filter" class="outline-none text-sm text-gray-700 bg-transparent" />
+        </div>
+    </div>
+
+    <!-- BẢNG THÔNG BÁO -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-x-auto">
+        <table class="w-full text-sm text-left">
+            <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
+                <tr>
+                    <th class="px-4 py-3">ID</th>
+                    <th class="px-4 py-3">Người dùng</th>
+                    <th class="px-4 py-3">Loại</th>
+                    <th class="px-4 py-3">Nội dung</th>
+                    <th class="px-4 py-3">Ngày</th>
+                    <th class="px-4 py-3">Giờ</th>
+                </tr>
+            </thead>
+            <tbody id="notifications-table-body">
+                <!-- Dữ liệu sẽ được JS chèn vào đây -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PHÂN TRANG -->
+    <div class="flex justify-center items-center gap-3 mt-6">
+        <button id="prev-page" class="p-2 bg-white border rounded-lg disabled:opacity-50 hover:bg-blue-50 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+        </button>
+        <span id="page-info" class="text-sm">
+            Trang <b>1</b> / 1
+        </span>
+        <button id="next-page" class="p-2 bg-white border rounded-lg disabled:opacity-50 hover:bg-blue-50 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+        </button>
+    </div>
+</main>
+<script src="~/js//AdminLogs.js"></script>

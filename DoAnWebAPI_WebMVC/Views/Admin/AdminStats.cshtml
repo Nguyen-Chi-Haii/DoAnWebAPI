@@ -1,0 +1,84 @@
+﻿<!-- ===== MAIN CONTENT ===== -->
+@{
+    ViewData["Title"] = "Thống kê hệ thống";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<main class="p-4 sm:p-8">
+    <h1 class="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-800">
+        <!-- SVG Icon BarChart3 -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
+        Thống kê hệ thống
+    </h1>
+
+    <!-- === CARD THỐNG KÊ === -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+
+        <!-- Đã thêm: border border-gray-200 rounded-xl -->
+        <div class="admin-card p-5 border border-gray-200 rounded-xl">
+            <div class="flex items-center justify-between">
+                <h3 class="text-gray-500 text-sm">Tổng số ảnh</h3>
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
+            </div>
+            <p id="totalImages" class="text-3xl font-bold mt-3">0</p>
+        </div>
+
+        <!-- Đã thêm: border border-gray-200 rounded-xl -->
+        <div class="admin-card p-5 border border-gray-200 rounded-xl">
+            <div class="flex items-center justify-between">
+                <h3 class="text-gray-500 text-sm">Người dùng</h3>
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+            </div>
+            <p id="totalUsers" class="text-3xl font-bold mt-3">0</p>
+        </div>
+
+        <!-- Đã thêm: border border-gray-200 rounded-xl -->
+        <div class="admin-card p-5 border border-gray-200 rounded-xl">
+            <div class="flex items-center justify-between">
+                <h3 class="text-gray-500 text-sm">Lượt thích</h3>
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-pink-500"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></svg>
+            </div>
+            <p id="totalLikes" class="text-3xl font-bold mt-3">0</p>
+        </div>
+
+        <!-- Đã thêm: border border-gray-200 rounded-xl -->
+        <div class="admin-card p-5 border border-gray-200 rounded-xl">
+            <div class="flex items-center justify-between">
+                <h3 class="text-gray-500 text-sm">Lượt tải xuống</h3>
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-500"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
+            </div>
+            <p id="totalDownloads" class="text-3xl font-bold mt-3">0</p>
+        </div>
+    </div>
+
+    <!-- === BIỂU ĐỒ NGƯỜI DÙNG === -->
+    <div class="admin-card p-6 mb-8">
+        <h2 class="text-lg font-semibold mb-4 text-gray-700">👥 Tăng trưởng người dùng trong năm</h2>
+        <div>
+            <canvas id="userGrowthChart"></canvas>
+        </div>
+    </div>
+
+    <!-- === TOP TAG & CHỦ ĐỀ === -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="admin-card p-6">
+            <h2 class="text-lg font-semibold mb-3 text-gray-700">🏷️ Top 3 Tag phổ biến</h2>
+            <div id="topTagsContainer"></div>
+        </div>
+
+        <div class="admin-card p-6">
+            <h2 class="text-lg font-semibold mb-3 text-gray-700">📚 Top 3 Chủ đề phổ biến</h2>
+            <div id="topTopicsContainer"></div>
+        </div>
+    </div>
+
+    <!-- === BIỂU ĐỒ TẢI LÊN / TẢI XUỐNG === -->
+    <div class="admin-card p-6">
+        <h2 class="text-lg font-semibold mb-4 text-gray-700">⬆️⬇️ Hoạt động trong năm</h2>
+        <div>
+            <canvas id="activityChart"></canvas>
+        </div>
+    </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="~/js/AdminStats.js"></script>

@@ -1,0 +1,53 @@
+﻿<!-- MAIN CONTENT -->
+@{
+    ViewData["Title"] = "Quản lý Người dùng";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<main class="flex-1 overflow-y-auto p-4 sm:p-6 pt-20 lg:pt-6">
+    <h1 class="text-2xl font-bold mb-4 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+        Quản lý Người dùng
+    </h1>
+
+    <!-- THANH TÌM KIẾM -->
+    <div class="flex items-center bg-white border border-gray-300 rounded-lg px-3 py-2 mb-6 shadow-sm w-full sm:w-1/2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500 mr-2"><circle cx="11" cy="11" r="8" /><line x1="21" x2="16.65" y1="21" y2="16.65" /></svg>
+        <input type="text"
+               id="search-input"
+               placeholder="Tìm theo ID hoặc tên người dùng..."
+               class="flex-1 outline-none text-sm text-gray-700 bg-transparent" />
+    </div>
+
+    <!-- DANH SÁCH NGƯỜI DÙNG -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-x-auto">
+        <table class="w-full text-sm text-left">
+            <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
+                <tr>
+                    <th class="px-4 py-3">ID</th>
+                    <th class="px-4 py-3">Tên người dùng</th>
+                    <th class="px-4 py-3">Email</th>
+                    <th class="px-4 py-3">Vai trò</th>
+                    <th class="px-4 py-3">Ngày tham gia</th>
+                    <th class="px-4 py-3 text-center">Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="user-table-body">
+                <!-- Dữ liệu người dùng sẽ được JS chèn vào đây -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PHÂN TRANG -->
+    <div id="pagination-container" class="flex justify-center items-center gap-3 mt-6">
+        <button id="prev-page" class="p-2 bg-white border rounded-lg disabled:opacity-50 hover:bg-blue-50 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+        </button>
+        <span id="page-info" class="text-sm">
+            Trang <b>1</b> / 1
+        </span>
+        <button id="next-page" class="p-2 bg-white border rounded-lg disabled:opacity-50 hover:bg-blue-50 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+        </button>
+    </div>
+</main>
+<script src="~/js//AdminUsers.js"></script>

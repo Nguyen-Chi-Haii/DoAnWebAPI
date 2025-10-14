@@ -1,0 +1,52 @@
+﻿@model DoAnWebAPI_WebMVC.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký";
+    Layout = "_AuthLayout";
+}
+<div class="login-container">
+    <h2>Tạo tài khoản mới</h2>
+    <p>Hãy điền thông tin để bắt đầu hành trình của bạn!</p>
+
+    <form id="register-form" asp-controller="Account" asp-action="Register" method="post" class="login-form">
+
+        <div asp-validation-summary="ModelOnly" class="error-summary"></div>
+
+        <div class="input-group">
+            <input asp-for="FullName" placeholder="Họ và tên" />
+            <span asp-validation-for="FullName" class="error-message"></span>
+        </div>
+
+        <div class="input-group">
+            <input asp-for="Email" placeholder="Email" />
+            <span asp-validation-for="Email" class="error-message"></span>
+        </div>
+
+        <div class="input-group">
+            <input asp-for="Password" placeholder="Mật khẩu" />
+            <span asp-validation-for="Password" class="error-message"></span>
+        </div>
+
+        <div class="input-group">
+            <input asp-for="ConfirmPassword" placeholder="Xác nhận mật khẩu" />
+            <span asp-validation-for="ConfirmPassword" class="error-message"></span>
+        </div>
+
+        <button type="submit" class="register-button">
+            Đăng ký
+        </button>
+    </form>
+
+    <div class="register-link">
+        <a asp-controller="Account" asp-action="Login">Đã có tài khoản? Đăng nhập</a>
+    </div>
+</div>
+
+<style>
+    .login-form .register-button {
+        background-color: #16a34a; /* bg-green-600 */
+    }
+
+        .login-form .register-button:hover {
+            background-color: #15803d; /* hover:bg-green-700 */
+        }
+</style>

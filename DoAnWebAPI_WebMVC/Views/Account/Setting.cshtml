@@ -1,0 +1,66 @@
+﻿@{
+    ViewData["Title"] = "Cài đặt tài khoản";
+    Layout = "_FormLayout";
+}
+
+<div class="settings-container">
+    <aside class="settings-menu">
+        <div class="settings-menu__header">
+            <h2 class="settings-menu__title">
+                <i data-lucide="settings"></i> Cài đặt & Cá nhân hóa
+            </h2>
+        </div>
+
+        <nav id="settings-nav" class="settings-menu__nav">
+            <button data-tab="profile" class="nav-button active">
+                <i data-lucide="user"></i> Quản lý tài khoản
+            </button>
+            <button data-tab="password" class="nav-button">
+                <i data-lucide="key"></i> Đổi mật khẩu
+            </button>
+            <button id="settings-logout-btn" class="nav-button nav-button--danger">
+                <i data-lucide="log-out"></i> Đăng xuất
+            </button>
+            <a href="/" class="nav-button nav-button--secondary">
+                <i data-lucide="home"></i> Trở về trang chính
+            </a>
+        </nav>
+    </aside>
+
+    <main class="settings-content">
+        <div class="tabs-container">
+            <div id="settings-profile-tab" class="tab-content is-active">
+                <h3 class="tab-title">Quản lý tài khoản</h3>
+                <form id="settings-profile-form" class="tab-form">
+                    <div class="avatar-section">
+                        <div class="avatar-uploader">
+                            <img id="settings-avatar-preview" src="https://placehold.co/100x100/E2E8F0/4A5568?text=Avatar" alt="avatar" class="avatar-img" /> <button type="button" id="settings-upload-avatar-btn" class="avatar-upload-btn">
+                                <i data-lucide="upload"></i>
+                            </button>
+                            <input type="file" id="settings-avatar-file-input" accept="image/*" class="hidden-input" />
+                        </div>
+                        <div class="profile-inputs">
+                            <input type="text" id="settings-profile-name" placeholder="Tên hiển thị" class="form-input" /> <input type="email" id="settings-profile-email" placeholder="Email" class="form-input" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-blue btn-with-icon">
+                        <i data-lucide="check"></i> Lưu thay đổi
+                    </button>
+                </form>
+            </div>
+
+            <div id="settings-password-tab" class="tab-content">
+                <h3 class="tab-title">Đổi mật khẩu</h3>
+                <form id="settings-password-form" class="tab-form">
+                    <input type="password" id="settings-current-password" placeholder="Mật khẩu hiện tại" class="form-input" required /> <input type="password" id="settings-new-password" placeholder="Mật khẩu mới" class="form-input" required /> <input type="password" id="settings-confirm-password" placeholder="Xác nhận mật khẩu mới" class="form-input" required /> <button type="submit" class="btn btn-green btn-with-icon">
+                        <i data-lucide="check"></i> Cập nhật mật khẩu
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+@section Scripts {
+    <script src="~/js/Setting.js" asp-append-version="true"></script>
+}

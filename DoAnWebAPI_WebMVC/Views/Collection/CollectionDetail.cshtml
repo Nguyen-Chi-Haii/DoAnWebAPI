@@ -1,0 +1,33 @@
+﻿@{
+    ViewData["Title"] = "Chi tiết Bộ sưu tập";
+    Layout = "_CollectionLayout";
+}
+
+<div id="collection-container" class="collection-container" data-collection-id="@ViewBag.CollectionId">
+
+    <div class="header">
+        <div class="header-left-group">
+            <a href="/Collection/Collection" class="btn btn-gray back-button">
+                <i data-lucide="arrow-left"></i>
+                <span>Quay lại</span>
+            </a>
+            <h2 id="collection-name"></h2>
+        </div>
+        <div id="normal-mode-buttons" class="actions">
+            <a href="/Image/AddImage?collectionId=@ViewBag.CollectionId" id="add-image-btn" class="btn btn-blue">Thêm ảnh</a>
+            <button id="delete-mode-btn" class="btn btn-red">Xóa ảnh</button>
+        </div>
+        <div id="delete-mode-buttons" class="actions" style="display: none;">
+            <button id="done-btn" class="btn btn-green">Xong</button>
+        </div>
+    </div>
+    <hr class="divider" />
+    <p id="collection-description" class="description"></p>
+    <div id="image-grid" class="image-grid"></div>
+</div>
+
+@section Scripts {
+    <script src="~/js/CollectionDetail.js"></script>
+}
+
+@await Html.PartialAsync("~/Views/Image/ImageDetail.cshtml")

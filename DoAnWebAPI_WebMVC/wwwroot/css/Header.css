@@ -1,0 +1,8 @@
+﻿
+#app-container {
+    max-width:100%;
+    font-family: 'Inter', sans-serif;
+    background-color: #f4f4f7;
+}
+
+/* Bạn có thể override Tailwind nếu cần */

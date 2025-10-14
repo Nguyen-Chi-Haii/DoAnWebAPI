@@ -1,0 +1,203 @@
+﻿.userStats-container {
+    width: 100%;
+    background-color: #ffffff;
+    color: #111827;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.userStats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.userStats-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.userStats-divider {
+    border: 0;
+    border-top: 1px solid #d1d5db;
+    margin-bottom: 1rem;
+}
+
+.userStats-table-wrapper {
+    overflow-x: auto;
+}
+
+.userStats-table {
+    width: 100%;
+}
+
+    .userStats-table thead {
+        display: none;
+    }
+
+    .userStats-table tbody,
+    .userStats-table tr,
+    .userStats-table td {
+        display: block;
+    }
+
+    .userStats-table tr {
+        background-color: #ffffff;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+        border: 1px solid #e5e7eb;
+    }
+
+    .userStats-table td {
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .userStats-table tr td:last-child {
+        border-bottom: none;
+    }
+
+.userStats-mobile-label {
+    font-weight: 600;
+    color: #111827;
+}
+
+.userStats-cell-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #4b5563;
+}
+
+@media (min-width: 768px) {
+    .userStats-table {
+        border-radius: 0.5rem;
+        overflow: hidden;
+        background-color: #f9fafb;
+    }
+
+        .userStats-table thead {
+            display: table-header-group;
+        }
+
+        .userStats-table tbody {
+            display: table-row-group;
+        }
+
+        .userStats-table tr {
+            display: table-row;
+            margin-bottom: 0;
+            box-shadow: none;
+            border: none;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .userStats-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .userStats-table td {
+            display: table-cell;
+            padding: 0.75rem 1.5rem;
+            justify-content: flex-start;
+            border-bottom: none;
+        }
+
+    .userStats-mobile-label {
+        display: none;
+    }
+
+    .userStats-table .userStats-table-header {
+        padding: 0.75rem 1.5rem;
+        text-align: left;
+        background-color: #e5e7eb;
+        color: #374151;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+    }
+}
+
+.userStats-pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.userStats-pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    background-color: #e5e7eb;
+    color: #374151;
+    cursor: pointer;
+}
+
+    .userStats-pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+.userStats-page-info {
+    font-size: 0.875rem;
+}
+
+.userStats-summary-box {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: #f3f4f6;
+    border-radius: 0.5rem;
+}
+
+.userStats-summary-title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.userStats-summary-text {
+    font-size: 0.875rem;
+    color: #4b5563;
+}
+
+.userStats-summary-value {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.userStats-exit-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.userStats-exit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background-color: #ef4444;
+    color: white;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: background-color 0.2s;
+}
+
+    .userStats-exit-btn:hover {
+        background-color: #dc2626;
+    }

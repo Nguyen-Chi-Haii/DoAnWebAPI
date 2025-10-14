@@ -1,0 +1,94 @@
+﻿<div id="app-container" class="shadow-xl">
+    <!-- HEADER: Đây là khu vực chính được fix -->
+    <header class=" border-b border-gray-200">
+
+        <!-- 1. Desktop Navigation (Sử dụng padding ngang px-4 để tạo khoảng trống) -->
+        <div id="desktop-nav" class="hidden md:flex items-center justify-between gap-4 px-4">
+            <div id="desktop-nav" class="hidden md:flex items-center justify-between gap-4 px-4">
+                <a href="/" class="min-w-[100px]">
+                    <img src="~/Logo.png" alt="Photo.AI Logo" class="h-20 md:h-20" />
+                </a>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="relative flex-1 max-w-xl">
+                <div class="flex items-center w-full p-0 border border-gray-300 rounded-lg transition
+                focus-within:ring-2 focus-within:ring-blue-400">
+
+                    <div data-lucide="search" class="text-gray-500 w-4 h-4 mx-3 flex-shrink-0"></div>
+
+                    <input type="text" id="search-input-desktop" placeholder="Tìm kiếm ảnh..."
+                           class="w-full py-2 border-none bg-transparent focus:outline-none focus:ring-0" />
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 min-w-[200px] justify-end">
+                <a href="/Image/AddImage" class="flex items-center gap-1 bg-blue-500 text-white font-medium px-4 py-2 rounded-lg hover:bg-blue-600 transition shadow-md">
+                    <i data-lucide="upload"></i>
+                    <span>Tải ảnh lên</span>
+                </a>
+            </div>
+
+                @if (true)
+                {
+                    <div class="relative">
+                        <button id="user-menu-button" class="flex items-center gap-2 text-gray-800 font-medium px-4 py-2 rounded-lg hover:bg-gray-200 transition">
+                            <span>@User.Identity.Name</span>
+                            <div data-lucide="chevron-down" class="w-4 h-4"></div>
+                        </button>
+
+                        <div id="user-menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-20">
+                            <div class="py-1">
+                                <a asp-controller="Collection" asp-action="Collection" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <div data-lucide="image" class="w-4 h-4"></div>
+                                    <span>Bộ sưu tập</span>
+                                </a>
+                                <a asp-controller="Stats" asp-action="UserStats" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <div data-lucide="bar-chart-3" class="w-4 h-4"></div>
+                                    <span>Thống kê</span>
+                                </a>
+                                <a asp-controller ="Account" asp-action="Setting" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <div data-lucide="user-cog" class="w-4 h-4"></div>
+                                    <span>Cá nhân</span>
+                                </a>
+                            @if (true /* Điều kiện kiểm tra quyền Admin, ví dụ: User.IsInRole("Admin") */)
+                            {
+                                <a asp-controller="Admin" asp-action="AdminHome" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <div data-lucide="shield-check" class="w-4 h-4"></div>
+                                    <span>Quản trị</span>
+                                </a>
+                            }
+                                <div class="border-t border-gray-200 my-1"></div>
+                                <a href="#" class="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                    <div data-lucide="log-out" class="w-4 h-4"></div>
+                                    <span>Đăng xuất</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Login" class="flex items-center gap-1 bg-gray-200 text-gray-800 font-medium px-4 py-2 rounded-lg hover:bg-gray-300 transition shadow-md">
+                        <div data-lucide="log-in" class="w-4 h-4"></div>
+                        <span>Đăng nhập</span>
+                    </a>
+                }
+            </div>
+        </div>
+
+        <!-- 2. Mobile Navigation (Sử dụng padding ngang px-4 để tạo khoảng trống) -->
+        <div id="mobile-nav" class="flex md:hidden items-center gap-2 px-4">
+            <div class="font-bold text-lg text-blue-600 min-w-min">Photo.AI</div>
+
+            <div class="flex-1">
+                <div class="flex items-center w-full border border-gray-300 rounded-lg transition
+                focus-within:ring-2 focus-within:ring-blue-400 px-4">
+
+                    <div data-lucide="search" class="text-gray-500 w-4 h-4 mr-2 flex-shrink-0"></div>
+
+                    <input type="text" id="search-input-mobile" placeholder="Tìm kiếm..."
+                           class="w-full py-2 border-none bg-transparent focus:outline-none focus:ring-0" />
+                </div>
+            </div>
+        </div>

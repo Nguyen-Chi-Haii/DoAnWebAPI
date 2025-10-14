@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Quản lý</title>
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/Form.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/Setting.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/UserStats.css" asp-append-version="true" />
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="admin-layout-body">
+
+    <main role="main" class="admin-layout-main">
+        @RenderBody()
+    </main>
+
+    <footer class="admin-layout-footer">
+        @await Html.PartialAsync("_layoutFooter")
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

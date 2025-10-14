@@ -1,0 +1,26 @@
+﻿ /* CSS tuỳ chỉnh cho Grid và Hiệu ứng Hover 
+        (Giữ nguyên các quy tắc từ Tailwind để code được tự contained)
+    */
+    #content-container {
+        /* Bỏ "height: 100vh;" nếu bạn muốn container cuộn theo body của trang chính */
+        /* Giữ lại nếu bạn muốn container này là khu vực cuộn chính của trang */
+        /* height: 100vh; */ 
+        width: 100%; 
+        min-height: 80vh; 
+    }
+
+    /* Nút hành động trên desktop */
+    .image-card .image-actions {
+        opacity: 0;
+        transition: opacity 300ms ease-in-out;
+    }
+
+    @media (min-width: 768px) {
+        .image-card:hover .image-actions {
+            opacity: 1;
+        }
+    }
+
+    .action-button {
+        transition: background-color 0.15s, transform 0.15s;
+    }

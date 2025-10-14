@@ -1,0 +1,55 @@
+﻿@{
+    ViewData["Title"] = "Thống kê";
+    Layout = "_FormLayout";
+}
+
+<div class="userStats-container">
+    <div class="userStats-header">
+        <h2 class="userStats-title">
+            <i data-lucide="bar-chart-2"></i> Thống kê ảnh
+        </h2>
+    </div>
+
+    <hr class="userStats-divider" />
+
+    <div class="userStats-table-wrapper">
+        <table class="userStats-table">
+            <thead>
+                <tr>
+                    <th class="userStats-table-header">ID Ảnh</th>
+                    <th class="userStats-table-header">Lượt xem</th>
+                    <th class="userStats-table-header">Lượt tải xuống</th>
+                    <th class="userStats-table-header">Lượt thích</th>
+                </tr>
+            </thead>
+            <tbody id="userStats-table-body"></tbody>
+        </table>
+    </div>
+
+    <div class="userStats-pagination-controls">
+        <button id="userStats-prev-page-btn" class="userStats-pagination-btn">
+            <i data-lucide="chevron-left"></i> Trang trước
+        </button>
+        <span id="userStats-page-info" class="userStats-page-info"></span>
+        <button id="userStats-next-page-btn" class="userStats-pagination-btn">
+            Trang sau <i data-lucide="chevron-right"></i>
+        </button>
+    </div>
+
+    <div class="userStats-summary-box">
+        <h3 class="userStats-summary-title">Tóm tắt</h3>
+        <p class="userStats-summary-text">Tổng số lượt xem: <span id="userStats-total-views" class="userStats-summary-value"></span></p>
+        <p class="userStats-summary-text">Tổng số lượt tải xuống: <span id="userStats-total-downloads" class="userStats-summary-value"></span></p>
+        <p class="userStats-summary-text">Tổng số lượt thích: <span id="userStats-total-likes" class="userStats-summary-value"></span></p>
+    </div>
+
+    <div class="userStats-exit-wrapper">
+        <button id="userStats-exit-btn" class="userStats-exit-btn">
+            <i data-lucide="log-out"></i> Thoát
+        </button>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/userStats.js" asp-append-version="true"></script>
+}

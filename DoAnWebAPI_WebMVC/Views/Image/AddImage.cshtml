@@ -1,0 +1,72 @@
+﻿@{
+    ViewData["Title"] = "Thêm Ảnh Mới";
+    Layout = "_FormLayout";
+}
+
+<div class="form-container">
+    <div class="form-header">
+        <h2 class="form-title">Thêm Ảnh Mới</h2>
+    </div>
+
+    <form id="add-image-form" class="form-body">
+        <div>
+            <label for="image-title" class="form-label">Tiêu đề ảnh</label>
+            <input type="text" id="image-title" class="form-input" placeholder="Nhập tiêu đề..." required />
+        </div>
+
+        <div>
+            <label for="image-description" class="form-label">Mô tả</label>
+            <textarea id="image-description" rows="3" class="form-textarea" placeholder="Mô tả ngắn..."></textarea>
+        </div>
+
+        <div class="privacy-toggle-container">
+            <span id="privacy-status-text" class="form-label">Công khai</span>
+            <button type="button" id="privacy-toggle-btn" class="btn btn-blue">
+                <i data-lucide="globe"></i>
+                <span>Công khai</span>
+            </button>
+        </div>
+
+        <div>
+            <label class="form-label label-with-icon"><i data-lucide="upload"></i> Ảnh tải lên</label>
+            <div class="image-upload-container">
+                <img id="image-preview" src="" alt="Xem trước ảnh" class="image-preview hidden" />
+
+                <button type="button" id="upload-image-btn" class="add-image-placeholder--single">
+                    <i data-lucide="plus"></i>
+                    <span class="add-image-text">Chọn ảnh</span>
+                </button>
+                <input type="file" id="file-input" accept="image/*" class="hidden-input" />
+            </div>
+        </div>
+
+        <div>
+            <label for="tag-input" class="form-label">Thẻ (Tags)</label>
+            <div class="tag-input-container">
+                <input type="text" id="tag-input" class="form-input" placeholder="Nhập thẻ, nhấn Enter để thêm..." />
+                <div id="tag-suggestions" class="suggestion-box"></div>
+            </div>
+            <div id="selected-tags" class="selected-tags-container"></div>
+        </div>
+
+        <div>
+            <label for="topic-input" class="form-label">Chủ đề (Topics)</label>
+            <div class="tag-input-container">
+                <input type="text" id="topic-input" class="form-input" placeholder="Nhập chủ đề, nhấn Enter để thêm..." />
+                <div id="topic-suggestions" class="suggestion-box"></div>
+            </div>
+            <div id="selected-topics" class="selected-tags-container"></div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" id="cancel-btn" class="btn btn-gray">Hủy</button>
+            <button type="submit" class="btn btn-blue btn-with-icon">
+                <i data-lucide="check"></i> Lưu ảnh
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/js/addImage.js" asp-append-version="true"></script>
+}

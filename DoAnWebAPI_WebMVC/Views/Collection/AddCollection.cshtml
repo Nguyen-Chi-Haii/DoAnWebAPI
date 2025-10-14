@@ -1,0 +1,54 @@
+﻿@{
+    ViewData["Title"] = "Thêm Bộ Sưu Tập";
+    Layout = "_FormLayout"; // <-- Sử dụng layout quản trị mới
+}
+
+<div class="form-container">
+    <div class="form-header">
+        <h2 class="form-title">Thêm Bộ Sưu Tập Mới</h2>
+    </div>
+
+    <form id="add-collection-form" class="form-body">
+        <div>
+            <label for="collection-name" class="form-label">Tên bộ sưu tập</label>
+            <input type="text" id="collection-name" class="form-input" placeholder="Ví dụ: Cảnh biển mùa hè" required />
+        </div>
+
+        <div>
+            <label for="collection-description" class="form-label">Mô tả</label>
+            <textarea id="collection-description" rows="3" class="form-textarea" placeholder="Nhập mô tả ngắn về bộ sưu tập..."></textarea>
+        </div>
+
+        <div class="privacy-toggle-container">
+            <span id="privacy-status-text" class="form-label">Công khai</span>
+            <button type="button" id="privacy-toggle-btn" class="btn btn-blue">
+                <i data-lucide="globe"></i>
+                <span>Công khai</span>
+            </button>
+        </div>
+
+        <div>
+            <label class="form-label label-with-icon">
+                <i data-lucide="upload"></i> Ảnh của bộ sưu tập
+            </label>
+            <div id="image-preview-container" class="image-preview-container">
+                <button type="button" id="add-image-btn" class="add-image-placeholder">
+                    <i data-lucide="plus"></i>
+                    <span class="add-image-text">Thêm ảnh</span>
+                </button>
+            </div>
+            <input type="file" id="file-input" accept="image/*" multiple class="hidden-input" />
+        </div>
+
+        <div class="form-actions">
+            <button type="button" id="cancel-btn" class="btn btn-gray">Hủy</button>
+            <button type="submit" class="btn btn-blue btn-with-icon">
+                <i data-lucide="check"></i> Lưu bộ sưu tập
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/js/AddCollection.js" asp-append-version="true"></script>
+}
