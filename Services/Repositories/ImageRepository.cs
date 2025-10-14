@@ -112,7 +112,7 @@ namespace DoAnWebAPI.Services.Repositories
             }).ToList() ?? new List<ImageDTO>();
         }
 
-        public async Task<ImageDTO> GetByIdAsync(int id)
+        public async Task<ImageDTO> GetByIdAsync(string id)
         {
             // ✅ FIX: Sử dụng FireSharp GetAsync
             var response = await _firebase.GetAsync(GetPath(id));
@@ -135,7 +135,7 @@ namespace DoAnWebAPI.Services.Repositories
             };
         }
 
-        public async Task<bool> UpdateAsync(int id, UpdateImageDTO dto) 
+        public async Task<bool> UpdateAsync(string id, UpdateImageDTO dto)
         {
             var existingResponse = await _firebase.GetAsync(GetPath(id));
             if (existingResponse.Body == "null") return false;

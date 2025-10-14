@@ -20,10 +20,10 @@ namespace DoAnWebAPI.Controllers
         private readonly FirebaseService _firebaseService;
 
         public CollectionImagesController(
-            ICollectionImageRepository collectionImageRepository,
-            ICollectionRepository collectionRepository,
-            IImageRepository imageRepository,
-            FirebaseService firebaseService)
+       ICollectionImageRepository collectionImageRepository,
+       ICollectionRepository collectionRepository,
+       IImageRepository imageRepository,
+       FirebaseService firebaseService)
         {
             _collectionImageRepository = collectionImageRepository;
             _collectionRepository = collectionRepository;
@@ -36,20 +36,17 @@ namespace DoAnWebAPI.Controllers
         {
             try
             {
-                // Validate collectionId
                 if (collectionId <= 0)
                 {
                     return BadRequest("Collection ID must be a positive integer.");
                 }
 
-                // Check if collection exists
                 var collection = await _collectionRepository.GetByIdAsync(collectionId);
                 if (collection == null)
                 {
                     return NotFound("Collection not found.");
                 }
 
-                // Check user authorization
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var isAdmin = await _firebaseService.IsAdminAsync(userId);
                 if (!isAdmin && collection.UserId.ToString() != userId)
@@ -64,7 +61,6 @@ namespace DoAnWebAPI.Controllers
                     AddedAt = ci.AddedAt
                 }).ToList();
 
-                // Validate DTOs
                 foreach (var dto in dtos)
                 {
                     var validationContext = new ValidationContext(dto);
@@ -88,27 +84,23 @@ namespace DoAnWebAPI.Controllers
         {
             try
             {
-                // Validate inputs
                 if (collectionId <= 0 || imageId <= 0)
                 {
                     return BadRequest("Collection ID and Image ID must be positive integers.");
                 }
 
-                // Check if collection exists
                 var collection = await _collectionRepository.GetByIdAsync(collectionId);
                 if (collection == null)
                 {
                     return NotFound("Collection not found.");
                 }
 
-                // Check if image exists
-                var image = await _imageRepository.GetByIdAsync(imageId);
+                var image = await _imageRepository.GetByIdAsync(imageId.ToString()); // Sửa: Chuyển int imageId thành string
                 if (image == null)
                 {
                     return NotFound("Image not found.");
                 }
 
-                // Check user authorization
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var isAdmin = await _firebaseService.IsAdminAsync(userId);
                 if (!isAdmin && collection.UserId.ToString() != userId)
@@ -128,7 +120,6 @@ namespace DoAnWebAPI.Controllers
                     AddedAt = result.AddedAt
                 };
 
-                // Validate response DTO
                 var validationContext = new ValidationContext(responseDto);
                 Validator.ValidateObject(responseDto, validationContext, validateAllProperties: true);
 
@@ -152,27 +143,23 @@ namespace DoAnWebAPI.Controllers
         {
             try
             {
-                // Validate inputs
                 if (collectionId <= 0 || imageId <= 0)
                 {
                     return BadRequest("Collection ID and Image ID must be positive integers.");
                 }
 
-                // Check if collection exists
                 var collection = await _collectionRepository.GetByIdAsync(collectionId);
                 if (collection == null)
                 {
                     return NotFound("Collection not found.");
                 }
 
-                // Check if image exists
-                var image = await _imageRepository.GetByIdAsync(imageId);
+                var image = await _imageRepository.GetByIdAsync(imageId.ToString()); // Sửa: Chuyển int imageId thành string
                 if (image == null)
                 {
                     return NotFound("Image not found.");
                 }
 
-                // Check user authorization
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var isAdmin = await _firebaseService.IsAdminAsync(userId);
                 if (!isAdmin && collection.UserId.ToString() != userId)

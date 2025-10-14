@@ -16,18 +16,15 @@ namespace DoAnWebAPI.Controllers
         private readonly ITagRepository _tagRepository;
 
         public ImageTagsController(
-            IImageTagRepository imageTagRepository,
-            IImageRepository imageRepository,
-            ITagRepository tagRepository)
+     IImageTagRepository imageTagRepository,
+     IImageRepository imageRepository,
+     ITagRepository tagRepository)
         {
             _imageTagRepository = imageTagRepository;
             _imageRepository = imageRepository;
             _tagRepository = tagRepository;
         }
 
-        /// <summary>
-        /// Get all image-tag relationships.
-        /// </summary>
         [HttpGet]
         [Authorize(Policy = "UserOrAdmin")]
         public async Task<IActionResult> GetAll()
@@ -36,19 +33,14 @@ namespace DoAnWebAPI.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Get tags for a specific image.
-        /// </summary>
         [HttpGet("image/{imageId}")]
         [Authorize(Policy = "UserOrAdmin")]
         public async Task<IActionResult> GetByImageId(int imageId)
         {
-            // Validate imageId
             if (imageId <= 0)
                 return BadRequest("Image ID must be a positive integer.");
 
-            // Check if image exists
-            var image = await _imageRepository.GetByIdAsync(imageId);
+            var image = await _imageRepository.GetByIdAsync(imageId.ToString()); // Sửa: Chuyển int imageId thành string
             if (image == null)
                 return NotFound("Image not found.");
 
@@ -56,19 +48,14 @@ namespace DoAnWebAPI.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Get images for a specific tag.
-        /// </summary>
         [HttpGet("tag/{tagId}")]
         [Authorize(Policy = "UserOrAdmin")]
         public async Task<IActionResult> GetByTagId(int tagId)
         {
-            // Validate tagId
             if (tagId <= 0)
                 return BadRequest("Tag ID must be a positive integer.");
 
-            // Check if tag exists
-            var tag = await _tagRepository.GetByIdAsync(tagId);
+            var tag = await _tagRepository.GetByIdAsync(tagId); // Đã đúng vì TagRepository dùng int
             if (tag == null)
                 return NotFound("Tag not found.");
 
@@ -76,24 +63,18 @@ namespace DoAnWebAPI.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Add an image-tag relationship.
-        /// </summary>
         [HttpPost]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Add([FromBody] UpdateImageTagDTO dto)
         {
-            // Validate DTO
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Check if image exists
-            var image = await _imageRepository.GetByIdAsync(dto.ImageId);
+            var image = await _imageRepository.GetByIdAsync(dto.ImageId.ToString()); // Sửa: Chuyển int ImageId thành string
             if (image == null)
                 return NotFound("Image not found.");
 
-            // Check if tag exists
-            var tag = await _tagRepository.GetByIdAsync(dto.TagId);
+            var tag = await _tagRepository.GetByIdAsync(dto.TagId); // Đã đúng vì TagRepository dùng int
             if (tag == null)
                 return NotFound("Tag not found.");
 
@@ -110,24 +91,18 @@ namespace DoAnWebAPI.Controllers
             return Ok(new { message = "Tag added to image successfully." });
         }
 
-        /// <summary>
-        /// Delete an image-tag relationship.
-        /// </summary>
         [HttpDelete]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete([FromBody] UpdateImageTagDTO dto)
         {
-            // Validate DTO
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Check if image exists
-            var image = await _imageRepository.GetByIdAsync(dto.ImageId);
+            var image = await _imageRepository.GetByIdAsync(dto.ImageId.ToString()); // Sửa: Chuyển int ImageId thành string
             if (image == null)
                 return NotFound("Image not found.");
 
-            // Check if tag exists
-            var tag = await _tagRepository.GetByIdAsync(dto.TagId);
+            var tag = await _tagRepository.GetByIdAsync(dto.TagId); // Đã đúng vì TagRepository dùng int
             if (tag == null)
                 return NotFound("Tag not found.");
 

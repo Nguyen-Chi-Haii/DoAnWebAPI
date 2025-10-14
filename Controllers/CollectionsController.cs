@@ -46,7 +46,7 @@ namespace DoAnWebAPI.Controllers
             // WARNING: Inefficient. This retrieves every image one by one. Optimize in a production environment.
             foreach (var link in imageLinks)
             {
-                var imageDto = await _imageRepository.GetByIdAsync(link.ImageId);
+                var imageDto = await _imageRepository.GetByIdAsync(link.ImageId.ToString());
                 if (imageDto != null)
                 {
                     imageDtos.Add(imageDto);
