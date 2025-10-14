@@ -167,7 +167,7 @@ namespace DoAnWebAPI.Controllers
             }
         }
 
-        // ✅ Xác minh token Firebase (Giữ nguyên)
+        // ✅ Xác minh token Firebase
         [HttpPost("verify-token")]
         [AllowAnonymous]
         public async Task<IActionResult> VerifyToken([FromBody] string idToken)
@@ -189,7 +189,6 @@ namespace DoAnWebAPI.Controllers
             }
         }
 
-        // ✅ Logout (Giữ nguyên)
         [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
