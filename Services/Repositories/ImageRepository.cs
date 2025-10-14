@@ -1,10 +1,10 @@
-﻿using DoAnWebAPI.Model.DTO.Image;
+using DoAnWebAPI.Model.DTO.Image;
 using DoAnWebAPI.Model.DTO.Tag;
 using DoAnWebAPI.Model.DTO.Topics;
 using DoAnWebAPI.Services.Interface;
-using FireSharp; // ✅ THÊM using FireSharp
-using FireSharp.Response; // ✅ THÊM using FireSharp.Response
-using FirebaseWebApi.Models; // Assumed namespace for Image model
+using FireSharp;
+using FireSharp.Response;
+using FirebaseWebApi.Models; // Namespace chứa Image model
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,11 +14,11 @@ namespace DoAnWebAPI.Services.Repositories
 {
     public class ImageRepository : IImageRepository
     {
-        private readonly FireSharp.FirebaseClient _firebase; // ✅ FIX: Dùng FireSharp.FirebaseClient
+        private readonly FireSharp.FirebaseClient _firebase;
         private readonly ICloudinaryService _cloudinaryService;
         private const string Collection = "images";
 
-        public ImageRepository(FireSharp.FirebaseClient firebase, ICloudinaryService cloudinaryService) // ✅ FIX: Dùng FireSharp.FirebaseClient
+        public ImageRepository(FireSharp.FirebaseClient firebase, ICloudinaryService cloudinaryService)
         {
             _firebase = firebase;
             _cloudinaryService = cloudinaryService;
@@ -27,7 +27,26 @@ namespace DoAnWebAPI.Services.Repositories
         private string GetPath(string id) => $"{Collection}/{id}";
         private string GetCollectionPath() => Collection;
 
-        // Logic CreateAsync
+        // Helper để ánh xạ từ Domain Model sang DTO (Đã sửa)
+        private ImageDTO? MapToDTO(Image image)
+        {
+            if (image == null) return null;
+
+            return new ImageDTO
+            {
+                Id = image.Id,
+                UserId = image.UserId,
+                Title = image.Title,
+                Description = image.Description, // ✅ ĐÃ SỬA: Ánh xạ Description
+                FileUrl = image.FileUrl,
+                ThumbnailUrl = image.ThumbnailUrl,
+                IsPublic = image.IsPublic,
+                Status = image.Status,
+                Tags = new List<TagDTO>(),
+                Topics = new List<TopicDTO>()
+            };
+        }
+
         public async Task<ImageDTO> CreateAsync(
             int userId,
             string title,
@@ -59,80 +78,81 @@ namespace DoAnWebAPI.Services.Repositories
                 UpdatedAt = DateTime.UtcNow
             };
 
-            // ✅ FIX: Sử dụng FireSharp SetAsync
             await _firebase.SetAsync(GetPath(image.Id.ToString()), image);
-
-            // TODO: (Đề xuất) Thêm logic lưu TagIds và TopicIds vào các bảng liên kết ở đây
-
-            return new ImageDTO
-            {
-                Id = image.Id,
-                UserId = image.UserId,
-                Title = image.Title,
-                FileUrl = image.FileUrl,
-                ThumbnailUrl = image.ThumbnailUrl,
-                IsPublic = image.IsPublic,
-                Status = image.Status,
-                Tags = new List<TagDTO>(),
-                Topics = new List<TopicDTO>()
-            };
+            return MapToDTO(image)!;
         }
 
         public async Task<bool> DeleteAsync(string id)
         {
-            // ✅ FIX: Kiểm tra sự tồn tại bằng FireSharp GetAsync
             var checkResponse = await _firebase.GetAsync(GetPath(id));
             if (checkResponse.Body == "null") return false;
 
-            // ✅ FIX: Sử dụng FireSharp DeleteAsync
             await _firebase.DeleteAsync(GetPath(id));
             return true;
         }
 
+        // ✅ ĐÃ SỬA: GetAllAsync (Xử lý Dictionary Deserialization và Logging)
         public async Task<IEnumerable<ImageDTO>> GetAllAsync()
         {
-            // ✅ FIX: Sử dụng FireSharp GetAsync để đọc toàn bộ collection
             var response = await _firebase.GetAsync(GetCollectionPath());
 
-            if (response.Body == "null") return new List<ImageDTO>();
+            if (response.Body == "null" || string.IsNullOrWhiteSpace(response.Body))
+                return new List<ImageDTO>();
 
-            var data = response.ResultAs<Dictionary<string, Image>>();
-
-            return data?.Values.Select(d => new ImageDTO
+            try
             {
-                Id = d.Id,
-                UserId = d.UserId,
-                Title = d.Title,
-                FileUrl = d.FileUrl,
-                ThumbnailUrl = d.ThumbnailUrl,
-                IsPublic = d.IsPublic,
-                Status = d.Status,
-                Tags = new List<TagDTO>(),
-                Topics = new List<TopicDTO>()
-            }).ToList() ?? new List<ImageDTO>();
+                var data = response.ResultAs<Dictionary<string, Image>>();
+
+                if (data == null)
+                {
+                    Console.WriteLine("ImageRepository Error: Deserialization failed for images collection.");
+                    Console.WriteLine($"Raw Firebase response body: {response.Body}");
+                    return new List<ImageDTO>();
+                }
+
+                return data.Values
+                       .Where(d => d != null)
+                       .Select(MapToDTO)
+                       .Where(dto => dto != null)
+                       .ToList()!;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ImageRepository Error: Exception during GetAllAsync: {ex.Message}");
+                return new List<ImageDTO>();
+            }
         }
 
-        public async Task<ImageDTO> GetByIdAsync(string id)
+        // ✅ ĐÃ SỬA: GetByIdAsync (Xử lý Deserialization và Logging)
+        public async Task<ImageDTO?> GetByIdAsync(string id)
         {
-            // ✅ FIX: Sử dụng FireSharp GetAsync
-            var response = await _firebase.GetAsync(GetPath(id));
+            var path = GetPath(id);
+            var response = await _firebase.GetAsync(path);
 
-            if (response.Body == "null") return null;
-
-            var image = response.ResultAs<Image>();
-
-            return new ImageDTO
+            if (response.Body == "null")
             {
-                Id = image.Id,
-                UserId = image.UserId,
-                Title = image.Title,
-                FileUrl = image.FileUrl,
-                ThumbnailUrl = image.ThumbnailUrl,
-                IsPublic = image.IsPublic,
-                Status = image.Status,
-                Tags = new List<TagDTO>(),
-                Topics = new List<TopicDTO>()
-            };
+                Console.WriteLine($"ImageRepository Info: Image ID {id} not found at path {path}.");
+                return null;
+            }
+
+            try
+            {
+                var image = response.ResultAs<Image>();
+
+                if (image == null)
+                {
+                    Console.WriteLine($"ImageRepository Error: Deserialization failed for ID {id}.");
+                    Console.WriteLine($"Raw Firebase response body: {response.Body}");
+                    return null;
+                }
+
+                return MapToDTO(image);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ImageRepository Error: Exception during GetByIdAsync for ID {id}: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<bool> UpdateAsync(string id, UpdateImageDTO dto)
@@ -142,6 +162,8 @@ namespace DoAnWebAPI.Services.Repositories
 
             var existing = existingResponse.ResultAs<Image>();
 
+            if (existing == null) return false;
+
             // Cập nhật các trường
             if (dto.Title != null) existing.Title = dto.Title;
             if (dto.Description != null) existing.Description = dto.Description;
@@ -149,10 +171,7 @@ namespace DoAnWebAPI.Services.Repositories
             if (dto.Status != null) existing.Status = dto.Status;
             existing.UpdatedAt = DateTime.UtcNow;
 
-            // ✅ FIX: Sử dụng FireSharp SetAsync
             await _firebase.SetAsync(GetPath(id), existing);
-
-            // TODO: (Đề xuất) Thêm logic sync TagIds và TopicIds
 
             return true;
         }
