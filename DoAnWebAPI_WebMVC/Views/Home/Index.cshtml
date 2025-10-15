@@ -1,11 +1,24 @@
-﻿@{
+﻿@* File: Views/Home/Index.cshtml *@
+
+@{
     ViewData["Title"] = "Trang chủ";
-    ViewData["ShowEditButton"] = false;
 }
 
 <div id="image-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-20">
+    @* Ảnh sẽ được render vào đây bởi JavaScript *@
 </div>
 
 <div id="loading-indicator" class="text-center p-4 text-gray-500 hidden">
     Đang tải thêm ảnh...
 </div>
+
+@* Phần Partial View cho Modal. 
+    Dòng này sẽ render HTML của ImageDetail.cshtml vào trang chủ.
+*@
+@await Html.PartialAsync("~/Views/Image/ImageDetail.cshtml")
+
+@section Scripts {
+    @* Thêm 2 file script cần thiết cho trang chủ *@
+    <script src="~/js/ImageDetail.js" asp-append-version="true"></script>
+    <script src="~/js/HomeBody.js" asp-append-version="true"></script>
+}

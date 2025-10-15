@@ -1,20 +1,8 @@
 ﻿// HomeBody.js
-
-const mockImages = Array.from({ length: 40 }, (_, i) => ({
-    id: i + 1,
-    url: `https://picsum.photos/400/300?image=${100 + i}`,
-    title: `Ảnh Phong Cảnh ${i + 1}`,
-    likes: Math.floor(Math.random() * 500) + 100,
-    isLiked: false,
-    // Thêm dữ liệu giả lập cho modal
-    description: `Đây là mô tả chi tiết cho Ảnh Phong Cảnh ${i + 1}. Nội dung này sẽ được hiển thị trong pop-up.`,
-    tags: [{ id: 1, name: "Phong cảnh", color: "blue" }, { id: i + 1, name: "Ảnh số " + (i + 1), color: "green" }],
-    topics: [{ id: 10, name: "Thiên nhiên", color: "teal" }]
-}));
+let images = []; 
 
 const initialLoadCount = 8;
 const loadMoreCount = 4;
-let images = [...mockImages];
 let visibleImageCount = initialLoadCount;
 let isProcessingScroll = false;
 let pressedButton = null;
@@ -25,36 +13,61 @@ const loadingIndicator = document.getElementById('loading-indicator');
 
 const formatLikes = (num) => num >= 1000 ? (num / 1000).toFixed(1) + 'k' : num;
 
+async function fetchAndRenderImages() {
+    const loadingMessage = document.createElement('p');
+    loadingMessage.className = 'text-center text-gray-500';
+    loadingMessage.textContent = 'Đang tải dữ liệu từ server...';
+    imageGrid.appendChild(loadingMessage);
 
+    try {
+        // Sử dụng apiService đã tạo để gọi API
+        const fetchedImages = await api.images.getAll();
+        images = fetchedImages; // Lưu dữ liệu thật vào biến global
+        imageGrid.innerHTML = ''; // Xóa thông báo loading
+        renderInitialImages(); // Bắt đầu render những ảnh đầu tiên
+    } catch (error) {
+        console.error("Lỗi khi tải ảnh:", error);
+        imageGrid.innerHTML = `<p class="text-center text-red-500">Không thể tải dữ liệu ảnh. Vui lòng thử lại sau.</p>`;
+    }
+}
 /**
  * ===================================================================
  * [CẬP NHẬT 1] - Bọc thẻ ảnh trong một thẻ <a> để kích hoạt modal
  * ===================================================================
  */
+// File: wwwroot/js/HomeBody.js
+
 const renderImageCard = (image) => {
+    // Lấy dữ liệu từ API object
+    const isLiked = image.isLikedByCurrentUser;
+    const likeCount = image.likeCount;
+    const imageUrl = image.thumbnailUrl;
+
     let likeButtonClasses = 'p-2 rounded-full transition drop-shadow-md flex items-center gap-1.5 action-button';
-    if (image.isLiked) {
+    if (isLiked) {
         likeButtonClasses += ' bg-red-500 text-white hover:bg-red-600';
     } else {
         likeButtonClasses += ' bg-black/50 text-white hover:bg-black/70';
     }
 
-    // Bọc toàn bộ div trong một thẻ <a> với class và data-id
+    // Đây là template HTML đầy đủ, bao gồm cả nút "Thêm vào Bộ sưu tập"
     return `
     <div class="image-card-wrapper">
         <a href="#" class="image-card-link" data-id="${image.id}">
             <div id="image-${image.id}" class="image-card bg-white rounded-xl shadow-lg overflow-hidden transition hover:shadow-xl group flex flex-col">
                 <div class="relative image-area">
-                    <img src="${image.url}" alt="${image.title}" class="w-full h-auto aspect-[4/3] object-cover"/>
+                    <img src="${imageUrl}" alt="${image.title}" class="w-full h-auto aspect-[4/3] object-cover"/>
                     <div class="absolute top-3 right-3 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        
                         <button data-action="collect" data-id="${image.id}" data-title="${image.title}"
                                 class="p-2 rounded-full transition drop-shadow-md action-button bg-black/50 text-white hover:bg-black/70" 
                                 title="Thêm vào Bộ sưu tập">
                             <div data-lucide="folder-plus" class="w-[18px] h-[18px]"></div>
                         </button>
-                        <button data-action="like" data-id="${image.id}" class="${likeButtonClasses}" title="${image.isLiked ? 'Bỏ thích' : 'Thích'}">
-                            <div data-lucide="heart" class="w-[18px] h-[18px]" style="fill: ${image.isLiked ? 'white' : 'none'};"></div>
-                            <span class="text-sm font-medium">${formatLikes(image.likes)}</span>
+
+                        <button data-action="like" data-id="${image.id}" class="${likeButtonClasses}" title="${isLiked ? 'Bỏ thích' : 'Thích'}">
+                            <div data-lucide="heart" class="w-[18px] h-[18px]" style="fill: ${isLiked ? 'white' : 'none'};"></div>
+                            <span class="text-sm font-medium">${formatLikes(likeCount)}</span>
                         </button>
                     </div>
                 </div>
@@ -125,27 +138,51 @@ const handleScroll = () => {
     }
 };
 
-const handleActionClick = (button) => {
+const handleActionClick = async (button) => {
     const action = button.dataset.action;
     const imageId = parseInt(button.dataset.id);
 
     if (action === 'like') {
-        images = images.map(img => {
-            if (img.id === imageId) {
-                const newLikes = img.isLiked ? img.likes - 1 : img.likes + 1;
-                return { ...img, isLiked: !img.isLiked, likes: newLikes };
+        const imageToUpdate = images.find(img => img.id === imageId);
+        if (!imageToUpdate) return;
+
+        // Lưu trạng thái cũ để rollback nếu API lỗi
+        const originalLikedState = imageToUpdate.isLikedByCurrentUser;
+        const originalLikeCount = imageToUpdate.likeCount;
+
+        // Cập nhật giao diện ngay lập tức (Optimistic UI)
+        imageToUpdate.isLikedByCurrentUser = !originalLikedState;
+        imageToUpdate.likeCount = originalLikedState ? originalLikeCount - 1 : originalLikeCount + 1;
+
+        const cardWrapper = button.closest('.image-card-wrapper');
+        if (cardWrapper) {
+            cardWrapper.outerHTML = renderImageCard(imageToUpdate);
+            lucide.createIcons();
+        }
+
+        try {
+            // Gọi API tương ứng
+            if (originalLikedState) {
+                await api.likes.remove(imageId);
+            } else {
+                await api.likes.add(imageId);
             }
-            return img;
-        });
+        } catch (error) {
+            console.error("Lỗi khi like/unlike:", error);
+            alert("Đã xảy ra lỗi. Vui lòng thử lại.");
+
+            // Rollback lại trạng thái nếu API thất bại
+            imageToUpdate.isLikedByCurrentUser = originalLikedState;
+            imageToUpdate.likeCount = originalLikeCount;
+            if (cardWrapper) {
+                cardWrapper.outerHTML = renderImageCard(imageToUpdate);
+                lucide.createIcons();
+            }
+        }
+        return; // Dừng hàm sau khi xử lý like
     }
 
-    const updatedImage = images.find(img => img.id === imageId);
-    const cardWrapper = button.closest('.image-card-wrapper');
-    if (cardWrapper) {
-        cardWrapper.outerHTML = renderImageCard(updatedImage);
-        lucide.createIcons();
-    }
-
+    // Giữ nguyên logic cho các action khác
     switch (action) {
         case 'download': alert(`Bắt đầu tải xuống ảnh: ${button.dataset.title}`); break;
         case 'collect': alert(`Thêm ảnh: ${button.dataset.title} vào Bộ sưu tập.`); break;
@@ -163,11 +200,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    renderInitialImages();
+    fetchAndRenderImages();
     contentContainer.addEventListener('scroll', handleScroll);
 
     // Lắng nghe sự kiện click trên toàn bộ grid
-    imageGrid.addEventListener('click', (e) => {
+    imageGrid.addEventListener('click', async (e) => {
         const link = e.target.closest('.image-card-link');
         const actionButton = e.target.closest('button[data-action]');
 
@@ -176,18 +213,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Ưu tiên 1: Nếu click vào nút action (like, download...)
         if (actionButton) {
-            handleActionClick(actionButton);
+            await handleActionClick(actionButton); // Thêm await
             return;
         }
 
         // Ưu tiên 2: Nếu click vào thẻ ảnh (để mở modal)
         if (link) {
-            const imageId = parseInt(link.dataset.id);
-            const imageData = images.find(img => img.id === imageId);
+            const imageId = link.dataset.id; // Lấy ID (dưới dạng chuỗi là đủ)
 
             // Kiểm tra xem hàm openModal đã tồn tại chưa (từ file detail-modal.js)
-            if (imageData && typeof openModal === 'function') {
-                openModal(imageData);
+            if (imageId && typeof openModal === 'function') {
+                openModal(imageId); // Đúng: chỉ truyền ID
             } else {
                 console.error("Hàm openModal() không được tìm thấy. Hãy chắc chắn file detail-modal.js đã được tải.");
             }

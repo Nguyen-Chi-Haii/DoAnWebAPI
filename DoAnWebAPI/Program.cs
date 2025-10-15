@@ -1,4 +1,4 @@
-using DoAnWebAPI.Repositories;
+﻿using DoAnWebAPI.Repositories;
 using DoAnWebAPI.Services;
 using DoAnWebAPI.Services.Interface;
 using DoAnWebAPI.Services.Repositories;
@@ -159,9 +159,22 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// --------------------
+// 🚀 PIPELINE MIDDLEWARE (Đã sắp xếp lại)
+// --------------------
+
+// 1. Thêm UseRouting() để thiết lập cơ chế định tuyến.
+app.UseRouting();
+
+// 2. Áp dụng chính sách CORS.
+//    Nó phải nằm sau UseRouting() và trước UseAuthorization().
 app.UseCors("AllowAll");
+
+// 3. Xác thực và Phân quyền.
 app.UseAuthentication();
 app.UseAuthorization();
 
+// 4. Ánh xạ các Controller vào các endpoint đã được định tuyến.
 app.MapControllers();
+
 app.Run();

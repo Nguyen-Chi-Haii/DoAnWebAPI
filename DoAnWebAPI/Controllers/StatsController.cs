@@ -45,7 +45,7 @@ namespace DoAnWebAPI.Controllers
         }
 
         // POST /api/images/{imageId}/stats/view
-        [HttpPost("view")]
+        [HttpPost("increment-view")]
         public async Task<IActionResult> IncrementViewCount(int imageId)
         {
             // ✅ Data Validation

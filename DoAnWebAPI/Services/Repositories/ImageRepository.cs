@@ -1,69 +1,137 @@
+﻿// File: Services/Repositories/ImageRepository.cs
+
+using DoAnWebAPI.Model; // SỬA LỖI 1: Thêm using này để nhận diện các lớp Model như Image, Like, Stat...
 using DoAnWebAPI.Model.DTO.Image;
 using DoAnWebAPI.Model.DTO.Tag;
 using DoAnWebAPI.Model.DTO.Topics;
 using DoAnWebAPI.Services.Interface;
-using FireSharp;
-using FireSharp.Response;
-using FirebaseWebApi.Models; // Namespace chứa Image model
+using FirebaseWebApi.Models;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace DoAnWebAPI.Services.Repositories
 {
     public class ImageRepository : IImageRepository
     {
         private readonly FireSharp.FirebaseClient _firebase;
-        private readonly ICloudinaryService _cloudinaryService;
-        private const string Collection = "images";
+        private readonly IStatRepository _statRepository;
+        private readonly ILikeRepository _likeRepository;
+        private readonly ITagRepository _tagRepository;
+        private readonly ITopicRepository _topicRepository;
 
-        public ImageRepository(FireSharp.FirebaseClient firebase, ICloudinaryService cloudinaryService)
+        public ImageRepository(
+            FireSharp.FirebaseClient firebase,
+            IStatRepository statRepository,
+            ILikeRepository likeRepository,
+            ITagRepository tagRepository,
+            ITopicRepository topicRepository)
         {
             _firebase = firebase;
-            _cloudinaryService = cloudinaryService;
+            _statRepository = statRepository;
+            _likeRepository = likeRepository;
+            _tagRepository = tagRepository;
+            _topicRepository = topicRepository;
         }
 
-        private string GetPath(string id) => $"{Collection}/{id}";
-        private string GetCollectionPath() => Collection;
-
-        // Helper để ánh xạ từ Domain Model sang DTO (Đã sửa)
-        private ImageDTO? MapToDTO(Image image)
+        public async Task<IEnumerable<ImageDTO>> GetAllAsync(int? currentUserId = null)
         {
+            var imageResponse = await _firebase.GetAsync("images");
+            if (imageResponse.Body == "null") return new List<ImageDTO>();
+
+            var imagesData = imageResponse.ResultAs<Dictionary<string, Image>>();
+            if (imagesData == null) return new List<ImageDTO>();
+
+            var allStats = await _statRepository.GetAllAsync();
+            var allTags = await _tagRepository.GetAllAsync();
+            var allTopics = await _topicRepository.GetAllAsync();
+            var userLikes = currentUserId.HasValue
+                ? await _likeRepository.GetLikesByUserIdAsync(currentUserId.Value)
+                : new List<Like>();
+
+            var imageDtos = imagesData.Values.Select(image =>
+            {
+                var stat = allStats.FirstOrDefault(s => s.ImageId == image.Id);
+                var tagsForImage = allTags
+                    .Where(tag => image.TagIds?.Contains(tag.Id) ?? false)
+                    .Select(tag => new TagDTO { Id = tag.Id, Name = tag.Name })
+                    .ToList();
+                var topicsForImage = allTopics
+                    .Where(topic => image.TopicIds?.Contains(topic.Id) ?? false)
+                    .Select(topic => new TopicDTO { Id = topic.Id, Name = topic.Name })
+                    .ToList();
+
+                return new ImageDTO
+                {
+                    Id = image.Id,
+                    UserId = image.UserId,
+                    Title = image.Title,
+                    Description = image.Description,
+                    FileUrl = image.FileUrl,
+                    ThumbnailUrl = image.ThumbnailUrl,
+                    IsPublic = image.IsPublic,
+                    Status = image.Status,
+                    Tags = tagsForImage,
+                    Topics = topicsForImage,
+                    LikeCount = stat?.LikesCount ?? 0,
+                    IsLikedByCurrentUser = userLikes.Any(l => l.ImageId == image.Id)
+                };
+            }).ToList();
+
+            return imageDtos.OrderByDescending(i => i.Id);
+        }
+
+        public async Task<ImageDTO?> GetByIdAsync(string id, int? currentUserId = null)
+        {
+            var response = await _firebase.GetAsync($"images/{id}");
+            if (response.Body == "null") return null;
+
+            var image = response.ResultAs<Image>();
             if (image == null) return null;
+
+            var stat = await _statRepository.GetStatByImageIdAsync(image.Id);
+            var isLiked = false;
+            if (currentUserId.HasValue)
+            {
+                isLiked = (await _likeRepository.GetLikeByImageAndUserAsync(image.Id, currentUserId.Value)) != null;
+            }
+
+            // SỬA LỖI 2: Lấy tất cả tags/topics rồi lọc trong bộ nhớ thay vì gọi hàm không tồn tại
+            var allTags = await _tagRepository.GetAllAsync();
+            var tagsForImage = allTags
+                .Where(tag => image.TagIds?.Contains(tag.Id) ?? false)
+                .Select(t => new TagDTO { Id = t.Id, Name = t.Name })
+                .ToList();
+
+            var allTopics = await _topicRepository.GetAllAsync();
+            var topicsForImage = allTopics
+                .Where(topic => image.TopicIds?.Contains(topic.Id) ?? false)
+                .Select(t => new TopicDTO { Id = t.Id, Name = t.Name })
+                .ToList();
 
             return new ImageDTO
             {
                 Id = image.Id,
                 UserId = image.UserId,
                 Title = image.Title,
-                Description = image.Description, // ✅ ĐÃ SỬA: Ánh xạ Description
+                Description = image.Description,
                 FileUrl = image.FileUrl,
                 ThumbnailUrl = image.ThumbnailUrl,
                 IsPublic = image.IsPublic,
                 Status = image.Status,
-                Tags = new List<TagDTO>(),
-                Topics = new List<TopicDTO>()
+                Tags = tagsForImage,
+                Topics = topicsForImage,
+                LikeCount = stat?.LikesCount ?? 0,
+                IsLikedByCurrentUser = isLiked
             };
         }
 
-        public async Task<ImageDTO> CreateAsync(
-            int userId,
-            string title,
-            string? description,
-            bool isPublic,
-            List<int> tagIds,
-            List<int> topicIds,
-            string fileUrl,
-            string thumbnailUrl,
-            long size,
-            int width,
-            int height
-        )
+        public async Task<ImageDTO> CreateAsync(int userId, string title, string? description, bool isPublic, List<int> tagIds, List<int> topicIds, string fileUrl, string thumbnailUrl, long size, int width, int height)
         {
             var image = new Image
             {
-                Id = new Random().Next(1, 999999),
+                Id = new Random().Next(100000, 999999), // Tăng khoảng để tránh trùng lặp
                 UserId = userId,
                 Title = title,
                 Description = description ?? string.Empty,
@@ -73,106 +141,55 @@ namespace DoAnWebAPI.Services.Repositories
                 Width = width,
                 Height = height,
                 IsPublic = isPublic,
-                Status = "Pending",
+                Status = "Approved",
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow,
+                TagIds = tagIds,
+                TopicIds = topicIds
             };
 
-            await _firebase.SetAsync(GetPath(image.Id.ToString()), image);
-            return MapToDTO(image)!;
-        }
+            await _firebase.SetAsync($"images/{image.Id}", image);
 
-        public async Task<bool> DeleteAsync(string id)
-        {
-            var checkResponse = await _firebase.GetAsync(GetPath(id));
-            if (checkResponse.Body == "null") return false;
-
-            await _firebase.DeleteAsync(GetPath(id));
-            return true;
-        }
-
-        // ✅ ĐÃ SỬA: GetAllAsync (Xử lý Dictionary Deserialization và Logging)
-        public async Task<IEnumerable<ImageDTO>> GetAllAsync()
-        {
-            var response = await _firebase.GetAsync(GetCollectionPath());
-
-            if (response.Body == "null" || string.IsNullOrWhiteSpace(response.Body))
-                return new List<ImageDTO>();
-
-            try
+            // TỐI ƯU 3: Tự tạo DTO thay vì gọi lại GetByIdAsync để tiết kiệm 1 lượt gọi API
+            return new ImageDTO
             {
-                var data = response.ResultAs<Dictionary<string, Image>>();
-
-                if (data == null)
-                {
-                    Console.WriteLine("ImageRepository Error: Deserialization failed for images collection.");
-                    Console.WriteLine($"Raw Firebase response body: {response.Body}");
-                    return new List<ImageDTO>();
-                }
-
-                return data.Values
-                       .Where(d => d != null)
-                       .Select(MapToDTO)
-                       .Where(dto => dto != null)
-                       .ToList()!;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"ImageRepository Error: Exception during GetAllAsync: {ex.Message}");
-                return new List<ImageDTO>();
-            }
-        }
-
-        // ✅ ĐÃ SỬA: GetByIdAsync (Xử lý Deserialization và Logging)
-        public async Task<ImageDTO?> GetByIdAsync(string id)
-        {
-            var path = GetPath(id);
-            var response = await _firebase.GetAsync(path);
-
-            if (response.Body == "null")
-            {
-                Console.WriteLine($"ImageRepository Info: Image ID {id} not found at path {path}.");
-                return null;
-            }
-
-            try
-            {
-                var image = response.ResultAs<Image>();
-
-                if (image == null)
-                {
-                    Console.WriteLine($"ImageRepository Error: Deserialization failed for ID {id}.");
-                    Console.WriteLine($"Raw Firebase response body: {response.Body}");
-                    return null;
-                }
-
-                return MapToDTO(image);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"ImageRepository Error: Exception during GetByIdAsync for ID {id}: {ex.Message}");
-                return null;
-            }
+                Id = image.Id,
+                UserId = image.UserId,
+                Title = image.Title,
+                Description = image.Description,
+                FileUrl = image.FileUrl,
+                ThumbnailUrl = image.ThumbnailUrl,
+                IsPublic = image.IsPublic,
+                Status = image.Status,
+                Tags = new List<TagDTO>(), // Khi mới tạo, chưa có DTO chi tiết, trả về rỗng
+                Topics = new List<TopicDTO>(),
+                LikeCount = 0,
+                IsLikedByCurrentUser = false
+            };
         }
 
         public async Task<bool> UpdateAsync(string id, UpdateImageDTO dto)
         {
-            var existingResponse = await _firebase.GetAsync(GetPath(id));
-            if (existingResponse.Body == "null") return false;
+            var response = await _firebase.GetAsync($"images/{id}");
+            if (response.Body == "null") return false;
+            var image = response.ResultAs<Image>();
+            if (image == null) return false;
 
-            var existing = existingResponse.ResultAs<Image>();
+            image.Title = dto.Title ?? image.Title;
+            image.Description = dto.Description ?? image.Description;
+            image.IsPublic = dto.IsPublic ?? image.IsPublic;
+            image.TagIds = dto.TagIds ?? image.TagIds;
+            image.TopicIds = dto.TopicIds ?? image.TopicIds;
+            image.UpdatedAt = DateTime.UtcNow;
 
-            if (existing == null) return false;
+            await _firebase.UpdateAsync($"images/{id}", image);
+            return true;
+        }
 
-            // Cập nhật các trường
-            if (dto.Title != null) existing.Title = dto.Title;
-            if (dto.Description != null) existing.Description = dto.Description;
-            if (dto.IsPublic.HasValue) existing.IsPublic = dto.IsPublic.Value;
-            if (dto.Status != null) existing.Status = dto.Status;
-            existing.UpdatedAt = DateTime.UtcNow;
-
-            await _firebase.SetAsync(GetPath(id), existing);
-
+        public async Task<bool> DeleteAsync(string id)
+        {
+            // Nên xóa cả các dữ liệu liên quan (stats, likes, ...) nhưng tạm thời để đơn giản
+            await _firebase.DeleteAsync($"images/{id}");
             return true;
         }
     }

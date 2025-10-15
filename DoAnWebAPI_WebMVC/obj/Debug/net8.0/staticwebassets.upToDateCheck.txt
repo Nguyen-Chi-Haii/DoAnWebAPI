@@ -21,6 +21,7 @@ wwwroot\js\AdminLogs.js
 wwwroot\js\AdminStats.js
 wwwroot\js\AdminTags_Topics.js
 wwwroot\js\AdminUsers.js
+wwwroot\js\apiServices.js
 wwwroot\js\Collection.js
 wwwroot\js\CollectionDetail.js
 wwwroot\js\editCollection.js

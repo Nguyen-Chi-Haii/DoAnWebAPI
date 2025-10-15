@@ -12,5 +12,6 @@ namespace DoAnWebAPI.Services.Interface
         // ✅ Cập nhật chữ ký để nhận userId và imageId an toàn
         Task<Like> CreateLikeAsync(int userId, int imageId);
         Task<bool> DeleteLikeAsync(int imageId, int userId);
+        Task<List<Like>> GetLikesByUserIdAsync(int userId);
     }
 }

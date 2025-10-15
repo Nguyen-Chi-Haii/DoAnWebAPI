@@ -19,5 +19,8 @@
 
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+
+        public List<int>? TagIds { get; set; }
+        public List<int>? TopicIds { get; set; }
     }
 }

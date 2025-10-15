@@ -82,5 +82,22 @@ namespace DoAnWebAPI.Services.Repositories
                 .Where(x => x != null && x.ImageId == imageId)
                 .ToList();
         }
+        public async Task<List<Like>> GetLikesByUserIdAsync(int userId)
+        {
+            var response = await _firebase.GetAsync(GetCollectionPath());
+
+            if (response.Body == "null")
+                return new List<Like>();
+
+            var likesDict = response.ResultAs<Dictionary<string, Like>>();
+
+            if (likesDict == null)
+                return new List<Like>();
+
+            // Lọc theo UserId thay vì ImageId
+            return likesDict.Values
+                .Where(x => x != null && x.UserId == userId)
+                .ToList();
+        }
     }
 }

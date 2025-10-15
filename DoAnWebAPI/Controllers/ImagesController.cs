@@ -1,21 +1,19 @@
-﻿using CloudinaryDotNet.Actions;
+﻿// File: Controllers/ImagesController.cs
+
 using DoAnWebAPI.Model.DTO.Image;
-using DoAnWebAPI.Services;
 using DoAnWebAPI.Services.Interface;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
-using System;
-using System.Net.Http;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
 
 namespace DoAnWebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class ImagesController : ControllerBase
     {
         private readonly IImageRepository _repository;
@@ -27,56 +25,56 @@ namespace DoAnWebAPI.Controllers
             _cloudinaryService = cloudinaryService;
         }
 
-        // ✅ FIX LỖI 401: Lấy Local ID (integer) từ Custom Claim "local_id"
-        private int GetCurrentUserId()
+        private int? GetCurrentUserIdOrDefault()
         {
-            // 💡 Tìm kiếm Custom Claim "local_id" (được thiết lập trong AuthController)
             var userIdClaim = User.FindFirst("local_id");
-
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
             {
-                // Thông báo cụ thể hơn để biết cần phải tạo token mới
-                throw new UnauthorizedAccessException("Người dùng chưa được xác thực hoặc không tìm thấy Local ID (int) trong token. Vui lòng login lại.");
+                return userId;
             }
-            return userId;
+            return null;
         }
 
-        private bool IsAdmin()
-        {
-            return User.IsInRole("Admin");
-        }
-
+        private bool IsAdmin() => User.IsInRole("Admin");
 
         // GET /api/images
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<ImageDTO>>> GetAll()
+        public async Task<ActionResult<IEnumerable<ImageDTO>>> GetAll(
+            [FromQuery] string? search = null,
+            [FromQuery] int? tagId = null,
+            [FromQuery] int? topicId = null,
+            [FromQuery] int? userId = null)
         {
-            var currentUserId = 0;
-            if (User.Identity.IsAuthenticated)
-            {
-                try
-                {
-                    currentUserId = GetCurrentUserId();
-                }
-                catch
-                {
-                    currentUserId = 0;
-                }
-            }
+            var currentUserId = GetCurrentUserIdOrDefault();
+            var allImages = await _repository.GetAllAsync(currentUserId);
 
-            var allImages = await _repository.GetAllAsync();
-
-            if (IsAdmin())
-            {
-                return Ok(allImages);
-            }
-
-            var filteredImages = allImages.Where(image =>
-                image.IsPublic || (image.UserId == currentUserId && currentUserId != 0)
+            // Logic lọc dữ liệu vẫn giữ nguyên
+            var accessibleImages = allImages.Where(image =>
+                image.IsPublic || (image.UserId == currentUserId && currentUserId.HasValue) || IsAdmin()
             );
 
-            return Ok(filteredImages);
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                accessibleImages = accessibleImages.Where(i =>
+                    (i.Title != null && i.Title.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (i.Description != null && i.Description.Contains(search, StringComparison.OrdinalIgnoreCase))
+                );
+            }
+            if (tagId.HasValue)
+            {
+                accessibleImages = accessibleImages.Where(i => i.Tags.Any(t => t.Id == tagId.Value));
+            }
+            if (topicId.HasValue)
+            {
+                accessibleImages = accessibleImages.Where(i => i.Topics.Any(t => t.Id == topicId.Value));
+            }
+            if (userId.HasValue)
+            {
+                accessibleImages = accessibleImages.Where(i => i.UserId == userId.Value);
+            }
+
+            return Ok(accessibleImages.ToList());
         }
 
         // GET /api/images/{id}
@@ -84,20 +82,14 @@ namespace DoAnWebAPI.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<ImageDTO>> GetById(string id)
         {
-            var image = await _repository.GetByIdAsync(id);
+            var currentUserId = GetCurrentUserIdOrDefault();
+            var image = await _repository.GetByIdAsync(id, currentUserId);
+
             if (image == null) return NotFound();
 
-            var currentUserId = 0;
-            if (User.Identity.IsAuthenticated)
-            {
-                try { currentUserId = GetCurrentUserId(); } catch { /* Bỏ qua lỗi parsing */ }
-            }
-
-            // 🔑 Phân quyền: Nếu không Public VÀ không phải Admin VÀ không phải chủ sở hữu -> Forbidden
             if (!image.IsPublic && image.UserId != currentUserId && !IsAdmin())
             {
-                // ✅ ĐÃ SỬA: Trả về StatusCode(403) thay vì Forbid("message")
-                return StatusCode(403, new { Message = "Bạn không có quyền truy cập ảnh private này." });
+                return Forbid();
             }
 
             return Ok(image);
@@ -105,149 +97,78 @@ namespace DoAnWebAPI.Controllers
 
         // POST /api/images
         [HttpPost]
+        [Authorize]
         [Consumes("multipart/form-data")]
         [RequestSizeLimit(52428800)]
         public async Task<ActionResult<ImageDTO>> Create([FromForm] CreateImageDTO dto)
         {
-            Console.WriteLine("\n========== POST IMAGE REQUEST ==========");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            var currentUserId = GetCurrentUserIdOrDefault();
+            if (!currentUserId.HasValue) return Unauthorized("Không thể xác định người dùng.");
 
-            int currentUserId;
-            try
-            {
-                currentUserId = GetCurrentUserId(); // Lấy Local ID đã sửa lỗi
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
+            var uploadResult = await _cloudinaryService.UploadImageAsync(dto.File);
 
-            try
-            {
-                Console.WriteLine("Step 1: Validating file...");
-                if (dto.File == null || dto.File.Length == 0)
-                {
-                    return BadRequest("File ảnh là bắt buộc.");
-                }
-                Console.WriteLine($"✓ File received: {dto.File.FileName}");
+            var created = await _repository.CreateAsync(
+                currentUserId.Value,
+                dto.Title,
+                dto.Description,
+                dto.IsPublic,
+                dto.TagIds ?? new List<int>(),
+                dto.TopicIds ?? new List<int>(),
+                uploadResult.fileUrl,
+                uploadResult.thumbnailUrl,
+                uploadResult.size,
+                uploadResult.width,
+                uploadResult.height
+            );
 
-                Console.WriteLine("Step 2: Validating file type...");
-                var allowedTypes = new[] { "image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp" };
-                if (!allowedTypes.Contains(dto.File.ContentType?.ToLower()))
-                {
-                    return BadRequest($"File type không hợp lệ. Chỉ chấp nhận: {string.Join(", ", allowedTypes)}");
-                }
-                Console.WriteLine("✓ File type valid");
-
-
-                Console.WriteLine("Step 3: Uploading to Cloudinary...");
-                var uploadResult = await _cloudinaryService.UploadImageAsync(dto.File);
-                Console.WriteLine($"✓ Cloudinary upload successful!");
-
-                Console.WriteLine("Step 4: Saving metadata to Firebase...");
-
-                var created = await _repository.CreateAsync(
-                    currentUserId,
-                    dto.Title,
-                    dto.Description,
-                    dto.IsPublic,
-                    dto.TagIds,
-                    dto.TopicIds,
-                    uploadResult.fileUrl,
-                    uploadResult.thumbnailUrl,
-                    uploadResult.size,
-                    uploadResult.width,
-                    uploadResult.height
-                );
-
-                Console.WriteLine($"✓ Image saved to Firebase with ID: {created.Id}");
-                Console.WriteLine("========== SUCCESS ==========\n");
-
-                return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ ERROR: {ex.GetType().Name}");
-                if (ex is HttpRequestException httpEx)
-                {
-                    return StatusCode(503, new { error = "Không thể kết nối đến Cloudinary", details = httpEx.Message });
-                }
-                else if (ex is TaskCanceledException timeoutEx)
-                {
-                    return StatusCode(504, new { error = "Upload timeout - File quá lớn hoặc kết nối chậm", details = timeoutEx.Message });
-                }
-
-                return StatusCode(500, new
-                {
-                    error = ex.Message,
-                    type = ex.GetType().Name,
-                    innerError = ex.InnerException?.Message
-                });
-            }
+            return CreatedAtAction(nameof(GetById), new { id = created.Id.ToString() }, created);
         }
 
         // PUT /api/images/{id}
         [HttpPut("{id}")]
+        [Authorize]
         public async Task<IActionResult> Update(string id, [FromBody] UpdateImageDTO dto)
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var currentUserId = GetCurrentUserIdOrDefault();
+            if (!currentUserId.HasValue) return Unauthorized();
+
+            var image = await _repository.GetByIdAsync(id); // Lấy bản gốc để kiểm tra quyền
+            if (image == null) return NotFound();
+
+            if (image.UserId != currentUserId && !IsAdmin())
             {
-                return BadRequest(ModelState);
+                return Forbid();
             }
 
-            int currentUserId;
-            try
-            {
-                currentUserId = GetCurrentUserId();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
+            var success = await _repository.UpdateAsync(id, dto);
+            if (!success) return NotFound();
 
-            var existingImage = await _repository.GetByIdAsync(id);
-            if (existingImage == null) return NotFound();
-
-            if (existingImage.UserId != currentUserId && !IsAdmin())
-            {
-                // ✅ ĐÃ SỬA: Trả về StatusCode(403) thay vì Forbid("message")
-                return StatusCode(403, new { Message = "Bạn chỉ có thể chỉnh sửa ảnh của chính mình hoặc phải có quyền Admin." });
-            }
-
-            var result = await _repository.UpdateAsync(id, dto);
-            if (!result) return NotFound();
             return NoContent();
         }
 
         // DELETE /api/images/{id}
         [HttpDelete("{id}")]
+        [Authorize]
         public async Task<IActionResult> Delete(string id)
         {
-            int currentUserId;
-            try
-            {
-                currentUserId = GetCurrentUserId();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
+            var currentUserId = GetCurrentUserIdOrDefault();
+            if (!currentUserId.HasValue) return Unauthorized();
 
-            var existingImage = await _repository.GetByIdAsync(id);
-            if (existingImage == null) return NotFound();
+            var image = await _repository.GetByIdAsync(id);
+            if (image == null) return NotFound();
 
-            if (existingImage.UserId != currentUserId && !IsAdmin())
+            if (image.UserId != currentUserId && !IsAdmin())
             {
-                // ✅ ĐÃ SỬA: Trả về StatusCode(403) thay vì Forbid("message")
-                return StatusCode(403, new { Message = "Bạn chỉ có thể xóa ảnh của chính mình hoặc phải có quyền Admin." });
+                return Forbid();
             }
 
-            var result = await _repository.DeleteAsync(id);
-            if (!result) return NotFound();
+            var success = await _repository.DeleteAsync(id);
+            if (!success) return NotFound();
+
             return NoContent();
         }
     }

@@ -1,4 +1,6 @@
-﻿using DoAnWebAPI.Model.DTO.Image;
+﻿// File: Services/Interface/IImageRepository.cs
+
+using DoAnWebAPI.Model.DTO.Image;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -6,9 +8,13 @@ namespace DoAnWebAPI.Services.Interface
 {
     public interface IImageRepository
     {
-        Task<IEnumerable<ImageDTO>> GetAllAsync();
-        Task<ImageDTO> GetByIdAsync(string id);
-        // ✅ Chữ ký mới: Nhận UserId an toàn và các trường dữ liệu cần thiết
+        // SỬA ĐỔI: Thêm tham số currentUserId tùy chọn
+        Task<IEnumerable<ImageDTO>> GetAllAsync(int? currentUserId = null);
+
+        // SỬA ĐỔI: Thêm tham số currentUserId và trả về DTO có thể null
+        Task<ImageDTO?> GetByIdAsync(string id, int? currentUserId = null);
+
+        // GIỮ NGUYÊN: Chữ ký hàm CreateAsync đã đúng
         Task<ImageDTO> CreateAsync(
             int userId,
             string title,
@@ -22,7 +28,11 @@ namespace DoAnWebAPI.Services.Interface
             int width,
             int height
         );
+
+        // GIỮ NGUYÊN:
         Task<bool> UpdateAsync(string id, UpdateImageDTO dto);
+
+        // GIỮ NGUYÊN:
         Task<bool> DeleteAsync(string id);
     }
 }

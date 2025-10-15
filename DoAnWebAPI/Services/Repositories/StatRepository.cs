@@ -1,32 +1,32 @@
-﻿using DoAnWebAPI.Model;
+﻿// File: Services/Repositories/StatRepository.cs
+
+using DoAnWebAPI.Model;
 using DoAnWebAPI.Model.DTO.Stats;
 using DoAnWebAPI.Services.Interface;
-using FireSharp; // ✅ THÊM using FireSharp
-using FireSharp.Response; // ✅ THÊM using FireSharp.Response
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System;
 
 namespace DoAnWebAPI.Services.Repositories
 {
     public class StatRepository : IStatRepository
     {
-        private readonly FireSharp.FirebaseClient _firebase; // ✅ FIX: Dùng FireSharp.FirebaseClient
+        private readonly FireSharp.FirebaseClient _firebase;
         private const string Collection = "stats";
 
-        public StatRepository(FireSharp.FirebaseClient firebase) // ✅ FIX: Dùng FireSharp.FirebaseClient
+        public StatRepository(FireSharp.FirebaseClient firebase)
         {
             _firebase = firebase;
         }
 
         private string GetPath(int imageId) => $"{Collection}/{imageId}";
 
+        // Private helper, không cần thay đổi
         private async Task<Stat?> GetStatDomainByImageIdAsync(int imageId)
         {
             var path = GetPath(imageId);
-            // ✅ FIX: Sử dụng FireSharp GetAsync
             var response = await _firebase.GetAsync(path);
-
             if (response.Body == "null") return null;
             return response.ResultAs<Stat>();
         }
@@ -35,20 +35,20 @@ namespace DoAnWebAPI.Services.Repositories
         {
             var stat = new Stat
             {
-                Id = imageId,
+                Id = imageId, // Khớp với model Stat.cs
                 ImageId = imageId,
-                ViewsCount = 0,
-                DownloadCount = 0,
-                LikesCount = 0,
+                ViewsCount = 0,    // Khớp với model Stat.cs
+                DownloadCount = 0, // Khớp với model Stat.cs
+                LikesCount = 0,    // Khớp với model Stat.cs
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
-            // ✅ FIX: Sử dụng FireSharp SetAsync
             await _firebase.SetAsync(GetPath(imageId), stat);
             return stat;
         }
 
+        // Private helper, không cần thay đổi
         private async Task<Stat> GetOrCreateStatAsync(int imageId)
         {
             var existing = await GetStatDomainByImageIdAsync(imageId);
@@ -70,48 +70,62 @@ namespace DoAnWebAPI.Services.Repositories
             {
                 Id = stat.Id,
                 ImageId = stat.ImageId,
-                ViewsCount = stat.ViewsCount,
-                DownloadCount = stat.DownloadCount,
-                LikesCount = stat.LikesCount
+                ViewsCount = stat.ViewsCount,       // Khớp với model Stat.cs
+                DownloadCount = stat.DownloadCount, // Khớp với model Stat.cs
+                LikesCount = stat.LikesCount        // Khớp với model Stat.cs
             };
         }
 
-        // Helper method cho logic update lặp lại
+        // Private helper, không cần thay đổi
         private async Task<Stat> UpdateStatField(int imageId, Action<Stat> updateAction)
         {
             var stat = await GetOrCreateStatAsync(imageId);
             updateAction(stat);
             stat.UpdatedAt = DateTime.UtcNow;
 
-            // ✅ FIX: Sử dụng FireSharp SetAsync
             await _firebase.SetAsync(GetPath(imageId), stat);
             return stat;
         }
 
-
         public Task<Stat> IncrementViewsAsync(int imageId)
         {
-            return UpdateStatField(imageId, stat => stat.ViewsCount++);
+            return UpdateStatField(imageId, stat => stat.ViewsCount++); // Khớp với model Stat.cs
         }
 
         public Task<Stat> IncrementDownloadsAsync(int imageId)
         {
-            return UpdateStatField(imageId, stat => stat.DownloadCount++);
+            return UpdateStatField(imageId, stat => stat.DownloadCount++); // Khớp với model Stat.cs
         }
 
         public Task<Stat> IncrementLikesAsync(int imageId)
         {
-            return UpdateStatField(imageId, stat => stat.LikesCount++);
+            return UpdateStatField(imageId, stat => stat.LikesCount++); // Khớp với model Stat.cs
         }
 
         public Task<Stat> DecrementLikesAsync(int imageId)
         {
             return UpdateStatField(imageId, stat => {
-                if (stat.LikesCount > 0)
+                if (stat.LikesCount > 0) // Khớp với model Stat.cs
                 {
-                    stat.LikesCount--;
+                    stat.LikesCount--; // Khớp với model Stat.cs
                 }
             });
+        }
+
+        public async Task<IEnumerable<Stat>> GetAllAsync()
+        {
+            var response = await _firebase.GetAsync(Collection);
+            if (response.Body == "null")
+                return new List<Stat>();
+
+            var statsDict = response.ResultAs<Dictionary<string, Stat>>();
+
+            if (statsDict == null)
+            {
+                return new List<Stat>();
+            }
+
+            return statsDict.Values;
         }
     }
 }
