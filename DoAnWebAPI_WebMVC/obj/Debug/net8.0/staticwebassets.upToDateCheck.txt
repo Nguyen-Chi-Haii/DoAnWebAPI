@@ -31,7 +31,6 @@ wwwroot\js\Footer.js
 wwwroot\js\Header.js
 wwwroot\js\HomeBody.js
 wwwroot\js\ImageDetail.js
-wwwroot\js\Login.js
 wwwroot\js\Setting.js
 wwwroot\js\Sidebar.js
 wwwroot\js\site.js
@@ -94,3 +93,4 @@ wwwroot\lib\jquery\dist\jquery.min.js
 wwwroot\lib\jquery\dist\jquery.min.map
 wwwroot\lib\jquery\LICENSE.txt
 wwwroot\Logo.png
+wwwroot\js\Login.js

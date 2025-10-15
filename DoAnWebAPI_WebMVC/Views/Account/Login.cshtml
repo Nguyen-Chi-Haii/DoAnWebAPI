@@ -7,8 +7,15 @@
     <h2>Đăng nhập tài khoản</h2>
     <p>Chào mừng bạn quay lại!</p>
 
-    <form id="login-form" asp-controller="Account" asp-action="Login" method="post" class="login-form">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" role="alert">
+            @TempData["SuccessMessage"]
+        </div>
+    }
 
+    <form id="login-form" asp-controller="Account" asp-action="Login" method="post" class="login-form">
+        ...
         <div asp-validation-summary="ModelOnly" class="error-summary"></div>
 
         <div class="input-group">
