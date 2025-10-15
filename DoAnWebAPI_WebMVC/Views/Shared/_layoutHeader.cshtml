@@ -1,24 +1,17 @@
-﻿<div id="app-container" class="shadow-xl">
-    <!-- HEADER: Đây là khu vực chính được fix -->
-    <header class=" border-b border-gray-200">
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
 
-        <!-- 1. Desktop Navigation (Sử dụng padding ngang px-4 để tạo khoảng trống) -->
+<div id="app-container" class="shadow-xl">
+    <header class="border-b border-gray-200">
         <div id="desktop-nav" class="hidden md:flex items-center justify-between gap-4 px-4">
-            <div id="desktop-nav" class="hidden md:flex items-center justify-between gap-4 px-4">
-                <a href="/" class="min-w-[100px]">
-                    <img src="~/Logo.png" alt="Photo.AI Logo" class="h-20 md:h-20" />
-                </a>
-            </div>
+            <a href="/" class="min-w-[100px]">
+                <img src="~/Logo.png" alt="Photo.AI Logo" class="h-20 md:h-20" />
+            </a>
 
-            <!-- Search Bar -->
             <div class="relative flex-1 max-w-xl">
-                <div class="flex items-center w-full p-0 border border-gray-300 rounded-lg transition
-                focus-within:ring-2 focus-within:ring-blue-400">
-
+                <div class="flex items-center w-full p-0 border border-gray-300 rounded-lg transition focus-within:ring-2 focus-within:ring-blue-400">
                     <div data-lucide="search" class="text-gray-500 w-4 h-4 mx-3 flex-shrink-0"></div>
-
-                    <input type="text" id="search-input-desktop" placeholder="Tìm kiếm ảnh..."
-                           class="w-full py-2 border-none bg-transparent focus:outline-none focus:ring-0" />
+                    <input type="text" id="search-input-desktop" placeholder="Tìm kiếm ảnh..." class="w-full py-2 border-none bg-transparent focus:outline-none focus:ring-0" />
                 </div>
             </div>
 
@@ -27,13 +20,12 @@
                     <i data-lucide="upload"></i>
                     <span>Tải ảnh lên</span>
                 </a>
-            </div>
 
-                @if (true)
+                @if (!string.IsNullOrEmpty(HttpContextAccessor.HttpContext.Session.GetString("JWToken")))
                 {
                     <div class="relative">
                         <button id="user-menu-button" class="flex items-center gap-2 text-gray-800 font-medium px-4 py-2 rounded-lg hover:bg-gray-200 transition">
-                            <span>@User.Identity.Name</span>
+                            <span>Tài khoản</span>
                             <div data-lucide="chevron-down" class="w-4 h-4"></div>
                         </button>
 
@@ -47,22 +39,27 @@
                                     <div data-lucide="bar-chart-3" class="w-4 h-4"></div>
                                     <span>Thống kê</span>
                                 </a>
-                                <a asp-controller ="Account" asp-action="Setting" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <a asp-controller="Account" asp-action="Setting" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <div data-lucide="user-cog" class="w-4 h-4"></div>
                                     <span>Cá nhân</span>
                                 </a>
-                            @if (true /* Điều kiện kiểm tra quyền Admin, ví dụ: User.IsInRole("Admin") */)
-                            {
-                                <a asp-controller="Admin" asp-action="AdminHome" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <div data-lucide="shield-check" class="w-4 h-4"></div>
-                                    <span>Quản trị</span>
-                                </a>
-                            }
+
+                                @if (User.IsInRole("Admin")) // <-- Sau này thay bằng logic kiểm tra vai trò thực tế
+                                {
+                                    <a asp-controller="Admin" asp-action="AdminHome" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <div data-lucide="shield-check" class="w-4 h-4"></div>
+                                        <span>Quản trị</span>
+                                    </a>
+                                }
+
                                 <div class="border-t border-gray-200 my-1"></div>
-                                <a href="#" class="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                    <div data-lucide="log-out" class="w-4 h-4"></div>
-                                    <span>Đăng xuất</span>
-                                </a>
+
+                                <form asp-controller="Account" asp-action="Logout" method="post">
+                                    <button type="submit" class="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left">
+                                        <div data-lucide="log-out" class="w-4 h-4"></div>
+                                        <span>Đăng xuất</span>
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -77,18 +74,14 @@
             </div>
         </div>
 
-        <!-- 2. Mobile Navigation (Sử dụng padding ngang px-4 để tạo khoảng trống) -->
         <div id="mobile-nav" class="flex md:hidden items-center gap-2 px-4">
             <div class="font-bold text-lg text-blue-600 min-w-min">Photo.AI</div>
-
             <div class="flex-1">
-                <div class="flex items-center w-full border border-gray-300 rounded-lg transition
-                focus-within:ring-2 focus-within:ring-blue-400 px-4">
-
+                <div class="flex items-center w-full border border-gray-300 rounded-lg transition focus-within:ring-2 focus-within:ring-blue-400 px-4">
                     <div data-lucide="search" class="text-gray-500 w-4 h-4 mr-2 flex-shrink-0"></div>
-
-                    <input type="text" id="search-input-mobile" placeholder="Tìm kiếm..."
-                           class="w-full py-2 border-none bg-transparent focus:outline-none focus:ring-0" />
+                    <input type="text" id="search-input-mobile" placeholder="Tìm kiếm..." class="w-full py-2 border-none bg-transparent focus:outline-none focus:ring-0" />
                 </div>
             </div>
         </div>
+    </header>
+</div>

@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "MXbvwEZ2hBY=",
+  "dgSpecHash": "QMjfxhjUmiU=",
   "success": true,
-  "projectFilePath": "D:\\Code\\Web2\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "D:\\baitap\\vs\\New folder\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\KatHuyn\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512"
+  ],
   "logs": []
 }
