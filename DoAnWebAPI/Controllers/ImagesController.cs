@@ -18,11 +18,13 @@ namespace DoAnWebAPI.Controllers
     {
         private readonly IImageRepository _repository;
         private readonly ICloudinaryService _cloudinaryService;
+        private readonly IStatRepository _statRepository;
 
-        public ImagesController(IImageRepository repository, ICloudinaryService cloudinaryService)
+        public ImagesController(IImageRepository repository, ICloudinaryService cloudinaryService, IStatRepository statRepository)
         {
             _repository = repository;
             _cloudinaryService = cloudinaryService;
+            _statRepository = statRepository;
         }
 
         private int? GetCurrentUserIdOrDefault()
@@ -170,6 +172,45 @@ namespace DoAnWebAPI.Controllers
             if (!success) return NotFound();
 
             return NoContent();
+        }
+        // GET /api/images/{id}/download
+        [HttpGet("{id}/download")]
+        [AllowAnonymous] // Cho phép cả người dùng chưa đăng nhập, vì ta sẽ kiểm tra quyền bên trong
+        public async Task<IActionResult> Download(string id)
+        {
+            // 1. Lấy thông tin người dùng hiện tại (nếu có)
+            var currentUserId = GetCurrentUserIdOrDefault();
+
+            // 2. Lấy thông tin chi tiết của ảnh từ repository
+            // Dùng GetByIdAsync vì nó trả về DTO đầy đủ, bao gồm cả FileUrl
+            var image = await _repository.GetByIdAsync(id, currentUserId);
+
+            if (image == null)
+            {
+                return NotFound("Không tìm thấy ảnh.");
+            }
+
+            // 3. Kiểm tra quyền truy cập (giống hệt logic của GetById)
+            if (!image.IsPublic && image.UserId != currentUserId && !IsAdmin())
+            {
+                // Trả về 403 Forbidden nếu không có quyền xem ảnh private
+                return Forbid();
+            }
+
+            // 4. Tăng số lượt tải xuống
+            try
+            {
+                await _statRepository.IncrementDownloadsAsync(image.Id);
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi nếu cần, nhưng vẫn tiếp tục cho phép tải
+                // logger.LogError(ex, "Lỗi khi tăng lượt tải xuống cho ảnh {ImageId}", image.Id);
+            }
+
+            // 5. Chuyển hướng người dùng đến URL của file trên Cloudinary
+            // Trình duyệt sẽ tự động xử lý việc tải file xuống
+            return Redirect(image.FileUrl);
         }
     }
 }
