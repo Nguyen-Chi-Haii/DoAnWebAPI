@@ -1,4 +1,6 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+
+var builder = WebApplication.CreateBuilder(args);
 
 // ---------------------------------------------------
 // 1. ĐĂNG KÝ CÁC DỊCH VỤ CẦN THIẾT
@@ -16,11 +18,18 @@ builder.Services.AddHttpContextAccessor();
 // Thêm và cấu hình dịch vụ Session để lưu trữ token đăng nhập
 builder.Services.AddSession(options =>
 {
-    // Đặt thời gian timeout cho session (ví dụ: 30 phút không hoạt động)
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
-    options.Cookie.HttpOnly = true; // Cookie không thể được truy cập bằng script phía client
-    options.Cookie.IsEssential = true; // Đánh dấu cookie này là cần thiết cho ứng dụng
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Thời gian chờ của session
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
 });
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login"; // Trang sẽ chuyển đến nếu chưa đăng nhập
+        options.AccessDeniedPath = "/Home/Index"; // Trang sẽ chuyển đến nếu không có quyền
+        options.ExpireTimeSpan = TimeSpan.FromHours(8); // Thời gian sống của cookie đăng nhập
+    });
 
 
 // ---------------------------------------------------
@@ -53,6 +62,8 @@ app.UseRouting();
 // Kích hoạt middleware của Session.
 // Vị trí này RẤT QUAN TRỌNG: phải sau UseRouting và trước UseAuthorization/MapControllerRoute.
 app.UseSession();
+
+app.UseAuthentication();
 
 // Kích hoạt middleware phân quyền
 app.UseAuthorization();

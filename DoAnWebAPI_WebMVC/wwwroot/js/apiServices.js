@@ -75,6 +75,45 @@ const api = {
         update: (id, data) => request(`/images/${id}`, 'PUT', data),
         delete: (id) => request(`/images/${id}`, 'DELETE'),
         getByUser: (userId) => request(`/users/${userId}/images`, 'GET'),
+        download: async (id, filename = 'download') => {
+            const headers = new Headers();
+            const token = getToken();
+            if (token) {
+                headers.append('Authorization', `Bearer ${token}`);
+            }
+
+            // Gọi fetch trực tiếp đến endpoint download
+            const response = await fetch(`${API_BASE_URL}/images/${id}/download`, { headers });
+
+            if (!response.ok) {
+                // Cố gắng đọc lỗi nếu có
+                const errorData = await response.json().catch(() => ({ message: response.statusText }));
+                throw new Error(errorData.message || `Tải xuống thất bại: ${response.status}`);
+            }
+
+            // Chuyển response thành một Blob (Binary Large Object)
+            const blob = await response.blob();
+
+            // Tạo một URL tạm thời cho blob trong bộ nhớ trình duyệt
+            const url = window.URL.createObjectURL(blob);
+
+            // Tạo một thẻ <a> ẩn để kích hoạt việc tải xuống
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+
+            // Gợi ý tên file cho trình duyệt
+            const extension = blob.type.split('/')[1] || 'jpg';
+            a.download = `${filename}.${extension}`;
+
+            // Thêm thẻ <a> vào trang, click vào nó, rồi xóa đi
+            document.body.appendChild(a);
+            a.click();
+
+            // Dọn dẹp URL tạm thời để giải phóng bộ nhớ
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
     },
     likes: {
         // Lưu ý: Body trống là cần thiết cho hàm POST/DELETE nếu API yêu cầu
