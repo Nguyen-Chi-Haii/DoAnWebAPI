@@ -3,147 +3,164 @@ let currentImageId = null;
 
 /**
  * Mở và hiển thị modal với dữ liệu của một ảnh cụ thể.
- *@param {string} imageId- Đối tượng chứa thông tin ảnh.
+ * @param {string} imageId - ID của ảnh cần hiển thị.
  */
-async function openModal(imageId) { // THAY ĐỔI: Nhận vào imageId
+async function openModal(imageId) {
     const modalOverlay = document.getElementById('image-detail-modal');
     if (!modalOverlay) return;
 
     currentImageId = imageId;
 
-    // Hiển thị loading...
-    document.getElementById('modal-image-title').textContent = "Đang tải...";
-    document.getElementById('modal-main-image').src = "";
-
+    // Reset và hiển thị modal với trạng thái loading
+    resetModalToLoading();
     modalOverlay.classList.remove('hidden');
     document.body.classList.add('no-scroll');
 
     try {
+        // Gọi API để lấy dữ liệu ảnh
         const imageData = await api.images.getById(imageId);
-        await api.stats.incrementView(imageId); // Tăng lượt xem
+        // Tăng lượt xem (không chặn hiển thị nếu lỗi)
+        api.stats.incrementView(imageId).catch(console.error);
 
-        // Cập nhật các phần tử trong modal
-        document.getElementById('modal-main-image').src = imageData.fileUrl; // Dùng fileUrl cho chất lượng cao
-        document.getElementById('modal-main-image').alt = imageData.title;
-        document.getElementById('modal-image-title').textContent = imageData.title;
-        document.getElementById('modal-image-id').textContent = `ID: ${imageData.id}`;
-        document.getElementById('modal-image-description').textContent = imageData.description || "Không có mô tả.";
-
-        // Cập nhật trạng thái và số lượt thích
-        const likeButton = document.getElementById('modal-like-button');
-        likeButton.dataset.isLiked = imageData.isLikedByCurrentUser;
-        likeButton.dataset.likeCount = imageData.likeCount;
-
-        renderItems(document.getElementById('modal-tags-container'), imageData.tags || []);
-        renderItems(document.getElementById('modal-topics-container'), imageData.topics || []);
-        updateLikeButton();
-
-        // Gán URL cho nút download
-        const downloadButton = document.getElementById('modal-download-button');
-        downloadButton.dataset.downloadUrl = imageData.fileUrl;
-        downloadButton.dataset.fileName = imageData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-
-        // Ẩn/hiện nút Edit dựa trên quyền
-        const editButton = document.getElementById('modal-edit-button');
-        const token = getToken(); // Giả định có hàm này
-        // Logic đơn giản: Nếu có token và UserId khớp thì hiện
-        // Cần có userId trong JWT payload hoặc lấy từ một endpoint /me
-        // Tạm thời luôn hiển thị nếu có nút
-        if (editButton) {
-            // Logic phức tạp hơn có thể được thêm ở đây
-        }
-
-        if (window.lucide) lucide.createIcons();
+        // Render dữ liệu đã lấy được vào modal
+        renderModalData(imageData);
 
     } catch (error) {
-        document.getElementById('modal-image-title').textContent = "Lỗi khi tải ảnh";
-        document.getElementById('modal-image-description').textContent = error.message;
+        console.error("Lỗi khi tải chi tiết ảnh:", error);
+        document.getElementById('modal-image-title').textContent = "Không thể tải dữ liệu";
     }
 }
+
 /**
- * Đóng modal.
+ * Đóng modal và dọn dẹp.
  */
 function closeModal() {
     const modalOverlay = document.getElementById('image-detail-modal');
-    if (!modalOverlay) return;
-    modalOverlay.classList.add('hidden');
+    if (modalOverlay) {
+        modalOverlay.classList.add('hidden');
+    }
     document.body.classList.remove('no-scroll');
+    currentImageId = null;
 }
 
-// Hàm render tags/topics (hàm phụ)
-const renderItems = (container, items, hasIcon = false) => {
-    if (!container) return;
-    if (items && items.length > 0) {
-        container.innerHTML = items.map(item => `
-            <span class="tag-item tag-${item.color || 'gray'}">
-                ${hasIcon ? '<i data-lucide="hash" style="width: 12px; height: 12px;"></i>' : ''}
-                ${item.name}
-            </span>
-        `).join('');
-    } else {
-        container.innerHTML = `<span class="placeholder">Chưa có thông tin.</span>`;
-    }
-};
+/**
+ * Đưa modal về trạng thái loading ban đầu.
+ */
+function resetModalToLoading() {
+    document.getElementById('modal-main-image').src = "";
+    document.getElementById('modal-image-title').textContent = "Đang tải...";
+    document.getElementById('modal-image-id').textContent = "";
+    document.getElementById('modal-image-description').textContent = "";
+    document.getElementById('modal-tags-container').innerHTML = "";
+    document.getElementById('modal-topics-container').innerHTML = "";
+    document.getElementById('modal-pending-status').classList.add('hidden'); // Ẩn banner pending
+}
 
-// Hàm cập nhật giao diện nút Like
-const updateLikeButton = () => {
-    const likeButton = document.getElementById('modal-like-button');
-    const likeText = document.getElementById('modal-like-text');
-    const likeCountSpan = document.getElementById('modal-like-count');
-    const likeIcon = likeButton.querySelector('i') || likeButton.querySelector('svg');
-    const isLiked = likeButton.dataset.isLiked === 'true';
-    likeCountSpan.textContent = likeButton.dataset.likeCount;
-
-
-    if (!likeButton || !likeText || !likeCountSpan || !likeIcon) return;
-
-    likeCountSpan.textContent = likeButton.dataset.likeCount; // Sửa ở đây
-    if (isLiked) { // Sửa ở đây, dùng biến đã khai báo
-        likeButton.classList.add('liked');
-        likeText.textContent = 'Đã thích';
-        likeIcon.style.fill = 'white';
-    } else {
-        likeButton.classList.remove('liked');
-        likeText.textContent = 'Thích';
-        likeIcon.style.fill = 'currentColor';
-    }
-};
-// Chỉ gán sự kiện một lần khi trang được tải
-document.addEventListener('DOMContentLoaded', () => {
-    // Tìm các phần tử bằng ID. Chúng có thể tồn tại hoặc không.
-    const modalOverlay = document.getElementById('image-detail-modal');
-    const exitButton = document.getElementById('modal-exit-button');
+/**
+ * Hàm render dữ liệu chi tiết của ảnh vào modal.
+ * @param {object} image - Dữ liệu ảnh từ API.
+ */
+const renderModalData = (image) => {
+    // Lấy các phần tử DOM một lần
+    const mainImage = document.getElementById('modal-main-image');
+    const title = document.getElementById('modal-image-title');
+    const id = document.getElementById('modal-image-id');
+    const description = document.getElementById('modal-image-description');
+    const tagsContainer = document.getElementById('modal-tags-container');
+    const topicsContainer = document.getElementById('modal-topics-container');
     const likeButton = document.getElementById('modal-like-button');
     const downloadButton = document.getElementById('modal-download-button');
     const collectionButton = document.getElementById('modal-collection-button');
-    const editButton = document.getElementById('modal-edit-button'); // Có thể là null
+    const pendingBanner = document.getElementById('modal-pending-status');
 
-    // Chỉ kiểm tra các phần tử cốt lõi
-    if (!modalOverlay || !exitButton) {
-        console.error("Lỗi: Không tìm thấy các phần tử CỐT LÕI của modal (#image-detail-modal, #modal-exit-button).");
-        return;
-    }
+    // ✅ BẮT ĐẦU: LOGIC XỬ LÝ TRẠNG THÁI "PENDING"
+    const isPending = image.status === 'pending';
 
-    // --- GÁN SỰ KIỆN ĐÓNG MODAL ---
-    exitButton.addEventListener('click', closeModal);
-    modalOverlay.addEventListener('click', (event) => {
-        if (event.target === modalOverlay) closeModal();
-    });
-    window.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && !modalOverlay.classList.contains('hidden')) {
-            closeModal();
+    pendingBanner.classList.toggle('hidden', !isPending); // Hiển thị banner nếu isPending là true
+
+    // Vô hiệu hóa/Kích hoạt các nút dựa trên trạng thái pending
+    [likeButton, downloadButton, collectionButton].forEach(button => {
+        if (button) {
+            button.disabled = isPending;
+            button.classList.toggle('disabled-button', isPending);
         }
     });
+    // ✅ KẾT THÚC LOGIC
 
-    // --- GÁN SỰ KIỆN CHO CÁC NÚT BÊN TRONG MODAL (KIỂM TRA SỰ TỒN TẠI TRƯỚC KHI GÁN) ---
+    // Điền dữ liệu vào các phần tử
+    mainImage.src = image.fileUrl || image.url;
+    mainImage.alt = image.title;
+    title.textContent = image.title || "Không có tiêu đề";
+    id.textContent = `ID: ${image.id}`;
+    description.textContent = image.description || "Không có mô tả.";
 
-    // Chỉ gán sự kiện nếu nút tồn tại
-    // MODIFIED: Gán sự kiện cho các nút
+    // Render tags
+    tagsContainer.innerHTML = image.tags?.map(tag => `<span class="image-detail-modal__tag">${tag.name}</span>`).join('') || 'Không có';
+
+    // Render topics
+    topicsContainer.innerHTML = image.topics?.map(topic => `<span class="image-detail-modal__tag image-detail-modal__tag--topic">${topic.name}</span>`).join('') || 'Không có';
+
+    // Cập nhật trạng thái nút Like
+    if (likeButton) {
+        likeButton.dataset.isLiked = image.isLikedByCurrentUser;
+        likeButton.dataset.likeCount = image.likeCount;
+        updateLikeButton();
+    }
+
+    // Cập nhật thông tin cho nút Download
+    if (downloadButton) {
+        downloadButton.dataset.downloadUrl = image.fileUrl;
+        downloadButton.dataset.fileName = image.title.replace(/[^a-z0-9]/gi, '_'); // Tạo tên file an toàn
+    }
+};
+
+/**
+ * Cập nhật giao diện nút Like.
+ */
+function updateLikeButton() {
+    const likeButton = document.getElementById('modal-like-button');
+    if (!likeButton) return;
+
+    const isLiked = likeButton.dataset.isLiked === 'true';
+    const likeCount = likeButton.dataset.likeCount;
+    const likeIcon = likeButton.querySelector('i');
+    const likeText = document.getElementById('modal-like-text');
+    const likeCountSpan = document.getElementById('modal-like-count');
+
+    likeText.textContent = isLiked ? 'Đã thích' : 'Thích';
+    likeCountSpan.textContent = likeCount;
+    likeButton.classList.toggle('modal-button--liked', isLiked);
+    if (likeIcon) {
+        likeIcon.style.fill = isLiked ? 'currentColor' : 'none';
+    }
+}
+
+
+// --- GÁN SỰ KIỆN ---
+document.addEventListener('DOMContentLoaded', () => {
+    const exitButton = document.getElementById('modal-exit-button');
+    const likeButton = document.getElementById('modal-like-button');
+    const downloadButton = document.getElementById('modal-download-button');
+    const editButton = document.getElementById('modal-edit-button');
+
+    if (exitButton) {
+        exitButton.addEventListener('click', closeModal);
+    }
+
+    // Đóng modal khi click ra ngoài
+    const modalOverlay = document.getElementById('image-detail-modal');
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                closeModal();
+            }
+        });
+    }
+
     if (likeButton) {
         likeButton.addEventListener('click', async () => {
             if (!currentImageId) return;
             const isLiked = likeButton.dataset.isLiked === 'true';
-
             try {
                 if (isLiked) {
                     await api.likes.remove(currentImageId);
@@ -163,25 +180,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (downloadButton) {
         downloadButton.addEventListener('click', () => {
             const url = downloadButton.dataset.downloadUrl;
-            const filename = downloadButton.dataset.fileName || 'image.jpg';
+            const filename = downloadButton.dataset.fileName || 'image';
             if (!url) {
                 alert("Lỗi: Không tìm thấy URL để tải xuống.");
                 return;
             }
-            // Tạo một thẻ a ẩn để thực hiện việc tải xuống
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            api.images.download(currentImageId, filename).catch(error => {
+                alert(`Không thể tải xuống: ${error.message}`);
+            });
         });
     }
 
     if (editButton) {
         editButton.addEventListener('click', () => {
             if (currentImageId) {
-                window.location.href = `/Image/EditImage/${currentImageId}`; // Route chuẩn hơn
+                window.location.href = `/Image/EditImage?id=${currentImageId}`;
             }
         });
     }

@@ -1,4 +1,4 @@
-using DoAnWebAPI.Model.Domain;
+﻿using DoAnWebAPI.Model.Domain;
 using DoAnWebAPI.Model.DTO.Auth;
 using DoAnWebAPI.Services.Interface;
 using FirebaseAdmin.Auth;
@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Security.Claims;
 
 namespace DoAnWebAPI.Controllers
 {

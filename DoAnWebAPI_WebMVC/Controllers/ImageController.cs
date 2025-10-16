@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DoAnWebAPI_WebMVC.Controllers
 {
@@ -12,19 +13,17 @@ namespace DoAnWebAPI_WebMVC.Controllers
         {
             return View();
         }
+        [Authorize] // Đảm bảo chỉ người dùng đã đăng nhập mới có thể sửa ảnh
         public IActionResult EditImage(string id)
         {
-            // Kiểm tra xem ID có hợp lệ không
             if (string.IsNullOrEmpty(id))
             {
-                // Nếu không có ID, có thể chuyển hướng về trang chủ hoặc trang lỗi
-                return RedirectToAction("Index", "Home");
+                return BadRequest("Cần có ID của ảnh để chỉnh sửa.");
             }
 
-            // Truyền ID vào View để JavaScript có thể sử dụng
-            ViewBag.ImageId = id;
+            // Truyền ID của ảnh sang View để JavaScript có thể lấy và gọi API
+            ViewData["ImageId"] = id;
 
-            // Trả về View EditImage.cshtml
             return View();
         }
     }

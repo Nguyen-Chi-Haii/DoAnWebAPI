@@ -60,15 +60,13 @@ namespace DoAnWebAPI_WebMVC.Controllers
                 var handler = new JwtSecurityTokenHandler();
                 var jwtToken = handler.ReadJwtToken(authResponse.Token);
                 var claims = jwtToken.Claims;
-                System.Diagnostics.Debug.WriteLine("--- CLAIMS TRONG TOKEN ---");
-                foreach (var claim in claims)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Loại (Type): {claim.Type} | Giá trị (Value): {claim.Value}");
-                }
-                System.Diagnostics.Debug.WriteLine("--------------------------");
-                // ✅ KẾT THÚC: THÊM CODE GỠ LỖI
                 // 3. Tạo định danh và principal
-                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var identity = new ClaimsIdentity(
+                     claims,
+                     CookieAuthenticationDefaults.AuthenticationScheme,
+                     nameType: ClaimTypes.NameIdentifier, // Dùng để định danh người dùng
+                     roleType: "role"                     // ✅ Dùng để định danh vai trò
+                 );
                 var principal = new ClaimsPrincipal(identity);
 
                 // 4. Thực hiện đăng nhập, tạo cookie xác thực cho MVC
