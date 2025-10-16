@@ -1,6 +1,8 @@
 ﻿using DoAnWebAPI_WebMVC.ViewModels;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,14 +47,13 @@ namespace DoAnWebAPI_WebMVC.Controllers
                 var responseString = await response.Content.ReadAsStringAsync();
                 var authResponse = JsonConvert.DeserializeObject<AuthResponseDTO>(responseString);
 
-                // Lưu token vào Session hoặc Cookie
                 HttpContext.Session.SetString("JWToken", authResponse.Token);
+                HttpContext.Session.SetString("Username", authResponse.Username);
 
                 return RedirectToAction("Index", "Home");
             }
             else
             {
-                // Lấy thông điệp lỗi từ API (nếu có)
                 var errorContent = await response.Content.ReadAsStringAsync();
                 var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(errorContent);
                 ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
@@ -74,14 +75,13 @@ namespace DoAnWebAPI_WebMVC.Controllers
                 return View(model);
             }
 
-            // Chuyển đổi từ RegisterViewModel sang RegisterDTO của API
             var registerDto = new
             {
-                Username = model.FullName, // Sử dụng FullName làm Username
+                Username = model.FullName,
                 Email = model.Email,
                 Password = model.Password,
                 ConfirmPassword = model.ConfirmPassword,
-                Role = "User" // Gán vai trò mặc định là "User"
+                Role = "User"
             };
 
             var client = _httpClientFactory.CreateClient();
@@ -92,15 +92,47 @@ namespace DoAnWebAPI_WebMVC.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                // Chuyển hướng đến trang đăng nhập với thông báo thành công
                 TempData["SuccessMessage"] = "Đăng ký tài khoản thành công! Vui lòng đăng nhập.";
                 return RedirectToAction("Login");
             }
             else
             {
+                // ✅ LOGIC XỬ LÝ LỖI CHI TIẾT ĐÃ ĐƯỢC NÂNG CẤP
                 var errorContent = await response.Content.ReadAsStringAsync();
-                var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(errorContent);
-                ModelState.AddModelError(string.Empty, errorResponse?.Message ?? "Đăng ký không thành công. Vui lòng thử lại.");
+                try
+                {
+                    // Thử phân tích lỗi validation chi tiết (ví dụ: mật khẩu yếu)
+                    var validationErrors = JsonConvert.DeserializeObject<ValidationErrorsResponse>(errorContent);
+                    if (validationErrors?.Errors != null && validationErrors.Errors.Count > 0)
+                    {
+                        foreach (var errorList in validationErrors.Errors.Values)
+                        {
+                            foreach (var errorMessage in errorList)
+                            {
+                                ModelState.AddModelError(string.Empty, errorMessage);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Nếu không phải lỗi validation, thử phân tích lỗi đơn giản (ví dụ: email tồn tại)
+                        var simpleError = JsonConvert.DeserializeObject<ErrorResponse>(errorContent);
+                        if (!string.IsNullOrEmpty(simpleError?.Message))
+                        {
+                            ModelState.AddModelError(string.Empty, simpleError.Message);
+                        }
+                        else
+                        {
+                            ModelState.AddModelError(string.Empty, "Đăng ký không thành công. Đã có lỗi xảy ra.");
+                        }
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Nếu không thể phân tích JSON, hiển thị nội dung lỗi thô
+                    ModelState.AddModelError(string.Empty, errorContent);
+                }
+
                 return View(model);
             }
         }
@@ -108,8 +140,8 @@ namespace DoAnWebAPI_WebMVC.Controllers
         [HttpPost]
         public IActionResult Logout()
         {
-            // Xóa token khỏi Session
             HttpContext.Session.Remove("JWToken");
+            HttpContext.Session.Remove("Username");
             return RedirectToAction("Login", "Account");
         }
 
@@ -118,12 +150,19 @@ namespace DoAnWebAPI_WebMVC.Controllers
             return View();
         }
 
-        // Lớp phụ trợ để deserialize thông điệp lỗi từ API
+        // --- CÁC LỚP PHỤ TRỢ ---
+
         private class ErrorResponse
         {
             public string Message { get; set; }
         }
-        // Lớp phụ trợ để deserialize phản hồi đăng nhập thành công
+
+        // Dùng cho các lỗi validation từ API
+        private class ValidationErrorsResponse
+        {
+            public Dictionary<string, string[]> Errors { get; set; }
+        }
+
         private class AuthResponseDTO
         {
             public string Token { get; set; }

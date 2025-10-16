@@ -25,7 +25,9 @@
                 {
                     <div class="relative">
                         <button id="user-menu-button" class="flex items-center gap-2 text-gray-800 font-medium px-4 py-2 rounded-lg hover:bg-gray-200 transition">
-                            <span>Tài khoản</span>
+
+                            <span>@HttpContextAccessor.HttpContext.Session.GetString("Username")</span>
+
                             <div data-lucide="chevron-down" class="w-4 h-4"></div>
                         </button>
 
@@ -44,7 +46,7 @@
                                     <span>Cá nhân</span>
                                 </a>
 
-                                @if (User.IsInRole("Admin")) // <-- Sau này thay bằng logic kiểm tra vai trò thực tế
+                                @if (User.IsInRole("Admin"))
                                 {
                                     <a asp-controller="Admin" asp-action="AdminHome" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <div data-lucide="shield-check" class="w-4 h-4"></div>

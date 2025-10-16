@@ -1,7 +1,7 @@
-﻿@model DoAnWebAPI_WebMVC.ViewModels.LoginViewModel // Trỏ đến ViewModel bạn vừa tạo
+﻿@model DoAnWebAPI_WebMVC.ViewModels.LoginViewModel
 @{
     ViewData["Title"] = "Đăng nhập";
-    Layout = "_AuthLayout"; // <-- DÒNG QUAN TRỌNG NHẤT
+    Layout = "_AuthLayout";
 }
 <div class="login-container">
     <h2>Đăng nhập tài khoản</h2>
@@ -15,7 +15,6 @@
     }
 
     <form id="login-form" asp-controller="Account" asp-action="Login" method="post" class="login-form">
-        ...
         <div asp-validation-summary="ModelOnly" class="error-summary"></div>
 
         <div class="input-group">
@@ -41,3 +40,9 @@
         Bạn chưa có tài khoản? <a asp-controller="Account" asp-action="Register">Đăng ký tài khoản mới</a>
     </div>
 </div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
