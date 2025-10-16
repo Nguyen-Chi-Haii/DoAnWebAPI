@@ -1,11 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DoAnWebAPI_WebMVC.Controllers
 {
+    [Authorize]
     public class CollectionController : Controller
     {
         public IActionResult Collection()
         {
+            ViewData["ShowEditButton"] = true;
             return View();
         }
         public IActionResult CollectionDetail(string id)

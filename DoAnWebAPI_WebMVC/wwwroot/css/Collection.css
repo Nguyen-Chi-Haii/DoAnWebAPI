@@ -108,21 +108,9 @@ body {
 /* --- Lưới hiển thị item --- */
 .item-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1rem;
     padding-bottom: 2rem;
-}
-/* Responsive Grid */
-@media (min-width: 768px) {
-    .item-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (min-width: 1024px) {
-    .item-grid {
-        grid-template-columns: repeat(4, 1fr);
-    }
 }
 
 /* --- Thẻ Item (Bộ sưu tập / Ảnh) --- */
@@ -161,14 +149,7 @@ body {
     font-weight: 500;
 }
 
-/* --- Các hiệu ứng khi ở chế độ Edit/Delete --- */
-.item-card.selected.edit-mode {
-    border-color: #3b82f6;
-}
-
-.item-card.selected.delete-mode {
-    border-color: #ef4444;
-}
+/* --- ✅ BẮT ĐẦU: LOGIC MỚI CHO OVERLAY --- */
 
 .action-overlay {
     position: absolute;
@@ -176,32 +157,101 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    cursor: pointer;
+    background-color: transparent; /* Mặc định trong suốt */
+    opacity: 0; /* Mặc định ẩn */
+    transition: all 150ms ease-in-out;
 }
-
-    .action-overlay.edit-mode {
-        background-color: rgba(59, 130, 246, 0.4);
-    }
-
-    .action-overlay.delete-mode {
-        background-color: rgba(239, 68, 68, 0.4);
-    }
 
     .action-overlay i {
         color: white;
+        width: 32px;
+        height: 32px;
+        filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); /* Thêm bóng đổ cho icon */
     }
-/* File .css của bạn */
 
-/* Thêm hiệu ứng khi di chuột vào item ở chế độ Sửa */
-.item-grid.editing .item-grid-item:hover {
-    cursor: pointer;
-    border: 2px solid #3b82f6; /* Màu xanh dương */
-    opacity: 0.8;
+    /* --- Hiệu ứng khi CHỌN một item --- */
+    .action-overlay.selected {
+        opacity: 1; /* Hiển thị overlay khi được chọn */
+        border: 3px solid;
+    }
+
+.editing .action-overlay.selected {
+    background-color: rgba(59, 130, 246, 0.4); /* Xanh */
+    border-color: #3b82f6;
 }
 
-/* Thêm hiệu ứng khi di chuột vào item ở chế độ Xóa */
-.item-grid.deleting .item-grid-item:hover {
+.deleting .action-overlay.selected {
+    background-color: rgba(239, 68, 68, 0.4); /* Đỏ */
+    border-color: #ef4444;
+}
+
+/* --- Hiệu ứng khi HOVER trong các chế độ --- */
+.item-grid.editing .item-card:hover .action-overlay:not(.selected) {
+    opacity: 1;
+    background-color: rgba(59, 130, 246, 0.2); /* Xanh nhạt hơn */
+}
+
+.item-grid.deleting .item-card:hover .action-overlay:not(.selected) {
+    opacity: 1;
+    background-color: rgba(239, 68, 68, 0.2); /* Đỏ nhạt hơn */
+}
+/* ... (giữ nguyên tất cả CSS cũ của bạn) ... */
+
+/* --- ✅ BẮT ĐẦU: THÊM CSS MỚI CHO PHÂN TRANG --- */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem; /* 8px */
+    margin-top: 1.5rem; /* 24px */
+    padding-bottom: 1rem; /* 16px */
+    user-select: none;
+}
+
+.page-item {
+    display: inline-block;
+    padding: 0.5rem 0.75rem; /* 8px 12px */
+    min-width: 36px;
+    text-align: center;
+    border: 1px solid #d1d5db; /* border-gray-300 */
+    border-radius: 6px;
+    background-color: white;
+    color: #374151; /* text-gray-700 */
+    font-size: 0.875rem;
+    font-weight: 500;
     cursor: pointer;
-    border: 2px solid #ef4444; /* Màu đỏ */
-    opacity: 0.8;
+    transition: all 150ms ease-in-out;
+}
+
+    .page-item:hover {
+        background-color: #f3f4f6; /* bg-gray-100 */
+    }
+
+    .page-item.active {
+        background-color: #3b82f6; /* bg-blue-500 */
+        color: white;
+        border-color: #3b82f6;
+        cursor: default;
+    }
+
+    .page-item.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: #f9fafb; /* bg-gray-50 */
+    }
+
+    .page-item.ellipsis {
+        border: none;
+        background: none;
+        cursor: default;
+    }
+
+        .page-item.ellipsis:hover {
+            background: none;
+        }
+@media (min-width: 768px) {
+        .item-grid {
+                grid-template-columns: repeat(4, 1fr);
+           
+    }
 }

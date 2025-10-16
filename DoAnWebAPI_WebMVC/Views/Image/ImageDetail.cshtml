@@ -1,6 +1,6 @@
 ﻿@{
-    // Nút Sửa sẽ hiển thị mặc định (true), trừ khi có trang nào đó đặt ViewData["ShowEditButton"] = false
-    bool showEditButton = (ViewData["ShowEditButton"] as bool?) ?? true;
+    // Logic này vẫn giữ nguyên: Nút "Sửa" bị ẩn theo mặc định
+    bool showEditButton = (ViewData["ShowEditButton"] as bool?) ?? false;
 }
 <div id="image-detail-modal" class="image-detail-modal__overlay hidden">
 
@@ -15,7 +15,16 @@
 
         <div class="image-detail-modal__body">
 
+            @* ✅ SỬA LỖI: Chỉ còn MỘT cột ảnh. Banner được đặt BÊN TRONG cột này. *@
             <div class="image-detail-modal__image-column">
+
+                @* Banner thông báo "pending" được đặt ở đây *@
+                <div id="modal-pending-status" class="image-detail-modal__pending-banner hidden">
+                    <i data-lucide="shield-alert"></i>
+                    <span>Ảnh này đang chờ quản trị viên phê duyệt.</span>
+                </div>
+
+                @* Thẻ img hiển thị ảnh chính *@
                 <img id="modal-main-image" class="image-detail-modal__main-image" src="" alt=""
                      onerror="this.onerror=null;this.src='https://placehold.co/800x600/CCCCCC/333333?text=Image+Load+Error';" />
             </div>
@@ -54,7 +63,7 @@
                     <button id="modal-collection-button" class="modal-button modal-button--indigo">
                         <i data-lucide="folder-plus"></i> Thêm vào Bộ sưu tập
                     </button>
-                   
+
                     @if (showEditButton)
                     {
                         <button id="modal-edit-button" class="modal-button modal-button--blue">
