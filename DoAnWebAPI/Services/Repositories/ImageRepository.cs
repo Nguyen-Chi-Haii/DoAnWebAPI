@@ -141,7 +141,7 @@ namespace DoAnWebAPI.Services.Repositories
                 Width = width,
                 Height = height,
                 IsPublic = isPublic,
-                Status = "Approved",
+                Status = "pending",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 TagIds = tagIds,

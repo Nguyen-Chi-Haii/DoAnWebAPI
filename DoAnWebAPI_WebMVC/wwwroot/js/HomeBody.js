@@ -20,11 +20,21 @@ async function fetchAndRenderImages() {
     imageGrid.appendChild(loadingMessage);
 
     try {
-        // Sử dụng apiService đã tạo để gọi API
+        // 1. Vẫn gọi API để lấy tất cả ảnh như bình thường
         const fetchedImages = await api.images.getAll();
-        images = fetchedImages; // Lưu dữ liệu thật vào biến global
+
+        // ✅ 2. LỌC KẾT QUẢ TRẢ VỀ
+        //    - Chỉ giữ lại những ảnh có isPublic là true.
+        //    - Và có status không phải là 'pending'.
+        const approvedPublicImages = fetchedImages.filter(image =>
+            image.isPublic && image.status !== 'pending'
+        );
+
+        // 3. Lưu dữ liệu đã được lọc sạch vào biến global
+        images = approvedPublicImages;
+
         imageGrid.innerHTML = ''; // Xóa thông báo loading
-        renderInitialImages(); // Bắt đầu render những ảnh đầu tiên
+        renderInitialImages();    // Bắt đầu render những ảnh đầu tiên
     } catch (error) {
         console.error("Lỗi khi tải ảnh:", error);
         imageGrid.innerHTML = `<p class="text-center text-red-500">Không thể tải dữ liệu ảnh. Vui lòng thử lại sau.</p>`;
@@ -181,10 +191,32 @@ const handleActionClick = async (button) => {
         }
         return; // Dừng hàm sau khi xử lý like
     }
-
+    const title = button.dataset.title || 'untitled';
     // Giữ nguyên logic cho các action khác
     switch (action) {
-        case 'download': alert(`Bắt đầu tải xuống ảnh: ${button.dataset.title}`); break;
+       case 'download':
+            const downloadBtn = button;
+            const originalIcon = downloadBtn.innerHTML;
+
+            // 1. Vô hiệu hóa nút và hiển thị icon loading để phản hồi người dùng
+            downloadBtn.disabled = true;
+            downloadBtn.innerHTML = '<div data-lucide="loader-2" class="w-[18px] h-[18px] animate-spin"></div>';
+            lucide.createIcons();
+
+            try {
+                // 2. Gọi hàm download từ apiService
+                console.log(`Bắt đầu tải ảnh: ${title} (ID: ${imageId})`);
+                await api.images.download(imageId, title);
+            } catch (error) {
+                // 3. Xử lý nếu có lỗi
+                console.error('Lỗi khi tải xuống:', error);
+                alert(`Không thể tải ảnh "${title}". Lỗi: ${error.message}`);
+            } finally {
+                // 4. Khôi phục lại trạng thái của nút sau khi hoàn tất
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = originalIcon;
+            }
+            break;
         case 'collect': alert(`Thêm ảnh: ${button.dataset.title} vào Bộ sưu tập.`); break;
     }
 };

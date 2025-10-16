@@ -27,7 +27,21 @@
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/apiServices.js"></script>
+    @inject IHttpContextAccessor HttpContextAccessor
+    @{
+        var token = HttpContextAccessor.HttpContext.Session.GetString("JWToken");
+    }
 
+    @if (!string.IsNullOrEmpty(token))
+    {
+        <script>
+            // Lấy token từ server và lưu vào localStorage của trình duyệt
+            const jwtToken = @Json.Serialize(token);
+            localStorage.setItem('jwtToken', jwtToken);
+        </script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
+
 </body>
 </html>

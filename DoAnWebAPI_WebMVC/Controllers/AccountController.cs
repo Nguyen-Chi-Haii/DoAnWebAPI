@@ -1,9 +1,13 @@
 ﻿using DoAnWebAPI_WebMVC.ViewModels;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -47,8 +51,29 @@ namespace DoAnWebAPI_WebMVC.Controllers
                 var responseString = await response.Content.ReadAsStringAsync();
                 var authResponse = JsonConvert.DeserializeObject<AuthResponseDTO>(responseString);
 
+                // --- BẮT ĐẦU LOGIC MỚI ---
+                // 1. Lưu token vào Session (để các file JS có thể dùng)
                 HttpContext.Session.SetString("JWToken", authResponse.Token);
                 HttpContext.Session.SetString("Username", authResponse.Username);
+
+                // 2. Giải mã token để lấy claims (bao gồm cả Role)
+                var handler = new JwtSecurityTokenHandler();
+                var jwtToken = handler.ReadJwtToken(authResponse.Token);
+                var claims = jwtToken.Claims;
+                System.Diagnostics.Debug.WriteLine("--- CLAIMS TRONG TOKEN ---");
+                foreach (var claim in claims)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Loại (Type): {claim.Type} | Giá trị (Value): {claim.Value}");
+                }
+                System.Diagnostics.Debug.WriteLine("--------------------------");
+                // ✅ KẾT THÚC: THÊM CODE GỠ LỖI
+                // 3. Tạo định danh và principal
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
+
+                // 4. Thực hiện đăng nhập, tạo cookie xác thực cho MVC
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+                // --- KẾT THÚC LOGIC MỚI ---
 
                 return RedirectToAction("Index", "Home");
             }
@@ -138,10 +163,15 @@ namespace DoAnWebAPI_WebMVC.Controllers
         }
 
         [HttpPost]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout() // Chuyển thành async Task
         {
+            // Xóa Session
             HttpContext.Session.Remove("JWToken");
             HttpContext.Session.Remove("Username");
+
+            // ✅ THÊM DÒNG NÀY: Đăng xuất khỏi hệ thống cookie
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
             return RedirectToAction("Login", "Account");
         }
 
