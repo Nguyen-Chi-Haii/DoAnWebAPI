@@ -9,7 +9,7 @@
 
     <form id="register-form" asp-controller="Account" asp-action="Register" method="post" class="login-form">
 
-        <div asp-validation-summary="ModelOnly" class="error-summary"></div>
+        <div asp-validation-summary="None" class="d-none"></div>
 
         <div class="input-group">
             <input asp-for="FullName" placeholder="Họ và tên" />
@@ -34,6 +34,18 @@
         <button type="submit" class="register-button">
             Đăng ký
         </button>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="error-summary mt-3">
+                <ul>
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
     </form>
 
     <div class="register-link">
@@ -41,12 +53,8 @@
     </div>
 </div>
 
-<style>
-    .login-form .register-button {
-        background-color: #16a34a; /* bg-green-600 */
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-
-        .login-form .register-button:hover {
-            background-color: #15803d; /* hover:bg-green-700 */
-        }
-</style>
+}

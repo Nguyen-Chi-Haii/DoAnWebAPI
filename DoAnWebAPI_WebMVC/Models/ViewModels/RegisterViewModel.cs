@@ -1,19 +1,19 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace DoAnWebAPI_WebMVC.ViewModels // Thay bằng namespace của dự án bạn
+namespace DoAnWebAPI_WebMVC.ViewModels
 {
     public class RegisterViewModel
     {
-        [Required(ErrorMessage = "Vui lòng nhập họ và tên.")]
+        [Required(ErrorMessage = "Vui lòng nhập họ và tên của bạn.")]
         [Display(Name = "Họ và tên")]
         public string FullName { get; set; }
 
-        [Required(ErrorMessage = "Vui lòng nhập email.")]
-        [EmailAddress(ErrorMessage = "Địa chỉ email không hợp lệ.")]
+        [Required(ErrorMessage = "Vui lòng nhập địa chỉ email.")]
+        [EmailAddress(ErrorMessage = "Địa chỉ email không hợp lệ, vui lòng kiểm tra lại.")]
         public string Email { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập mật khẩu.")]
-        [StringLength(100, ErrorMessage = "{0} phải có ít nhất {2} và tối đa {1} ký tự.", MinimumLength = 6)]
+        [StringLength(100, ErrorMessage = "Mật khẩu phải có ít nhất {2} ký tự.", MinimumLength = 6)]
         [DataType(DataType.Password)]
         public string Password { get; set; }
 
