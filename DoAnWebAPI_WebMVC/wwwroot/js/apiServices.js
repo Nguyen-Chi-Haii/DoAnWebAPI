@@ -4,11 +4,12 @@
 const API_BASE_URL = 'http://localhost:5186/api'; // Ví dụ cho môi trường dev
 
 /**
- * Lấy JWT token từ localStorage.
+
+ * Lấy JWT token từ biến global được truyền từ server.
  * @returns {string|null} Token hoặc null nếu không tồn tại.
  */
 function getToken() {
-    return localStorage.getItem('jwtToken');
+    return window.jwtToken || null;
 }
 
 /**
@@ -45,10 +46,14 @@ async function request(endpoint, method, body = null) {
     if (!response.ok) {
         if (response.status === 401) {
             // Xử lý khi token hết hạn hoặc không hợp lệ
-            alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-            // Xóa token cũ và chuyển hướng đến trang đăng nhập
+            // Xóa token cũ để tránh lặp lại lỗi
             localStorage.removeItem('jwtToken');
-            window.location.href = '/Account/Login'; // ⚠️ Điều chỉnh URL trang đăng nhập nếu cần
+
+            if (response.status === 401) {
+                throw new Error("Unauthorized"); // Ném ra lỗi có tên cụ thể
+            }
+            // Dừng thực thi hàm ngay lập tức để ngăn các lỗi tiếp theo
+            return Promise.reject(new Error("Unauthorized"));
         }
         // Cố gắng parse lỗi từ body của response
         const errorData = await response.json().catch(() => ({ message: response.statusText }));
@@ -124,11 +129,15 @@ const api = {
     stats: {
         get: (imageId) => request(`/images/${imageId}/stats`, 'GET'),
         incrementView: (imageId) => request(`/images/${imageId}/stats/increment-view`, 'POST', {}),
+        incrementDownloadsAsync: (imageId) => request(`/images/${imageId}/stats/download`, 'POST', {})
     },
     tags: {
         getAll: () => request('/tags', 'GET'),
     },
     topics: {
         getAll: () => request('/topics', 'GET'),
+    },
+    users: {
+        getById: (id) => request(`/Users/${id}`, 'GET'),
     }
 };

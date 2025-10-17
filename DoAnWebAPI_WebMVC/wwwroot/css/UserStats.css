@@ -201,3 +201,15 @@
     .userStats-exit-btn:hover {
         background-color: #dc2626;
     }
+.userStats-thumbnail {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    transition: transform 0.2s ease;
+}
+
+    .userStats-thumbnail:hover {
+        transform: scale(1.05);
+    }

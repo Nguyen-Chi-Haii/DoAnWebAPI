@@ -7,7 +7,7 @@ using FirebaseAdmin;
 using FirebaseWebApi.Repositories;
 using FireSharp.Config;
 using Google.Apis.Auth.OAuth2;
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -84,23 +84,41 @@ builder.Services.AddSingleton(provider =>
 // --------------------
 // 🔐 AUTH FIREBASE ID TOKEN
 // --------------------
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = "FirebaseBearer";
-    options.DefaultChallengeScheme = "FirebaseBearer";
-})
-.AddJwtBearer("FirebaseBearer", options =>
-{
-    options.Authority = "https://securetoken.google.com/photogallerydb-196ef";
-    options.TokenValidationParameters = new TokenValidationParameters
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        ValidateIssuer = true,
-        ValidIssuer = "https://securetoken.google.com/photogallerydb-196ef",
-        ValidateAudience = true,
-        ValidAudience = "photogallerydb-196ef",
-        ValidateLifetime = true,
-    };
-});
+        var projectId = "photogallerydb-196ef"; // ⚠️ Trùng với Project ID Firebase
+        options.Authority = $"https://securetoken.google.com/{projectId}";
+        options.RequireHttpsMetadata = true; // ✅ Đặt lại true để dùng HTTPS đúng chuẩn
+
+        // ⚠️ ❌ Bỏ dòng này đi: MetadataAddress
+        // Vì Firebase không cung cấp JWKs ở link đó, mà ở Authority (securetoken.google.com)
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = $"https://securetoken.google.com/{projectId}",
+            ValidateAudience = true,
+            ValidAudience = projectId,
+            ValidateLifetime = true,
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"❌ JWT Error: {context.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("✅ Token validated successfully");
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+
 
 // --------------------
 // 🔓 PHÂN QUYỀN

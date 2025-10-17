@@ -1,5 +1,12 @@
-﻿document.addEventListener("DOMContentLoaded", async () => {
-    const container = document.getElementById("edit-image-form").closest('.form-container');
+﻿// File: wwwroot/js/editImage.js (Phiên bản đã đồng bộ với CSHTML mới)
+
+document.addEventListener("DOMContentLoaded", async () => {
+    const form = document.getElementById("edit-image-form");
+    if (!form) {
+        console.error("Lỗi: Không tìm thấy form#edit-image-form.");
+        return;
+    }
+    const container = form.closest('.form-container');
     const imageId = container.dataset.imageId;
 
     if (!imageId) {
@@ -12,7 +19,6 @@
     let allTags = [];
     let allTopics = [];
 
-    const form = document.getElementById("edit-image-form");
     const submitBtn = form.querySelector('button[type="submit"]');
     const titleInput = document.getElementById("image-title");
     const descriptionInput = document.getElementById("image-description");
@@ -27,22 +33,99 @@
     const selectedTopicsEl = document.getElementById("selected-topics");
     const cancelBtn = document.getElementById("cancel-btn");
 
-    // ✅ ĐÃ XÓA CÁC BIẾN uploadImageBtn và fileInput
+    // ✅ ĐÃ XÓA: Không còn cần các biến cho việc tải file lên nữa (uploadImageBtn, fileInput)
 
-    // --- CÁC HÀM RENDER VÀ HELPER (Không đổi) ---
-    const renderPills = (container, pills, pillClass, onRemove) => { /* ... giữ nguyên ... */ };
-    const renderSuggestions = (container, suggestions, onAdd) => { /* ... giữ nguyên ... */ };
-    const updatePrivacyStatus = () => { /* ... giữ nguyên ... */ };
+    // --- CÁC HÀM RENDER VÀ HELPER ---
+    const renderPills = (container, pills, pillClass, onRemove) => {
+        container.innerHTML = pills.map(item => `
+        <span class="${pillClass}" data-id="${item.id}">
+            ${item.name}
+            <i data-lucide="x" class="pill-remove-btn"></i>
+        </span>`).join('');
+        if (window.lucide) lucide.createIcons();
+        container.querySelectorAll('.pill-remove-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idToRemove = parseInt(btn.closest('span').dataset.id);
+                onRemove(idToRemove);
+            });
+        });
+    };
 
-    // --- CÁC HÀM XỬ LÝ TAGS/TOPICS (Không đổi) ---
-    const addTag = (tagObject) => { /* ... giữ nguyên ... */ };
-    const removeTag = (tagId) => { /* ... giữ nguyên ... */ };
-    const updateTagSuggestions = () => { /* ... giữ nguyên ... */ };
-    const addTopic = (topicObject) => { /* ... giữ nguyên ... */ };
-    const removeTopic = (topicId) => { /* ... giữ nguyên ... */ };
-    const updateTopicSuggestions = () => { /* ... giữ nguyên ... */ };
+    const renderSuggestions = (container, suggestions, onAdd) => {
+        container.innerHTML = '';
+        suggestions.forEach(item => {
+            const el = document.createElement('div');
+            el.className = 'suggestion-item';
+            el.textContent = item.name;
+            el.onclick = () => onAdd(item);
+            container.appendChild(el);
+        });
+    };
 
-    // ✅ ĐÃ XÓA HÀM handleImageUpload
+    const updatePrivacyStatus = () => {
+        // Tìm thẻ span và icon BÊN TRONG nút bấm
+        const buttonTextSpan = privacyToggleBtn.querySelector('span');
+
+        if (formState.isPublic) {
+            const newText = 'Công khai';
+            // Cập nhật chữ bên ngoài
+            privacyStatusText.textContent = newText;
+            // Cập nhật chữ và icon bên trong nút
+            privacyToggleBtn.innerHTML = `<i data-lucide="globe"></i><span>${newText}</span>`;
+        } else {
+            const newText = 'Riêng tư';
+            // Cập nhật chữ bên ngoài
+            privacyStatusText.textContent = newText;
+            // Cập nhật chữ và icon bên trong nút
+            privacyToggleBtn.innerHTML = `<i data-lucide="lock"></i><span>${newText}</span>`;
+        }
+        // Luôn gọi lại sau khi thay đổi innerHTML để render icon
+        if (window.lucide) lucide.createIcons();
+    };
+    // --- CÁC HÀM XỬ LÝ TAGS/TOPICS ---
+    const addTag = (tagObject) => {
+        if (tagObject && !formState.tags.some(t => t.id === tagObject.id)) {
+            formState.tags.push(tagObject);
+            renderPills(selectedTagsEl, formState.tags, 'tag-pill', removeTag);
+        }
+        tagInput.value = '';
+        updateTagSuggestions();
+    };
+    const removeTag = (tagId) => {
+        formState.tags = formState.tags.filter(t => t.id !== tagId);
+        renderPills(selectedTagsEl, formState.tags, 'tag-pill', removeTag);
+    };
+    const updateTagSuggestions = () => {
+        const query = tagInput.value.toLowerCase();
+        const selectedIds = formState.tags.map(t => t.id);
+        const filtered = query ? allTags.filter(
+            t => !selectedIds.includes(t.id) && t.name.toLowerCase().includes(query)
+        ) : [];
+        renderSuggestions(tagSuggestionsEl, filtered, addTag);
+    };
+
+    const addTopic = (topicObject) => {
+        if (topicObject && !formState.topics.some(t => t.id === topicObject.id)) {
+            formState.topics.push(topicObject);
+            renderPills(selectedTopicsEl, formState.topics, 'topic-pill', removeTopic);
+        }
+        topicInput.value = '';
+        updateTopicSuggestions();
+    };
+    const removeTopic = (topicId) => {
+        formState.topics = formState.topics.filter(t => t.id !== topicId);
+        renderPills(selectedTopicsEl, formState.topics, 'topic-pill', removeTopic);
+    };
+    const updateTopicSuggestions = () => {
+        const query = topicInput.value.toLowerCase();
+        const selectedIds = formState.topics.map(t => t.id);
+        const filtered = query ? allTopics.filter(
+            t => !selectedIds.includes(t.id) && t.name.toLowerCase().includes(query)
+        ) : [];
+        renderSuggestions(topicSuggestionsEl, filtered, addTopic);
+    };
+
+    // ✅ ĐÃ XÓA: Hàm xử lý tải file lên (handleImageUpload) không còn cần thiết
 
     // --- HÀM TẢI DỮ LIỆU BAN ĐẦU ---
     const populateForm = async () => {
@@ -60,14 +143,13 @@
                 title: initialData.title || "",
                 description: initialData.description || "",
                 isPublic: initialData.isPublic ?? true,
-                status: initialData.status,
                 tags: initialData.tags || [],
                 topics: initialData.topics || [],
             };
 
             titleInput.value = formState.title;
             descriptionInput.value = formState.description;
-            imagePreview.src = initialData.url || initialData.fileUrl;
+            imagePreview.src = initialData.thumbnailUrl || initialData.fileUrl; // Dùng thumbnail để tải nhanh hơn
             updatePrivacyStatus();
             renderPills(selectedTagsEl, formState.tags, 'tag-pill', removeTag);
             renderPills(selectedTopicsEl, formState.topics, 'topic-pill', removeTopic);
@@ -85,7 +167,6 @@
             Title: titleInput.value,
             Description: descriptionInput.value,
             IsPublic: formState.isPublic,
-            Status: formState.status,
             TagIds: formState.tags.map(t => t.id),
             TopicIds: formState.topics.map(t => t.id)
         };
@@ -125,10 +206,8 @@
         }
     });
 
-    // ✅ ĐÃ XÓA CÁC SỰ KIỆN CHO uploadImageBtn và fileInput
+    // ✅ ĐÃ XÓA: Các sự kiện cho nút tải file lên
 
     // --- KHỞI TẠO ---
     populateForm();
 });
-
-// Bạn có thể giữ hoặc xóa các hàm helper không dùng đến

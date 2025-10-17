@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DoAnWebAPI_WebMVC.Controllers
 {
+    [Authorize]
     public class AdminController : Controller
     {
         public IActionResult AdminHome()
@@ -14,6 +16,11 @@ namespace DoAnWebAPI_WebMVC.Controllers
         }
         public IActionResult AdminImages()
         {
+            var token = HttpContext.Session.GetString("JWToken");
+
+            // 2. Truyền token này sang cho View
+            ViewData["JwtToken"] = token;
+
             return View();
         }
         public IActionResult AdminUsers()

@@ -215,7 +215,7 @@ namespace DoAnWebAPI.Controllers
         [HttpGet("me")]
         public IActionResult Me()
         {
-            var uid = User.FindFirst("user_id")?.Value;
+            var uid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var email = User.FindFirst("email")?.Value;
             var localId = User.FindFirst("local_id")?.Value; // Để kiểm tra claim mới
             return Ok(new { Uid = uid, Email = email, LocalId = localId, Message = "Authenticated successfully" });

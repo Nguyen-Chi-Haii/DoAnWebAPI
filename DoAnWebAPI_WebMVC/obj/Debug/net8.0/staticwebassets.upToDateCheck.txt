@@ -24,6 +24,7 @@ wwwroot\js\AdminUsers.js
 wwwroot\js\apiServices.js
 wwwroot\js\Collection.js
 wwwroot\js\CollectionDetail.js
+wwwroot\js\editCollection.js
 wwwroot\js\editImage.js
 wwwroot\js\Filter.js
 wwwroot\js\Footer.js
@@ -93,4 +94,3 @@ wwwroot\lib\jquery\dist\jquery.min.js
 wwwroot\lib\jquery\dist\jquery.min.map
 wwwroot\lib\jquery\LICENSE.txt
 wwwroot\Logo.png
-wwwroot\js\editCollection.js

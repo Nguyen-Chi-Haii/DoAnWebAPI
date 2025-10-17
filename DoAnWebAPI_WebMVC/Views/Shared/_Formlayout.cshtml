@@ -13,6 +13,9 @@
 
     <link rel="stylesheet" href="~/css/UserStats.css" asp-append-version="true" />
 
+    <link rel="stylesheet" href="~/css/Footer.css" asp-append-version="true" />
+
+
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
@@ -22,25 +25,10 @@
         @RenderBody()
     </main>
 
-    <footer class="admin-layout-footer">
-        @await Html.PartialAsync("_layoutFooter")
-    </footer>
+
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/apiServices.js"></script>
-    @inject IHttpContextAccessor HttpContextAccessor
-    @{
-        var token = HttpContextAccessor.HttpContext.Session.GetString("JWToken");
-    }
-
-    @if (!string.IsNullOrEmpty(token))
-    {
-        <script>
-            // Lấy token từ server và lưu vào localStorage của trình duyệt
-            const jwtToken = @Json.Serialize(token);
-            localStorage.setItem('jwtToken', jwtToken);
-        </script>
-    }
     @await RenderSectionAsync("Scripts", required: false)
 
 </body>

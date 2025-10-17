@@ -55,6 +55,7 @@ namespace DoAnWebAPI_WebMVC.Controllers
                 // 1. Lưu token vào Session (để các file JS có thể dùng)
                 HttpContext.Session.SetString("JWToken", authResponse.Token);
                 HttpContext.Session.SetString("Username", authResponse.Username);
+                HttpContext.Session.SetString("UserId", authResponse.UserId);
 
                 // 2. Giải mã token để lấy claims (bao gồm cả Role)
                 var handler = new JwtSecurityTokenHandler();
@@ -166,6 +167,7 @@ namespace DoAnWebAPI_WebMVC.Controllers
             // Xóa Session
             HttpContext.Session.Remove("JWToken");
             HttpContext.Session.Remove("Username");
+            HttpContext.Session.Remove("UserId");
 
             // ✅ THÊM DÒNG NÀY: Đăng xuất khỏi hệ thống cookie
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

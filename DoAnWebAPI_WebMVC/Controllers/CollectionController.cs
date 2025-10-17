@@ -10,6 +10,7 @@ namespace DoAnWebAPI_WebMVC.Controllers
         {
             ViewData["ShowEditButton"] = true;
             return View();
+
         }
         public IActionResult CollectionDetail(string id)
         {

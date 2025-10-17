@@ -49,7 +49,16 @@
         </button>
     </div>
 </div>
-
 @section Scripts {
-    <script src="~/js/userStats.js" asp-append-version="true"></script>
+    @if (!string.IsNullOrEmpty(ViewBag.JwtToken))
+    {
+        <script>
+            const jwtToken = @Json.Serialize(ViewBag.JwtToken);
+             const userId = @Json.Serialize(ViewBag.UserId)
+             localStorage.setItem('jwtToken', jwtToken);
+             localStorage.setItem('userId', userId);
+        </script>
+    }
+
+    <script src="~/js/UserStats.js" asp-append-version="true"></script>
 }
