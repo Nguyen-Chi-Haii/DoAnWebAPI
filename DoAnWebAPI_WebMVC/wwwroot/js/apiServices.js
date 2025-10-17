@@ -12,19 +12,33 @@ function getToken() {
 }
 
 /**
- * Hàm gọi API chung, tự động thêm header Authorization.
+ * Hàm gọi API chung, tự động thêm header Authorization (trừ một số endpoint không cần).
  * @param {string} endpoint - Đường dẫn API (ví dụ: '/images').
  * @param {string} method - Phương thức HTTP (GET, POST, PUT, DELETE).
  * @param {object|FormData} [body=null] - Dữ liệu gửi đi (là object cho JSON, hoặc FormData cho file).
+ * @param {boolean} [skipAuth=false] - Bỏ qua Authorization header.
  * @returns {Promise<any>} - Dữ liệu trả về từ API.
  * @throws {Error} - Ném lỗi nếu request thất bại.
  */
-async function request(endpoint, method, body = null) {
+async function request(endpoint, method, body = null, skipAuth = false) {
     const headers = new Headers();
     const token = getToken();
 
-    if (token) {
+    console.log('=== API REQUEST DEBUG ===');
+    console.log('Endpoint:', endpoint);
+    console.log('Method:', method);
+    console.log('Skip Auth:', skipAuth);
+    console.log('Token:', token ? token.substring(0, 30) + '...' : 'null');
+    console.log('Token length:', token ? token.length : 0);
+
+    // ✅ Chỉ thêm Authorization header nếu skipAuth = false và có token
+    if (!skipAuth && token) {
         headers.append('Authorization', `Bearer ${token}`);
+        console.log('Authorization header added');
+    } else if (!skipAuth) {
+        console.warn('NO TOKEN FOUND - Proceeding without auth');
+    } else {
+        console.log('Skipping Authorization header');
     }
 
     const config = {
@@ -36,15 +50,26 @@ async function request(endpoint, method, body = null) {
     if (body && !(body instanceof FormData)) {
         headers.append('Content-Type', 'application/json');
         config.body = JSON.stringify(body);
+        console.log('Body (JSON):', body);
     } else if (body) {
         config.body = body; // Dành cho FormData
+        console.log('Body: FormData');
     }
+
+    console.log('Full URL:', `${API_BASE_URL}${endpoint}`);
+    console.log('========================');
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
+    console.log('=== API RESPONSE ===');
+    console.log('Status:', response.status);
+    console.log('OK:', response.ok);
+    console.log('===================');
+
     if (!response.ok) {
-        if (response.status === 401) {
+        if (response.status === 401 && !skipAuth) {
             // Xử lý khi token hết hạn hoặc không hợp lệ
+            console.error('401 UNAUTHORIZED - Token invalid or expired');
             alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
             // Xóa token cũ và chuyển hướng đến trang đăng nhập
             localStorage.removeItem('jwtToken');
@@ -130,5 +155,12 @@ const api = {
     },
     topics: {
         getAll: () => request('/topics', 'GET'),
+    },
+    collections: {
+        getAll: () => request('/collections', 'GET', null, true), // ✅ Bỏ qua xác thực
+        getById: (id) => request(`/collections/${id}`, 'GET', null, true), // ✅ Bỏ qua xác thực
+        create: (data) => request('/collections', 'POST', data, true), // ✅ Bỏ qua xác thực
+        update: (id, data) => request(`/collections/${id}`, 'PUT', data, true), // ✅ Bỏ qua xác thực
+        delete: (id) => request(`/collections/${id}`, 'DELETE', null, true), // ✅ Bỏ qua xác thực
     }
 };

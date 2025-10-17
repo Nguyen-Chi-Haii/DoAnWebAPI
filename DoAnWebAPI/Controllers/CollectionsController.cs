@@ -122,7 +122,7 @@ namespace DoAnWebAPI.Controllers
 
         // POST /api/collections
         [HttpPost]
-        // 🔐 Yêu cầu đăng nhập (sử dụng [Authorize] ở cấp Controller)
+        [AllowAnonymous] // ✅ Cho phép tạo collection không cần đăng nhập
         public async Task<ActionResult<CollectionDTO>> Create(CreateCollectionDTO dto)
         {
             // ✅ Data Validation: Tự động kiểm tra [Required], [MaxLength] từ DTO
@@ -131,20 +131,25 @@ namespace DoAnWebAPI.Controllers
                 return BadRequest(ModelState);
             }
 
-            int currentUserId;
-            try
+            // ✅ Lấy userId từ Claims nếu có, nếu không dùng userId = 1 (mặc định)
+            int currentUserId = 1; // Giá trị mặc định cho user guest
+            if (User.Identity.IsAuthenticated)
             {
-                currentUserId = GetCurrentUserId();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message); // 401 Unauthorized (Dù đã có [Authorize] nhưng thêm vào để an toàn)
+                try
+                {
+                    currentUserId = GetCurrentUserId();
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // Nếu có lỗi, vẫn dùng userId = 1
+                    currentUserId = 1;
+                }
             }
 
-            // 🔑 Phân quyền: Tạo Domain Model và gán UserId từ người dùng đã xác thực
+            // 🔑 Tạo Domain Model và gán UserId
             var collectionToCreate = new Model.Collection
             {
-                UserId = currentUserId, // 🔑 OVERRIDE: Chỉ dùng ID từ Claims
+                UserId = currentUserId,
                 Name = dto.Name,
                 Description = dto.Description,
                 IsPublic = dto.IsPublic

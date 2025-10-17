@@ -1,12 +1,15 @@
 ﻿document.addEventListener("DOMContentLoaded", () => {
+    // ✅ Bỏ kiểm tra token - cho phép tạo collection không cần đăng nhập
+    console.log('=== AddCollection.js loaded ===');
+
     // --- Khai báo các biến trạng thái ---
     let formState = {
         name: "",
         description: "",
         isPublic: true,
     };
-    let filesToUpload = []; // Mảng chứa các đối tượng File thật sự để gửi đi
-    let previewImageUrls = []; // Mảng chứa các URL tạm thời để xem trước
+    let filesToUpload = [];
+    let previewImageUrls = [];
 
     // --- Lấy các phần tử DOM ---
     const form = document.getElementById("add-collection-form");
@@ -21,7 +24,6 @@
 
     // --- Hàm render ảnh xem trước ---
     function renderPreviewImages() {
-        // Xóa tất cả ảnh cũ (trừ nút "Thêm ảnh")
         imagePreviewContainer.innerHTML = '';
 
         previewImageUrls.forEach((url, index) => {
@@ -42,9 +44,8 @@
             imagePreviewContainer.appendChild(item);
         });
 
-        // Luôn thêm lại nút "Thêm ảnh" vào cuối
         imagePreviewContainer.appendChild(addImageBtn);
-        lucide.createIcons(); // Cập nhật lại các icon
+        lucide.createIcons();
     }
 
     // --- Các hàm xử lý sự kiện ---
@@ -61,39 +62,45 @@
             <i data-lucide="${isPublic ? 'globe' : 'lock'}"></i>
             <span>${isPublic ? 'Công khai' : 'Riêng tư'}</span>
         `;
-        privacyToggleBtn.className = `btn ${isPublic ? 'btn-blue' : 'btn-gray'}`;
-        lucide.createIcons();
     }
 
-    function handleImageUpload(event) {
-        const newFiles = Array.from(event.target.files);
-        if (newFiles.length === 0) return;
+    async function handleImageUpload(e) {
+        const files = e.target.files;
+        for (let file of files) {
+            const formData = new FormData();
+            formData.append('file', file);
+            // Thêm các trường bắt buộc khác nếu API yêu cầu
+            formData.append('title', file.name.split('.')[0]); // Dùng tên file làm title tạm
+            formData.append('description', '');
+            formData.append('tags', JSON.stringify([]));
+            formData.append('topicId', ''); // hoặc một giá trị mặc định
 
-        // Thêm file mới vào mảng
-        filesToUpload.push(...newFiles);
+            try {
+                const uploadedImage = await api.images.create(formData);
+                console.log('Uploaded image:', uploadedImage); // Debug
 
-        // Tạo URL xem trước cho các file mới
-        const newUrls = newFiles.map(file => URL.createObjectURL(file));
-        previewImageUrls.push(...newUrls);
+                // API có thể trả về { id, url, ... } hoặc chỉ id
+                const imageId = uploadedImage.id || uploadedImage;
+                const imageUrl = uploadedImage.url || uploadedImage.thumbnailUrl || URL.createObjectURL(file);
 
+                filesToUpload.push(imageId);
+                previewImageUrls.push(imageUrl);
+            } catch (error) {
+                console.error('Lỗi upload:', error);
+                alert(`Lỗi khi upload ảnh: ${error.message}`);
+            }
+        }
         renderPreviewImages();
-
-        // Reset input để có thể chọn lại cùng 1 file
-        fileInput.value = "";
+        fileInput.value = ''; // Reset input
     }
 
     function handleRemoveImage(index) {
-        // Thu hồi URL cũ để giải phóng bộ nhớ
-        URL.revokeObjectURL(previewImageUrls[index]);
-
-        // Xóa file và URL xem trước tại vị trí index
         filesToUpload.splice(index, 1);
         previewImageUrls.splice(index, 1);
-
         renderPreviewImages();
     }
 
-    function handleSubmit(event) {
+    async function handleSubmit(event) {
         event.preventDefault();
         if (!formState.name.trim()) {
             alert("Vui lòng nhập tên bộ sưu tập!");
@@ -101,30 +108,41 @@
             return;
         }
 
-        // Tạo đối tượng FormData để gửi đi (bao gồm cả file)
-        const formData = new FormData();
-        formData.append('Name', formState.name);
-        formData.append('Description', formState.description);
-        formData.append('IsPublic', formState.isPublic);
+        const data = {
+            name: formState.name,
+            description: formState.description,
+            isPublic: formState.isPublic,
+            imageIds: filesToUpload
+        };
 
-        // Thêm từng file ảnh vào FormData
-        filesToUpload.forEach((file, index) => {
-            formData.append('Images', file, file.name);
-        });
+        console.log('=== DEBUG SUBMIT ===');
+        console.log('Data to submit:', data);
+        console.log('===================');
 
-        console.log("Dữ liệu sẵn sàng để gửi lên server:", formState);
-        console.log("Số lượng ảnh:", filesToUpload.length);
+        try {
+            const response = await api.collections.create(data);
+            console.log('Collection created:', response);
 
-        // --- Logic gửi formData lên server của bạn sẽ ở đây ---
-        // Ví dụ:
-        // fetch('/api/collections', {
-        //     method: 'POST',
-        //     body: formData 
-        // }).then(...);
+            // Cập nhật localStorage
+            const storedData = JSON.parse(localStorage.getItem('allCollectionsData') || '[]');
+            const newCollection = {
+                ...data,
+                id: response.id || response,
+                thumbnail: previewImageUrls[0] || '/images/default-collection.png',
+                images: filesToUpload.map(id => ({ id }))
+            };
+            localStorage.setItem('allCollectionsData', JSON.stringify([...storedData, newCollection]));
 
-        alert("✅ Đã tạo bộ sưu tập mới! (Kiểm tra console để xem dữ liệu)");
-        // Chuyển hướng hoặc reset form sau khi thành công
-        // window.location.href = "/Collection";
+            alert("✅ Đã tạo bộ sưu tập mới!");
+            window.location.href = "/Collection/Collection";
+        } catch (error) {
+            console.error('=== ERROR DETAILS ===');
+            console.error('Error:', error);
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+            console.error('====================');
+            alert(`Lỗi khi tạo bộ sưu tập: ${error.message}`);
+        }
     }
 
     // --- Gán sự kiện ---
@@ -135,20 +153,11 @@
     fileInput.addEventListener('change', handleImageUpload);
     form.addEventListener('submit', handleSubmit);
     cancelBtn.addEventListener('click', () => {
-        if (confirm("Bạn có chắc muốn hủy? Mọi thay đổi sẽ bị mất.")) {
-            window.location.href = "/Collection/Collection"; // Hoặc trang trước đó
-        }
-    });
-    cancelBtn.addEventListener('click', () => {
-        // 1. Hiển thị hộp thoại xác nhận để tránh mất dữ liệu
-        if (confirm("Bạn có chắc muốn hủy? Mọi thay đổi sẽ bị mất.")) {
-
-            // 2. Nếu người dùng nhấn "OK", chuyển hướng về trang Collection
+        if (confirm("Bạn có chắc muốn hủy?")) {
             window.location.href = "/Collection/Collection";
         }
-        // 3. Nếu người dùng nhấn "Cancel", không làm gì cả
     });
 
     // --- Khởi tạo ---
-    lucide.createIcons(); // Render icon lần đầu
+    lucide.createIcons();
 });

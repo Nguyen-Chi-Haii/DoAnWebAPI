@@ -4,14 +4,13 @@
 }
 
 <div id="collection-container" class="collection-container" data-collection-id="@ViewBag.CollectionId">
-
     <div class="header">
         <div class="header-left-group">
             <a href="/Collection/Collection" class="btn btn-gray back-button">
                 <i data-lucide="arrow-left"></i>
                 <span>Quay lại</span>
             </a>
-            <h2 id="collection-name"></h2>
+            <h2 id="collection-name">Đang tải...</h2>
         </div>
         <div id="normal-mode-buttons" class="actions">
             <a href="/Image/AddImage?collectionId=@ViewBag.CollectionId" id="add-image-btn" class="btn btn-blue">Thêm ảnh</a>
@@ -22,12 +21,11 @@
         </div>
     </div>
     <hr class="divider" />
-    <p id="collection-description" class="description"></p>
+    <p id="collection-description">Đang tải...</p>
     <div id="image-grid" class="image-grid"></div>
 </div>
 
 @section Scripts {
-    <script src="~/js/CollectionDetail.js"></script>
+    <script src="~/js/CollectionDetail.js" asp-append-version="true"></script>
+    @await Html.PartialAsync("~/Views/Image/ImageDetail.cshtml")
 }
-
-@await Html.PartialAsync("~/Views/Image/ImageDetail.cshtml")

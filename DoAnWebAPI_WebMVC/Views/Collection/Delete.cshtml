@@ -1,0 +1,74 @@
+﻿@{
+    ViewData["Title"] = "Xóa Bộ Sưu Tập";
+    Layout = "_FormLayout";
+}
+
+<div class="form-container" data-collection-id="@ViewBag.CollectionId">
+    <div class="form-header">
+        <h2 class="form-title">Xóa Bộ Sưu Tập</h2>
+    </div>
+
+    <div class="form-body">
+        <p id="collection-name">Đang tải...</p>
+        <p>Bạn có chắc chắn muốn xóa bộ sưu tập này? Hành động này không thể hoàn tác.</p>
+
+        <div class="form-actions">
+            <button type="button" id="cancel-btn" class="btn btn-gray">Hủy</button>
+            <button type="button" id="delete-btn" class="btn btn-red btn-with-icon">
+                <i data-lucide="trash"></i> Xóa bộ sưu tập
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const collectionId = document.querySelector('.form-container').dataset.collectionId;
+            const nameEl = document.getElementById('collection-name');
+            const deleteBtn = document.getElementById('delete-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+
+            try {
+                const token = await firebase.auth().currentUser.getIdToken();
+                const response = await fetch(`/api/collections/${collectionId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const collection = await response.json();
+                    nameEl.textContent = `Bạn có chắc chắn muốn xóa bộ sưu tập "${collection.name}"?`;
+                } else {
+                    nameEl.textContent = 'Lỗi: Không tải được thông tin bộ sưu tập.';
+                }
+            } catch (e) {
+                nameEl.textContent = 'Lỗi: Không tải được thông tin bộ sưu tập.';
+                console.error(e);
+            }
+
+            deleteBtn.addEventListener('click', async () => {
+                if (confirm('Bạn có chắc muốn xóa?')) {
+                    try {
+                        const token = await firebase.auth().currentUser.getIdToken();
+                        const response = await fetch(`/api/collections/${collectionId}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (response.ok) {
+                            alert('Đã xóa bộ sưu tập!');
+                            window.location.href = '/Collection/Collection';
+                        } else {
+                            alert('Lỗi khi xóa bộ sưu tập');
+                        }
+                    } catch (e) {
+                        alert('Có lỗi xảy ra');
+                        console.error(e);
+                    }
+                }
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                window.location.href = '/Collection/Collection';
+            });
+        });
+    </script>
+}

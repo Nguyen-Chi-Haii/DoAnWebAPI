@@ -1,29 +1,56 @@
 ﻿document.addEventListener("DOMContentLoaded", () => {
+    // ✅ SỬA: Thay Firebase bằng kiểm tra token
+    const isAuthenticated = !!getToken();
+    if (!isAuthenticated) {
+        document.body.innerHTML = '<h2>Vui lòng đăng nhập để chỉnh sửa.</h2>';
+        return;
+    }
+
     // --- LẤY DỮ LIỆU BAN ĐẦU ---
     const container = document.getElementById("edit-collection-form").closest('.form-container');
     const collectionId = container.dataset.collectionId;
-    const allCollectionsData = JSON.parse(localStorage.getItem('allCollectionsData'));
-    const initialData = allCollectionsData ? allCollectionsData.find(c => c.id === collectionId) : null;
+    let initialData;
 
-    if (!initialData) {
-        container.innerHTML = "<h2>Lỗi: Không tìm thấy dữ liệu của bộ sưu tập này.</h2>";
-        return;
+    async function loadInitialData() {
+        let allCollectionsData = JSON.parse(localStorage.getItem('allCollectionsData'));
+        initialData = allCollectionsData ? allCollectionsData.find(c => c.id === collectionId) : null;
+
+        if (!initialData) {
+            try {
+                initialData = await request(`/collections/${collectionId}`, 'GET');
+                const storedData = JSON.parse(localStorage.getItem('allCollectionsData') || '[]');
+                const updatedData = [...storedData.filter(c => c.id !== collectionId), initialData];
+                localStorage.setItem('allCollectionsData', JSON.stringify(updatedData));
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = "<h2>Lỗi khi tải bộ sưu tập.</h2>";
+                return;
+            }
+        }
+
+        initializeForm();
     }
 
     // --- KHAI BÁO CÁC BIẾN TRẠNG THÁI ---
     let formState = {
-        name: initialData.name,
-        description: initialData.description,
-        isPublic: initialData.isPublic ?? true,
+        name: '',
+        description: '',
+        isPublic: true,
     };
-    // Mảng quản lý các ảnh sẽ hiển thị trên UI
-    let displayedImages = initialData.images.map(img => ({ ...img, isNew: false, src: img.thumbnail }));
-
-    // Mảng quản lý các file mới cần tải lên
+    let displayedImages = [];
     let newFilesToUpload = [];
-    // Mảng quản lý ID của các ảnh cũ cần xóa
     let deletedImageIds = [];
 
+    function initializeForm() {
+        formState = {
+            name: initialData.name,
+            description: initialData.description,
+            isPublic: initialData.isPublic ?? true,
+        };
+        displayedImages = initialData.images.map(img => ({ ...img, isNew: false, src: img.thumbnail }));
+
+        populateForm();
+    }
 
     // --- LẤY CÁC PHẦN TỬ DOM ---
     const form = document.getElementById("edit-collection-form");
@@ -43,7 +70,7 @@
             const item = document.createElement('div');
             item.className = 'image-preview-item';
             const img = document.createElement('img');
-            img.src = image.src; // src có thể là thumbnail cũ hoặc blob URL mới
+            img.src = image.src;
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
             removeBtn.className = 'remove-image-btn';
@@ -61,31 +88,26 @@
         const imageToRemove = displayedImages.find(img => img.id === idToRemove);
         if (!imageToRemove) return;
 
-        // Nếu là ảnh cũ (không phải mới thêm), ghi nhận ID để xóa ở server
         if (!imageToRemove.isNew) {
             deletedImageIds.push(idToRemove);
         } else {
-            // Nếu là ảnh mới, tìm và xóa file tương ứng trong newFilesToUpload
-            newFilesToUpload = newFilesToUpload.filter(file => file.tempId !== idToRemove);
-            URL.revokeObjectURL(imageToRemove.src); // Giải phóng bộ nhớ
+            const fileIndex = newFilesToUpload.findIndex(file => file.tempId === idToRemove);
+            if (fileIndex > -1) newFilesToUpload.splice(fileIndex, 1);
         }
 
-        // Cập nhật lại mảng ảnh hiển thị
         displayedImages = displayedImages.filter(img => img.id !== idToRemove);
         renderPreviewImages();
     }
 
-    function handleImageUpload(event) {
-        const newFiles = Array.from(event.target.files);
-        if (newFiles.length === 0) return;
-
-        const newImageObjects = newFiles.map(file => {
-            const tempId = `new_${Date.now()}_${Math.random()}`;
-            file.tempId = tempId; // Gán ID tạm cho file để xóa nếu cần
+    function handleImageUpload(e) {
+        const newFiles = Array.from(e.target.files);
+        const tempIdStart = Date.now();
+        const newImageObjects = newFiles.map((file, index) => {
+            const tempId = tempIdStart + index;
             return {
                 id: tempId,
                 src: URL.createObjectURL(file),
-                isNew: true, // Đánh dấu đây là ảnh mới
+                isNew: true,
             };
         });
 
@@ -95,43 +117,36 @@
         fileInput.value = "";
     }
 
-    function handleSubmit(event) {
+    async function handleSubmit(event) {
         event.preventDefault();
-        // ... (validation)
 
         const formData = new FormData();
-        formData.append('Id', collectionId); // Gửi ID của bộ sưu tập đang sửa
+        formData.append('Id', collectionId);
         formData.append('Name', formState.name);
         formData.append('Description', formState.description);
         formData.append('IsPublic', formState.isPublic);
 
-        // Gửi danh sách ID ảnh cần xóa
         deletedImageIds.forEach(id => {
             formData.append('DeletedImageIds', id);
         });
 
-        // Gửi danh sách file ảnh mới cần thêm
         newFilesToUpload.forEach(file => {
             formData.append('NewImages', file, file.name);
         });
 
-        console.log("Dữ liệu cập nhật sẵn sàng để gửi:", {
-            ...formState,
-            id: collectionId,
-            deletedImageIds,
-            newImageCount: newFilesToUpload.length
-        });
-
-        alert("✅ Đã cập nhật bộ sưu tập! (Kiểm tra console để xem FormData)");
-        // fetch(`/api/collections/${collectionId}`, { method: 'PUT', body: formData })...
-        window.location.href = "/Collection/Collection";
+        try {
+            await request(`/collections/${collectionId}`, 'PUT', formData);
+            alert("✅ Đã cập nhật bộ sưu tập!");
+            window.location.href = "/Collection/Collection";
+        } catch (e) {
+            alert("Lỗi khi cập nhật bộ sưu tập");
+        }
     }
 
     function populateForm() {
         nameInput.value = formState.name;
         descriptionInput.value = formState.description;
 
-        // Cập nhật nút privacy
         const isPublic = formState.isPublic;
         privacyStatusText.textContent = isPublic ? "Công khai" : "Riêng tư";
         privacyToggleBtn.innerHTML = `<i data-lucide="${isPublic ? 'globe' : 'lock'}"></i><span>${isPublic ? 'Công khai' : 'Riêng tư'}</span>`;
@@ -141,22 +156,21 @@
     }
 
     // --- GÁN SỰ KIỆN ---
-    // (Các sự kiện input, toggle, cancel, submit tương tự như file addCollection.js)
     nameInput.addEventListener('input', (e) => formState.name = e.target.value);
     descriptionInput.addEventListener('input', (e) => formState.description = e.target.value);
     privacyToggleBtn.addEventListener('click', () => {
         formState.isPublic = !formState.isPublic;
-        populateForm(); // Gọi lại để cập nhật UI
+        populateForm();
     });
     addImageBtn.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleImageUpload);
     form.addEventListener('submit', handleSubmit);
     cancelBtn.addEventListener('click', () => {
-        if (confirm("Bạn có chắc muốn hủy? Mọi thay đổi sẽ không được lưu.")) {
+        if (confirm("Bạn có chắc muốn hủy?")) {
             window.location.href = "/Collection/Collection";
         }
     });
 
     // --- KHỞI TẠO ---
-    populateForm(); // Điền dữ liệu ban đầu vào form
+    loadInitialData();
 });

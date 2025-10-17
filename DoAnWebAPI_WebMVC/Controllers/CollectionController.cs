@@ -11,42 +11,59 @@ namespace DoAnWebAPI_WebMVC.Controllers
             ViewData["ShowEditButton"] = true;
             return View();
         }
+
+        // GET: /Collection/CollectionDetail/{id}
         public IActionResult CollectionDetail(string id)
         {
-            // Truyền ID vào View để JavaScript có thể sử dụng
+            if (string.IsNullOrEmpty(id) || !int.TryParse(id, out int collectionId))
+            {
+                return BadRequest("ID không hợp lệ.");
+            }
+
             ViewBag.CollectionId = id;
             return View();
         }
+        // GET: /Collection/AddCollection
         public IActionResult AddCollection()
         {
+            if (!User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Login", "Account");
+            }
             return View();
         }
         public IActionResult EditCollection(string id)
         {
-            if (string.IsNullOrEmpty(id))
+            if (string.IsNullOrEmpty(id) || !int.TryParse(id, out int collectionId))
             {
-                return BadRequest("ID không được để trống.");
+                return BadRequest("ID không hợp lệ.");
+            }
+
+            if (!User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Login", "Account");
             }
 
             // Tại đây bạn sẽ lấy dữ liệu của bộ sưu tập từ DB dựa vào 'id'
             // và truyền nó vào View để form sửa có thể hiển thị thông tin cũ.
 
             ViewBag.CollectionId = id; // Truyền ID sang View
-
-            // Giả sử bạn có một View tên là Edit.cshtml
             return View();
         }
         public IActionResult Delete(string id)
         {
-            if (string.IsNullOrEmpty(id))
+            if (string.IsNullOrEmpty(id) || !int.TryParse(id, out int collectionId))
             {
-                return BadRequest("ID không được để trống.");
+                return BadRequest("ID không hợp lệ.");
             }
-            // Tại đây bạn sẽ lấy dữ liệu của bộ sưu tập từ DB dựa vào 'id'
-            // và truyền nó vào View để xác nhận việc xóa.
-            ViewBag.CollectionId = id; // Truyền ID sang View
-            // Giả sử bạn có một View tên là Delete.cshtml
-            return View("~/View/Collection/Collection");
+
+            if (!User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            ViewBag.CollectionId = id;
+            return View();
         }
     }
 }

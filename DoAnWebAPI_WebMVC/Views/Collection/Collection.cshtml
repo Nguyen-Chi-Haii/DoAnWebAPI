@@ -2,6 +2,7 @@
     ViewData["Title"] = "Bộ sưu tập";
     Layout = "_CollectionLayout";
 }
+
 <div class="management-container">
     <div class="section-header">
         <h2 class="section-title">Bộ sưu tập của bạn</h2>
@@ -9,6 +10,7 @@
     </div>
     <hr class="divider">
     <div id="collections-grid" class="item-grid"></div>
+    <div id="collections-pagination" class="pagination-container"></div>
 
     <hr class="divider section-divider">
 
@@ -20,9 +22,8 @@
     <div id="images-grid" class="item-grid"></div>
     <div id="images-pagination" class="pagination-container"></div>
 </div>
+
 @section Scripts {
-    <script src="~/js/ImageDetail.js" asp-append-version="true"></script>
-    <script src="~/js/Collection.js"></script>
-    
+    <script src="~/js/Collection.js" asp-append-version="true"></script>
+    @await Html.PartialAsync("~/Views/Image/ImageDetail.cshtml")
 }
-@await Html.PartialAsync("~/Views/Image/ImageDetail.cshtml")

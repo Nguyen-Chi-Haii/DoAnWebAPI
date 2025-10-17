@@ -1,0 +1,413 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\DoAnWebAPI_WebMVC.bundle.scp.css",
+      "PackagePath": "staticwebassets\\DoAnWebAPI_WebMVC.etg5c8f9cz.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\Logo.png",
+      "PackagePath": "staticwebassets\\Logo.png"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\css\\AdminPanel.css",
+      "PackagePath": "staticwebassets\\css\\AdminPanel.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\css\\Collection.css",
+      "PackagePath": "staticwebassets\\css\\Collection.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\css\\CollectionDetail.css",
+      "PackagePath": "staticwebassets\\css\\CollectionDetail.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\css\\Form.css",
+      "PackagePath": "staticwebassets\\css\\Form.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\css\\Header.css",
+      "PackagePath": "staticwebassets\\css\\Header.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\css\\HomeBody.css",
+      "PackagePath": "staticwebassets\\css\\HomeBody.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\css\\HomeFilter.css",
+      "PackagePath": "staticwebassets\\css\\HomeFilter.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\css\\ImageDetail.css",
+      "PackagePath": "staticwebassets\\css\\ImageDetail.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\css\\Login.css",
+      "PackagePath": "staticwebassets\\css\\Login.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\css\\Setting.css",
+      "PackagePath": "staticwebassets\\css\\Setting.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\css\\Sidebar.css",
+      "PackagePath": "staticwebassets\\css\\Sidebar.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\css\\UserStats.css",
+      "PackagePath": "staticwebassets\\css\\UserStats.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\css\\site.css",
+      "PackagePath": "staticwebassets\\css\\site.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\favicon.ico",
+      "PackagePath": "staticwebassets\\favicon.ico"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\AddCollection.js",
+      "PackagePath": "staticwebassets\\js\\AddCollection.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\AdminApproval.js",
+      "PackagePath": "staticwebassets\\js\\AdminApproval.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\AdminHome.js",
+      "PackagePath": "staticwebassets\\js\\AdminHome.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\AdminImages.js",
+      "PackagePath": "staticwebassets\\js\\AdminImages.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\AdminLogs.js",
+      "PackagePath": "staticwebassets\\js\\AdminLogs.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\AdminStats.js",
+      "PackagePath": "staticwebassets\\js\\AdminStats.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\AdminTags_Topics.js",
+      "PackagePath": "staticwebassets\\js\\AdminTags_Topics.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\AdminUsers.js",
+      "PackagePath": "staticwebassets\\js\\AdminUsers.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\Collection.js",
+      "PackagePath": "staticwebassets\\js\\Collection.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\CollectionDetail.js",
+      "PackagePath": "staticwebassets\\js\\CollectionDetail.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\Filter.js",
+      "PackagePath": "staticwebassets\\js\\Filter.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\Footer.js",
+      "PackagePath": "staticwebassets\\js\\Footer.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\Header.js",
+      "PackagePath": "staticwebassets\\js\\Header.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\HomeBody.js",
+      "PackagePath": "staticwebassets\\js\\HomeBody.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\ImageDetail.js",
+      "PackagePath": "staticwebassets\\js\\ImageDetail.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\Login.js",
+      "PackagePath": "staticwebassets\\js\\Login.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\Setting.js",
+      "PackagePath": "staticwebassets\\js\\Setting.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\Sidebar.js",
+      "PackagePath": "staticwebassets\\js\\Sidebar.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\UserStats.js",
+      "PackagePath": "staticwebassets\\js\\UserStats.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\addImage.js",
+      "PackagePath": "staticwebassets\\js\\addImage.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\apiServices.js",
+      "PackagePath": "staticwebassets\\js\\apiServices.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\editCollection.js",
+      "PackagePath": "staticwebassets\\js\\editCollection.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\editImage.js",
+      "PackagePath": "staticwebassets\\js\\editImage.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\js\\site.js",
+      "PackagePath": "staticwebassets\\js\\site.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\LICENSE",
+      "PackagePath": "staticwebassets\\lib\\bootstrap"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.js.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.min.js",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.min.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.min.js.map",
+      "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.min.js.map"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\jquery-validation-unobtrusive\\LICENSE.txt",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation-unobtrusive\\LICENSE.txt"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.min.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.min.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\jquery-validation\\LICENSE.md",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\LICENSE.md"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\jquery-validation\\dist\\additional-methods.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\additional-methods.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\jquery-validation\\dist\\additional-methods.min.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\additional-methods.min.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\jquery-validation\\dist\\jquery.validate.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\jquery.validate.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\jquery-validation\\dist\\jquery.validate.min.js",
+      "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\jquery.validate.min.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\jquery\\LICENSE.txt",
+      "PackagePath": "staticwebassets\\lib\\jquery\\LICENSE.txt"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\jquery\\dist\\jquery.js",
+      "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\jquery\\dist\\jquery.min.js",
+      "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.min.js"
+    },
+    {
+      "Id": "C:\\Users\\PHUK\\Documents\\DevWeb2\\DoAn\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\wwwroot\\lib\\jquery\\dist\\jquery.min.map",
+      "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.min.map"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.DoAnWebAPI_WebMVC.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.DoAnWebAPI_WebMVC.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.DoAnWebAPI_WebMVC.props",
+      "PackagePath": "build\\DoAnWebAPI_WebMVC.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.DoAnWebAPI_WebMVC.props",
+      "PackagePath": "buildMultiTargeting\\DoAnWebAPI_WebMVC.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.DoAnWebAPI_WebMVC.props",
+      "PackagePath": "buildTransitive\\DoAnWebAPI_WebMVC.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

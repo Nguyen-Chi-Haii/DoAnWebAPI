@@ -1,6 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Chỉnh Sửa Bộ Sưu Tập";
-    Layout = "_FormLayout"; // <-- Sử dụng layout cho form
+    Layout = "_FormLayout";
 }
 
 <div class="form-container" data-collection-id="@ViewBag.CollectionId">
@@ -11,19 +11,19 @@
     <form id="edit-collection-form" class="form-body">
         <div>
             <label for="collection-name" class="form-label">Tên bộ sưu tập</label>
-            <input type="text" id="collection-name" class="form-input" placeholder="Ví dụ: Cảnh biển mùa hè" required />
+            <input type="text" id="collection-name" class="form-input" required />
         </div>
 
         <div>
             <label for="collection-description" class="form-label">Mô tả</label>
-            <textarea id="collection-description" rows="3" class="form-textarea" placeholder="Nhập mô tả ngắn về bộ sưu tập..."></textarea>
+            <textarea id="collection-description" rows="3" class="form-textarea"></textarea>
         </div>
 
         <div class="privacy-toggle-container">
-            <span id="privacy-status-text" class="form-label">Công khai</span>
+            <span id="privacy-status-text" class="form-label">Đang tải...</span>
             <button type="button" id="privacy-toggle-btn" class="btn btn-blue">
                 <i data-lucide="globe"></i>
-                <span>Công khai</span>
+                <span>Đang tải...</span>
             </button>
         </div>
 

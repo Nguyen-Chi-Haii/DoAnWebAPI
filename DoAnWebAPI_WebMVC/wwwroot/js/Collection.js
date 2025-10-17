@@ -6,7 +6,6 @@
     const createManagementSection = (config) => {
         let mode = 'normal';
         let data = config.initialData || [];
-        // State cho phân trang
         let currentPage = 1;
         const itemsPerPage = 8;
 
@@ -15,13 +14,19 @@
         const paginationContainer = document.getElementById(config.paginationId);
 
         if (!buttonsContainer || !gridContainer || !paginationContainer) {
-            console.error(`Lỗi khởi tạo section: Thiếu container HTML.`);
+            console.error(`Lỗi khởi tạo section: Thiếu container HTML. IDs - buttons: ${config.buttonsId}, grid: ${config.gridId}, pagination: ${config.paginationId}`);
             return null;
         }
+
+        // ✅ Bỏ kiểm tra token - cho phép truy cập mà không cần đăng nhập
+        console.log('Management section initialized');
 
         // --- CÁC HÀM RENDER ---
 
         const renderButtons = () => {
+            console.log('renderButtons called, mode:', mode);
+
+            // ✅ Bỏ kiểm tra xác thực - cho phép mọi người quản lý
             if (mode === 'normal') {
                 buttonsContainer.innerHTML = `
                     <a href="${config.addUrl}" class="button button-blue"><i data-lucide="plus"></i><span>Thêm</span></a>
@@ -34,6 +39,7 @@
                 `;
             }
             if (window.lucide) lucide.createIcons();
+            console.log('Buttons rendered successfully');
         };
 
         const renderPagination = () => {
@@ -55,86 +61,62 @@
             if (mode === 'edit') gridContainer.classList.add('editing');
             if (mode === 'delete') gridContainer.classList.add('deleting');
 
-            // ✅ SỬA LỖI Ở ĐÂY: Cắt (slice) mảng dữ liệu để chỉ lấy các item cho trang hiện tại
             const startIndex = (currentPage - 1) * itemsPerPage;
             const endIndex = startIndex + itemsPerPage;
             const paginatedData = data.slice(startIndex, endIndex);
 
-            // Xử lý trường hợp xóa hết item ở trang cuối
             if (paginatedData.length === 0 && currentPage > 1) {
                 currentPage--;
-                renderGrid(); // Gọi lại để render trang trước đó
+                renderGrid();
                 renderPagination();
                 return;
             }
 
-            if (data.length === 0) {
-                gridContainer.innerHTML = `<p class="text-center text-gray-600 col-span-full">${config.emptyMessage}</p>`;
-                return;
+            gridContainer.innerHTML = paginatedData.map(item => config.renderItem(item, mode)).join('');
+
+            if (paginatedData.length === 0) {
+                gridContainer.innerHTML = `<p class="text-center col-span-full">${config.emptyMessage}</p>`;
             }
 
-            // Render dữ liệu đã được phân trang
-            gridContainer.innerHTML = paginatedData.map(item => config.renderItem(item, mode)).join('');
             if (window.lucide) lucide.createIcons();
         };
 
         // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
 
         const handleButtonClick = (action) => {
-            switch (action) {
-                case 'edit': mode = 'edit'; break;
-                case 'delete': mode = 'delete'; break;
-                case 'cancel': mode = 'normal'; break;
-            }
+            if (action === 'edit') mode = 'edit';
+            if (action === 'delete') mode = 'delete';
+            if (action === 'cancel') mode = 'normal';
             renderButtons();
             renderGrid();
         };
 
-        const handleGridClick = async (e) => {
-            const targetItem = e.target.closest('.item-card');
-            if (!targetItem) return;
-            e.preventDefault();
-            const id = targetItem.dataset.id;
+        const handleGridClick = (e) => {
+            const card = e.target.closest('.item-card');
+            if (!card) return;
 
+            const id = card.dataset.id;
             if (mode === 'edit') {
                 window.location.href = `${config.editUrl}?id=${id}`;
             } else if (mode === 'delete') {
-                if (confirm(`Bạn có chắc chắn muốn xóa mục này không?`)) {
-                    try {
-                        if (config.gridId === 'images-grid') {
-                            await api.images.delete(id);
-                        } else {
-                            console.log(`Đang xóa bộ sưu tập ${id}`);
-                        }
-                        alert(`Đã xóa thành công!`);
-                        await loadData();
-                        mode = 'normal';
-                        renderButtons();
-                    } catch (error) {
-                        alert(`Xóa thất bại: ${error.message}`);
-                    }
+                if (confirm('Xác nhận xóa?')) {
+                    data = data.filter(item => item.id !== id);
+                    renderGrid();
+                    renderPagination();
                 }
             } else {
-                if (config.onItemClick) {
-                    config.onItemClick(id);
-                }
+                if (config.onItemClick) config.onItemClick(id);
             }
         };
 
         const handlePaginationClick = (e) => {
-            const target = e.target.closest('.page-item');
-            if (!target || target.classList.contains('disabled') || target.classList.contains('active')) return;
+            const pageItem = e.target.closest('.page-item');
+            if (!pageItem || pageItem.classList.contains('disabled')) return;
 
-            const pageAction = target.dataset.page;
-            const totalPages = Math.ceil(data.length / itemsPerPage);
-
-            if (pageAction === 'prev' && currentPage > 1) {
-                currentPage--;
-            } else if (pageAction === 'next' && currentPage < totalPages) {
-                currentPage++;
-            } else {
-                currentPage = parseInt(pageAction);
-            }
+            const page = pageItem.dataset.page;
+            if (page === 'prev') currentPage--;
+            else if (page === 'next') currentPage++;
+            else currentPage = parseInt(page);
 
             renderGrid();
             renderPagination();
@@ -142,18 +124,22 @@
 
         // --- HÀM TẢI DỮ LIỆU ---
         const loadData = async () => {
-            gridContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full">Đang tải...</p>`;
-            paginationContainer.innerHTML = '';
             try {
                 if (config.fetchData) {
                     data = await config.fetchData();
+                } else if (config.initialData) {
+                    data = config.initialData;
                 }
-                currentPage = 1;
+
+                if (config.gridId === 'collections-grid') {
+                    localStorage.setItem('allCollectionsData', JSON.stringify(data));
+                }
+
                 renderGrid();
                 renderPagination();
             } catch (error) {
                 console.error(`Lỗi khi tải dữ liệu cho ${config.gridId}:`, error);
-                gridContainer.innerHTML = `<p class="text-center text-red-500 col-span-full">Tải dữ liệu thất bại.</p>`;
+                gridContainer.innerHTML = `<p class="text-center text-red-500 col-span-full">Tải dữ liệu thất bại. ${error.message}</p>`;
             }
         };
 
@@ -166,13 +152,11 @@
         paginationContainer.addEventListener('click', handlePaginationClick);
 
         // --- KHỞI TẠO ---
-        renderButtons();
-        loadData();
+        renderButtons(); // Render nút ngay lập tức
+        loadData(); // Load dữ liệu sau
     };
 
-    // --- CẤU HÌNH CHO CÁC KHU VỰC ---
-
-    // Cấu hình cho Section Bộ sưu tập (dùng dữ liệu mẫu)
+    // --- KHỞI TẠO CÁC SECTION ---
     const collectionsConfig = {
         buttonsId: 'collections-buttons',
         gridId: 'collections-grid',
@@ -180,10 +164,7 @@
         addUrl: '/Collection/AddCollection',
         editUrl: '/Collection/EditCollection',
         emptyMessage: 'Bạn chưa tạo bộ sưu tập nào.',
-        initialData: [
-            { id: 1, name: 'Ảnh Du Lịch 2024', thumbnail: 'https://picsum.photos/id/1015/300/200' },
-            { id: 2, name: 'Gia Đình & Bạn Bè', thumbnail: 'https://picsum.photos/id/1025/300/200' },
-        ],
+        fetchData: () => api.collections.getAll(),
         renderItem: (item, mode) => `
             <div class="item-card" data-id="${item.id}">
                 <img src="${item.thumbnail}" alt="${item.name}" />
@@ -197,7 +178,6 @@
         `
     };
 
-    // Cấu hình cho Section Ảnh (dùng API thật)
     const imagesConfig = {
         buttonsId: 'images-buttons',
         gridId: 'images-grid',
@@ -212,7 +192,7 @@
         renderItem: (item, mode) => {
             const imageUrl = item.thumbnailUrl || item.url;
             return `
-                 <div class="item-card" data-id="${item.id}">
+                <div class="item-card" data-id="${item.id}">
                     <img src="${imageUrl}" alt="${item.title}" />
                     <div class="item-card-title">${item.title}</div>
                     ${(mode !== 'normal') ? `
@@ -225,7 +205,6 @@
         }
     };
 
-    // Khởi tạo cả hai section
     createManagementSection(collectionsConfig);
     createManagementSection(imagesConfig);
 });
