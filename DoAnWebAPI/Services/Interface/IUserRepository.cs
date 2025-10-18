@@ -1,4 +1,4 @@
-using DoAnWebAPI.Model.Domain;
+﻿using DoAnWebAPI.Model.Domain;
 using DoAnWebAPI.Model.DTO.User;
 using FirebaseWebApi.Models;
 using System.Collections.Generic;
@@ -21,5 +21,7 @@ namespace DoAnWebAPI.Services.Interface
         Task<User?> GetUserDomainByIdAsync(int id);
         Task<User?> GetByUsernameAsync(string username);
         Task<int> GetNextIdAsync();
+
+        Task<bool> UpdatePasswordHashAsync(int userId, string newPasswordHash);
     }
 }

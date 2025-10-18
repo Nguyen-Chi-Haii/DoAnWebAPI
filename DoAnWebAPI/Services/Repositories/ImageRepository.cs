@@ -43,16 +43,24 @@ namespace DoAnWebAPI.Services.Repositories
             var imagesData = imageResponse.ResultAs<Dictionary<string, Image>>();
             if (imagesData == null) return new List<ImageDTO>();
 
-            var allStats = await _statRepository.GetAllAsync();
+            // ✅ THAY ĐỔI Ở ĐÂY: Không tải tất cả stats/likes trước
+            // var allStats = await _statRepository.GetAllAsync(); // Bỏ dòng này
             var allTags = await _tagRepository.GetAllAsync();
             var allTopics = await _topicRepository.GetAllAsync();
-            var userLikes = currentUserId.HasValue
-                ? await _likeRepository.GetLikesByUserIdAsync(currentUserId.Value)
-                : new List<Like>();
+            // var userLikes = ... // Bỏ dòng này
 
-            var imageDtos = imagesData.Values.Select(image =>
+            var imageDtoTasks = imagesData.Values.Select(async image => // ✅ Thêm 'async'
             {
-                var stat = allStats.FirstOrDefault(s => s.ImageId == image.Id);
+                // ✅ THAY ĐỔI Ở ĐÂY: Gọi GetStat và GetLike cho TỪNG ảnh
+                var stat = await _statRepository.GetStatByImageIdAsync(image.Id);
+                var isLiked = false;
+                if (currentUserId.HasValue)
+                {
+                    // ✅ Dùng hàm giống GetByIdAsync
+                    isLiked = (await _likeRepository.GetLikeByImageAndUserAsync(image.Id, currentUserId.Value)) != null;
+                }
+
+                // Lấy tags/topics (giữ nguyên)
                 var tagsForImage = allTags
                     .Where(tag => image.TagIds?.Contains(tag.Id) ?? false)
                     .Select(tag => new TagDTO { Id = tag.Id, Name = tag.Name })
@@ -72,14 +80,19 @@ namespace DoAnWebAPI.Services.Repositories
                     ThumbnailUrl = image.ThumbnailUrl,
                     IsPublic = image.IsPublic,
                     Status = image.Status,
+                    CreatedAt = image.CreatedAt, // ✅ THÊM CreatedAt
                     Tags = tagsForImage,
                     Topics = topicsForImage,
                     LikeCount = stat?.LikesCount ?? 0,
-                    IsLikedByCurrentUser = userLikes.Any(l => l.ImageId == image.Id)
+                    IsLikedByCurrentUser = isLiked // ✅ Dùng biến isLiked
                 };
             }).ToList();
 
-            return imageDtos.OrderByDescending(i => i.Id);
+            // ✅ Đợi tất cả các Task hoàn thành
+            var imageDtos = await Task.WhenAll(imageDtoTasks);
+
+            // ✅ Sắp xếp kết quả cuối cùng (nếu cần)
+            return imageDtos.OrderByDescending(i => i.CreatedAt);
         }
 
         public async Task<ImageDTO?> GetByIdAsync(string id, int? currentUserId = null)
@@ -181,6 +194,7 @@ namespace DoAnWebAPI.Services.Repositories
             image.TagIds = dto.TagIds ?? image.TagIds;
             image.TopicIds = dto.TopicIds ?? image.TopicIds;
             image.UpdatedAt = DateTime.UtcNow;
+            image.Status = dto.Status ?? image.Status;
 
             await _firebase.UpdateAsync($"images/{id}", image);
             return true;

@@ -1,4 +1,4 @@
-using DoAnWebAPI.Model.Domain;
+﻿using DoAnWebAPI.Model.Domain;
 using DoAnWebAPI.Model.DTO.Auth;
 using DoAnWebAPI.Services.Interface;
 using FirebaseAdmin.Auth;
@@ -20,16 +20,34 @@ namespace DoAnWebAPI.Controllers
     {
         private readonly IUserRepository _userRepository;
         private readonly ILogger<AuthController> _logger;
-        private readonly IConfiguration _configuration; // ✅ ĐÃ THÊM
+        private readonly IConfiguration _configuration;
+        private readonly IHttpClientFactory _httpClientFactory; // ✅ THÊM DÒNG NÀY
 
-        // Record cho Login (Fixed 500 error)
-        private record FirebaseLoginResult(string idToken, string localId);
+        // Record cho Login (Fixed 500 error)
+        private record FirebaseLoginResult(string idToken, string localId, string email); // ✅ Thêm email
 
-        public AuthController(IUserRepository userRepository, ILogger<AuthController> logger, IConfiguration configuration) // ✅ ĐÃ SỬA
-        {
+        // ✅ SỬA CONSTRUCTOR
+        public AuthController(
+            IUserRepository userRepository,
+            ILogger<AuthController> logger,
+            IConfiguration configuration,
+            IHttpClientFactory httpClientFactory) // ✅ THÊM THAM SỐ NÀY
+        {
             _userRepository = userRepository;
             _logger = logger;
             _configuration = configuration;
+            _httpClientFactory = httpClientFactory; // ✅ THÊM DÒNG NÀY
+        }
+
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst("local_id");
+
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            {
+                throw new UnauthorizedAccessException("Người dùng chưa được xác thực hoặc không tìm thấy Local ID (int) trong token.");
+            }
+            return userId;
         }
 
         // ✅ Đăng ký bằng Firebase
@@ -218,6 +236,87 @@ namespace DoAnWebAPI.Controllers
             var email = User.FindFirst("email")?.Value;
             var localId = User.FindFirst("local_id")?.Value; // Để kiểm tra claim mới
             return Ok(new { Uid = uid, Email = email, LocalId = localId, Message = "Authenticated successfully" });
+        }
+
+
+        [HttpPost("change-password")]
+        [Authorize] // Yêu cầu phải đăng nhập
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (dto.NewPassword != dto.ConfirmPassword)
+            {
+                ModelState.AddModelError("ConfirmPassword", "Mật khẩu mới và mật khẩu xác nhận không khớp.");
+                return BadRequest(ModelState);
+            }
+
+            int currentUserId;
+            try
+            {
+                // Lấy ID (int) từ token
+                currentUserId = GetCurrentUserId();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { Message = ex.Message });
+            }
+
+            // Lấy thông tin user từ DB (chủ yếu để lấy Email)
+            var user = await _userRepository.GetByIdAsync(currentUserId);
+            if (user == null)
+            {
+                return NotFound(new { Message = "Không tìm thấy người dùng." });
+            }
+
+            // --- Xác thực mật khẩu cũ bằng cách gọi API Login của Firebase ---
+            var apiKey = _configuration["Firebase:WebApiKey"];
+            var http = _httpClientFactory.CreateClient();
+            var loginBody = new { email = user.Email, password = dto.CurrentPassword, returnSecureToken = true };
+
+            var loginResponse = await http.PostAsJsonAsync(
+                $"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={apiKey}", loginBody);
+
+            if (!loginResponse.IsSuccessStatusCode)
+            {
+                // Mật khẩu hiện tại sai
+                return BadRequest(new { Message = "Mật khẩu hiện tại không đúng." });
+            }
+            // --- Kết thúc xác thực ---
+
+            try
+            {
+                // Lấy Firebase UID (localId) từ kết quả login
+                var loginResult = await loginResponse.Content.ReadFromJsonAsync<FirebaseLoginResult>();
+                var firebaseUid = loginResult?.localId;
+
+                if (string.IsNullOrEmpty(firebaseUid))
+                {
+                    return StatusCode(500, new { Message = "Lỗi khi lấy Firebase UID." });
+                }
+
+                // 1. Cập nhật mật khẩu trên Firebase
+                var args = new UserRecordArgs
+                {
+                    Uid = firebaseUid,
+                    Password = dto.NewPassword
+                };
+                await FirebaseAuth.DefaultInstance.UpdateUserAsync(args);
+
+                // 2. Cập nhật "mật khẩu" (nếu cần) trong DB local của bạn
+                // (Lưu ý: Theo code Register, bạn đang lưu plaintext, điều này không an toàn)
+                await _userRepository.UpdatePasswordHashAsync(currentUserId, dto.NewPassword);
+
+                return Ok(new { Message = "Đổi mật khẩu thành công." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi cập nhật mật khẩu trên Firebase.");
+                return StatusCode(500, new { Message = "Lỗi máy chủ khi đổi mật khẩu.", Error = ex.Message });
+            }
         }
     }
 }

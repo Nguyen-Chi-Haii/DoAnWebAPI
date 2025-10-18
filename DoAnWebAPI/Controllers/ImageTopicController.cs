@@ -21,7 +21,7 @@ namespace DoAnWebAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "UserOrAdmin")]
+        [Authorize]
         public async Task<ActionResult<List<ImageTopicDTO>>> GetTopics(int imageId)
         {
             // Validate imageId
@@ -63,7 +63,7 @@ namespace DoAnWebAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize]
         public async Task<ActionResult<ImageTopicDTO>> AddTopic(int imageId, [FromBody] UpdateImageTopicDTO request)
         {
             // Validate model state
@@ -108,7 +108,7 @@ namespace DoAnWebAPI.Controllers
         }
 
         [HttpDelete("{topicId}")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize]
         public async Task<IActionResult> RemoveTopic(int imageId, int topicId)
         {
             // Validate input

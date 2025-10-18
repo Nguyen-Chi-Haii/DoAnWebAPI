@@ -25,17 +25,14 @@ namespace DoAnWebAPI.Controllers
         }
 
         // ✅ FIX LỖI 401: Lấy Local ID (integer) từ Custom Claim "local_id"
-        private int GetCurrentUserId()
+        private int? GetCurrentUserIdOrDefault()
         {
-            // 💡 Tìm kiếm Custom Claim "local_id" (được thiết lập trong AuthController)
             var userIdClaim = User.FindFirst("local_id");
-
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
             {
-                // Thông báo chi tiết để debug
-                throw new UnauthorizedAccessException("Người dùng chưa được xác thực hoặc không tìm thấy Local ID (int) trong token. Vui lòng login lại.");
+                return userId;
             }
-            return userId;
+            return null;
         }
 
         // Helper to map Domain model to DTO
@@ -65,26 +62,19 @@ namespace DoAnWebAPI.Controllers
             return Ok(dtos);
         }
 
-        // POST /api/images/{imageId}/like
         [HttpPost]
         [Authorize]
-        // Lưu ý: [FromBody] CreateLikeDTO dto có thể bỏ qua nếu bạn chỉ cần ImageId từ route và UserId từ token.
-        // Tuy nhiên, tôi giữ nguyên để khớp với chữ ký của bạn.
-        public async Task<ActionResult<LikeDTO>> PostLike(int imageId, [FromBody] CreateLikeDTO dto)
+        public async Task<ActionResult<LikeDTO>> PostLike(int imageId)
         {
             if (imageId <= 0)
             {
                 return BadRequest("ImageId không hợp lệ.");
             }
-            if (imageId != dto.ImageId)
-            {
-                return BadRequest("ImageId trong route phải khớp với ImageId trong body.");
-            }
 
             int currentUserId;
             try
             {
-                currentUserId = GetCurrentUserId(); // ✅ FIX: Lấy Local ID đã sửa lỗi
+                currentUserId = (int)GetCurrentUserIdOrDefault();
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -99,12 +89,13 @@ namespace DoAnWebAPI.Controllers
 
             var createdLike = await _likeRepository.CreateLikeAsync(currentUserId, imageId);
 
-            // ✅ Cập nhật Stats: Tăng số Likes
+            // ✅ Cập nhật Stats
             await _statRepository.IncrementLikesAsync(imageId);
 
             var responseDto = MapToDTO(createdLike);
             return Created(string.Empty, responseDto);
         }
+
 
         // DELETE /api/images/{imageId}/like
         [HttpDelete]
@@ -119,7 +110,7 @@ namespace DoAnWebAPI.Controllers
             int currentUserId;
             try
             {
-                currentUserId = GetCurrentUserId();
+                currentUserId = (int)GetCurrentUserIdOrDefault();
             }
             catch (UnauthorizedAccessException ex)
             {

@@ -113,30 +113,49 @@ namespace DoAnWebAPI.Controllers
             if (user == null) return NotFound();
             return Ok(user);
         }
-
-        // PUT /api/users/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateUserDTO dto)
+        public async Task<IActionResult> Update(int id, [FromForm] UpdateUserDTO dto)
         {
-            // ✅ Data Validation
+            // 1. Validation
             if (id <= 0)
             {
                 return BadRequest("ID User không hợp lệ.");
             }
+
+            // Kiểm tra xem ID "me" hay là ID số
+            int targetUserId = id;
+            if (id.ToString().ToLower() == "me") // Cho phép dùng "me"
+            {
+                try
+                {
+                    targetUserId = GetCurrentUserId(); // Lấy ID của user đang đăng nhập
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    return Unauthorized(new { Message = ex.Message });
+                }
+            }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            // 🔑 Phân quyền: Admin HOẶC Same User
-            if (!IsAdminOrSameUser(id))
+            // 2. Phân quyền: Admin HOẶC Same User
+            if (!IsAdminOrSameUser(targetUserId))
             {
-                // 💡 FIX: Trả về StatusCode(403) thay vì Forbid("message")
                 return StatusCode(403, new { Message = "Bạn không có quyền cập nhật hồ sơ người dùng này." });
             }
 
-            var result = await _userRepository.UpdateAsync(id, dto);
-            if (!result) return NotFound("Không tìm thấy người dùng.");
+            // 3. Gọi Repository (Repository của bạn CẦN được cập nhật để xử lý DTO này)
+            // (Bạn cần truyền cả file và dữ liệu text đến repository)
+            var result = await _userRepository.UpdateAsync(targetUserId, dto);
+
+            if (!result)
+            {
+                return NotFound("Không tìm thấy người dùng.");
+            }
+
             return NoContent();
         }
 

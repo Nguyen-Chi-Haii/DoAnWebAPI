@@ -26,7 +26,7 @@ namespace DoAnWebAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "UserOrAdmin")]
+        [Authorize]
         public async Task<IActionResult> GetAll()
         {
             var result = await _imageTagRepository.GetAllAsync();
@@ -34,7 +34,7 @@ namespace DoAnWebAPI.Controllers
         }
 
         [HttpGet("image/{imageId}")]
-        [Authorize(Policy = "UserOrAdmin")]
+        [Authorize]
         public async Task<IActionResult> GetByImageId(int imageId)
         {
             if (imageId <= 0)
@@ -49,7 +49,7 @@ namespace DoAnWebAPI.Controllers
         }
 
         [HttpGet("tag/{tagId}")]
-        [Authorize(Policy = "UserOrAdmin")]
+        [Authorize]
         public async Task<IActionResult> GetByTagId(int tagId)
         {
             if (tagId <= 0)
@@ -64,7 +64,7 @@ namespace DoAnWebAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize]
         public async Task<IActionResult> Add([FromBody] UpdateImageTagDTO dto)
         {
             if (!ModelState.IsValid)

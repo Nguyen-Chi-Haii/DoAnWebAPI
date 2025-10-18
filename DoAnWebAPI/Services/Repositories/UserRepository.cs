@@ -1,4 +1,4 @@
-using DoAnWebAPI.Model.Domain;
+﻿using DoAnWebAPI.Model.Domain;
 using DoAnWebAPI.Model.DTO.User;
 using DoAnWebAPI.Services;
 using DoAnWebAPI.Services.Interface;
@@ -128,6 +128,11 @@ namespace DoAnWebAPI.Services.Repositories
             var dict = await _firebaseService.GetDataAsync<Dictionary<string, User>>(Collection);
             return dict?.Values.FirstOrDefault(x =>
                 x.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public Task<bool> UpdatePasswordHashAsync(int userId, string newPasswordHash)
+        {
+            return Task.FromResult(true);
         }
     }
 }

@@ -17,6 +17,6 @@ namespace DoAnWebAPI.Model.DTO.Image
         public List<TopicDTO> Topics { get; set; }
         public int LikeCount { get; set; } = 0; // Mặc định là 0
         public bool IsLikedByCurrentUser { get; set; } = false; // Mặc định là false
-
+        public DateTime CreatedAt { get; internal set; }
     }
 }

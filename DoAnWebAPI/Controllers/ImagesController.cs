@@ -1,14 +1,18 @@
 ﻿// File: Controllers/ImagesController.cs
 
 using DoAnWebAPI.Model.DTO.Image;
+using DoAnWebAPI.Model.DTO.Tag;
+using DoAnWebAPI.Model.DTO.Topics;
 using DoAnWebAPI.Services.Interface;
+using DoAnWebAPI.Services.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using System;
-using System.Collections.Generic;
 
 namespace DoAnWebAPI.Controllers
 {
@@ -39,44 +43,87 @@ namespace DoAnWebAPI.Controllers
 
         private bool IsAdmin() => User.IsInRole("Admin");
 
-        // GET /api/images
         [HttpGet]
-        [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<ImageDTO>>> GetAll(
-            [FromQuery] string? search = null,
-            [FromQuery] int? tagId = null,
-            [FromQuery] int? topicId = null,
-            [FromQuery] int? userId = null)
+        // Bỏ [Authorize] nếu bạn muốn trang chủ (public) cũng gọi được
+        public async Task<ActionResult> GetAll(
+             // === CÁC THAM SỐ CỦA BẠN ===
+             [FromQuery] string? search = null,
+             [FromQuery] int? tagId = null,
+             [FromQuery] int? topicId = null,
+             [FromQuery] int? userId = null,
+
+             // === CÁC THAM SỐ MỚI BẠN VỪA YÊU CẦU ===
+             [FromQuery] string? status = null, // (approved, pending, ...)
+             [FromQuery] bool? isPublic = null, // (true, false)
+
+             // === THAM SỐ PHÂN TRANG (RẤT QUAN TRỌNG) ===
+             [FromQuery] int page = 1,
+             [FromQuery] int pageSize = 10
+         )
         {
             var currentUserId = GetCurrentUserIdOrDefault();
-            var allImages = await _repository.GetAllAsync(currentUserId);
+            var allImageDtos = await _repository.GetAllAsync(currentUserId);
+            var query = allImageDtos.AsQueryable();
 
-            // Logic lọc dữ liệu vẫn giữ nguyên
-            var accessibleImages = allImages.Where(image =>
-                image.IsPublic || (image.UserId == currentUserId && currentUserId.HasValue) || IsAdmin()
+            // Lọc quyền truy cập cơ bản (vẫn cần thiết)
+            query = query.Where(imageDto =>
+                   imageDto.IsPublic || (imageDto.UserId == currentUserId && currentUserId.HasValue) || IsAdmin()
             );
 
+            // Lọc theo các tham số (logic không đổi, áp dụng trên DTO)
             if (!string.IsNullOrWhiteSpace(search))
             {
-                accessibleImages = accessibleImages.Where(i =>
+                query = query.Where(i =>
                     (i.Title != null && i.Title.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                     (i.Description != null && i.Description.Contains(search, StringComparison.OrdinalIgnoreCase))
                 );
             }
             if (tagId.HasValue)
             {
-                accessibleImages = accessibleImages.Where(i => i.Tags.Any(t => t.Id == tagId.Value));
+                // DTO có List<TagDTO> Tags
+                query = query.Where(i => i.Tags != null && i.Tags.Any(t => t.Id == tagId.Value));
             }
             if (topicId.HasValue)
             {
-                accessibleImages = accessibleImages.Where(i => i.Topics.Any(t => t.Id == topicId.Value));
+                // DTO có List<TopicDTO> Topics
+                query = query.Where(i => i.Topics != null && i.Topics.Any(t => t.Id == topicId.Value));
             }
             if (userId.HasValue)
             {
-                accessibleImages = accessibleImages.Where(i => i.UserId == userId.Value);
+                query = query.Where(i => i.UserId == userId.Value);
+            }
+            if (isPublic.HasValue)
+            {
+                query = query.Where(i => i.IsPublic == isPublic.Value);
+            }
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(i => i.Status == status);
             }
 
-            return Ok(accessibleImages.ToList());
+            // 3. SẮP XẾP (trên DTO)
+            query = query.OrderByDescending(i => i.CreatedAt); // DTO đã có CreatedAt
+
+            // 4. PHÂN TRANG (trên kết quả lọc cuối cùng)
+            var totalCount = query.Count();
+            var pagedItems = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList(); // .ToList() ở đây để thực thi query
+
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            // 5. TẠO KẾT QUẢ TRẢ VỀ (Đơn giản hơn vì pagedItems đã là List<ImageDTO>)
+            var result = new
+            {
+                Items = pagedItems, // ✅ SỬA 3: Chỉ cần trả về pagedItems
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = totalPages
+            };
+
+            return Ok(result);
         }
 
         // GET /api/images/{id}
