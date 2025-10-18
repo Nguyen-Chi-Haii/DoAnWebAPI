@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DoAnWebAPI_WebMVC")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+97ffd3e8ec70150ca17088755906b740be9e631a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5777ec53e6b491e4383a0e428ef452d01a9ce829")]
 [assembly: System.Reflection.AssemblyProductAttribute("DoAnWebAPI_WebMVC")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DoAnWebAPI_WebMVC")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
