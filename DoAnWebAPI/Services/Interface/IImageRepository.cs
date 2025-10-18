@@ -34,5 +34,7 @@ namespace DoAnWebAPI.Services.Interface
 
         // GIỮ NGUYÊN:
         Task<bool> DeleteAsync(string id);
+        // AFTER
+        Task<IEnumerable<ImageDTO>> GetByUserIdAsync(int userId);
     }
 }

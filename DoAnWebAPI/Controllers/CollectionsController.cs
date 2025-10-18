@@ -1,12 +1,12 @@
 ﻿using DoAnWebAPI.Model.DTO.Collection;
 using DoAnWebAPI.Services.Interface;
+using Microsoft.AspNetCore.Authorization; // Thêm
 using Microsoft.AspNetCore.Mvc;
+using System; // Thêm cho UnauthorizedAccessException
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization; // Thêm
 using System.Security.Claims; // Thêm
-using System; // Thêm cho UnauthorizedAccessException
+using System.Threading.Tasks;
 
 namespace DoAnWebAPI.Controllers
 {
@@ -27,14 +27,14 @@ namespace DoAnWebAPI.Controllers
         }
 
         // Helper để lấy ID người dùng đã xác thực (từ Claims)
-        private int GetCurrentUserId()
+        private int? GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            var userIdClaim = User.FindFirst("local_id");
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
             {
-                throw new UnauthorizedAccessException("Người dùng chưa được xác thực hoặc không tìm thấy ID.");
+                return userId;
             }
-            return userId;
+            return null;
         }
 
         // Helper to map Domain model to DTO
@@ -73,7 +73,7 @@ namespace DoAnWebAPI.Controllers
             {
                 try
                 {
-                    currentUserId = GetCurrentUserId();
+                    currentUserId = (int)GetCurrentUserId();
                 }
                 catch (UnauthorizedAccessException) { /* Coi như là guest nếu có lỗi parsing */ }
             }
@@ -92,37 +92,51 @@ namespace DoAnWebAPI.Controllers
             return Ok(dtos);
         }
 
-        // GET /api/collections/{id}
         [HttpGet("{id}")]
-        [AllowAnonymous] // Cho phép người dùng chưa đăng nhập xem public collections
+        [AllowAnonymous]
         public async Task<ActionResult<CollectionDTO>> GetById(int id)
         {
             var collection = await _collectionRepository.GetByIdAsync(id);
             if (collection == null) return NotFound();
 
-            var currentUserId = 0;
-            if (User.Identity.IsAuthenticated)
-            {
-                try
-                {
-                    currentUserId = GetCurrentUserId();
-                }
-                catch (UnauthorizedAccessException) { /* Coi như là guest */ }
-            }
+            var currentUserId = User.Identity.IsAuthenticated ? GetCurrentUserId() : 0;
 
-            // Kiểm tra quyền truy cập: Nếu không Public VÀ không phải chủ sở hữu -> Forbidden
             if (!collection.IsPublic && collection.UserId != currentUserId)
             {
-                return Forbid("Bạn không có quyền xem bộ sưu tập private này."); // 403 Forbidden
+                return Forbid("Bạn không có quyền xem bộ sưu tập private này.");
             }
 
-            var dto = await MapToDTO(collection);
-            return Ok(dto);
+            // ✅ BẮT ĐẦU SỬA LỖI TẠI ĐÂY
+            // Bỏ qua hàm MapToDTO và xử lý trực tiếp để tối ưu và đúng dữ liệu
+
+            // 1. Lấy danh sách các liên kết ảnh-bộ sưu tập
+            var imageLinks = await _collectionImageRepository.GetImagesByCollectionIdAsync(collection.Id);
+            var imageDtos = new List<Model.DTO.Image.ImageDTO>();
+
+            // 2. Lấy thông tin chi tiết cho từng ảnh
+            if (imageLinks.Any())
+            {
+                var imageTasks = imageLinks.Select(link => _imageRepository.GetByIdAsync(link.ImageId.ToString()));
+                var images = (await Task.WhenAll(imageTasks)).Where(img => img != null);
+                imageDtos.AddRange(images);
+            }
+
+            // 3. Tạo DTO trả về với dữ liệu chính xác
+            return Ok(new CollectionDTO
+            {
+                Id = collection.Id,
+                UserId = collection.UserId,
+                Name = collection.Name,
+                IsPublic = collection.IsPublic,
+                Images = imageDtos, // Trả về danh sách đối tượng ảnh đầy đủ
+                ImageCount = imageDtos.Count // Đếm số lượng ảnh chính xác
+            });
+            // ✅ KẾT THÚC SỬA LỖI
         }
 
         // POST /api/collections
         [HttpPost]
-        [AllowAnonymous] // ✅ Cho phép tạo collection không cần đăng nhập
+        // 🔐 Yêu cầu đăng nhập (sử dụng [Authorize] ở cấp Controller)
         public async Task<ActionResult<CollectionDTO>> Create(CreateCollectionDTO dto)
         {
             // ✅ Data Validation: Tự động kiểm tra [Required], [MaxLength] từ DTO
@@ -131,25 +145,20 @@ namespace DoAnWebAPI.Controllers
                 return BadRequest(ModelState);
             }
 
-            // ✅ Lấy userId từ Claims nếu có, nếu không dùng userId = 1 (mặc định)
-            int currentUserId = 1; // Giá trị mặc định cho user guest
-            if (User.Identity.IsAuthenticated)
+            int currentUserId;
+            try
             {
-                try
-                {
-                    currentUserId = GetCurrentUserId();
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    // Nếu có lỗi, vẫn dùng userId = 1
-                    currentUserId = 1;
-                }
+                currentUserId = (int)GetCurrentUserId();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message); // 401 Unauthorized (Dù đã có [Authorize] nhưng thêm vào để an toàn)
             }
 
-            // 🔑 Tạo Domain Model và gán UserId
+            // 🔑 Phân quyền: Tạo Domain Model và gán UserId từ người dùng đã xác thực
             var collectionToCreate = new Model.Collection
             {
-                UserId = currentUserId,
+                UserId = currentUserId, // 🔑 OVERRIDE: Chỉ dùng ID từ Claims
                 Name = dto.Name,
                 Description = dto.Description,
                 IsPublic = dto.IsPublic
@@ -176,7 +185,7 @@ namespace DoAnWebAPI.Controllers
             int currentUserId;
             try
             {
-                currentUserId = GetCurrentUserId();
+                currentUserId = (int)GetCurrentUserId();
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -205,7 +214,7 @@ namespace DoAnWebAPI.Controllers
             int currentUserId;
             try
             {
-                currentUserId = GetCurrentUserId();
+                currentUserId = (int)GetCurrentUserId();
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -224,6 +233,55 @@ namespace DoAnWebAPI.Controllers
             var result = await _collectionRepository.DeleteAsync(id);
             if (!result) return NotFound();
             return NoContent();
+        }
+        [HttpGet("/api/users/{userId}/collections")]
+        [ProducesResponseType(typeof(List<CollectionDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetCollectionsByUserId(int userId)
+        {
+            var collections = await _collectionRepository.GetByUserIdAsync(userId);
+
+            if (collections == null || !collections.Any())
+            {
+                return Ok(new List<CollectionDTO>());
+            }
+
+            // Dùng Task.WhenAll để xử lý logic cho tất cả collection một cách song song
+            var collectionDtoTasks = collections.Select(async collection =>
+            {
+                // Lấy danh sách ID ảnh trong collection
+                var collectionImages = await _collectionImageRepository.GetImagesByCollectionIdAsync(collection.Id);
+
+                string thumbnailUrl = "https://via.placeholder.com/300x200.png?text=No+Image"; // URL mặc định
+
+                // Nếu có ảnh trong collection
+                if (collectionImages.Any())
+                {
+                    // 3. Lấy ra ImageId từ đối tượng đầu tiên và chuyển thành chuỗi
+                    var firstImageId = collectionImages.First().ImageId.ToString();
+
+                    // 4. ✅ SỬA LỖI Ở ĐÂY: Dùng ID kiểu chuỗi để gọi GetByIdAsync
+                    var firstImage = await _imageRepository.GetByIdAsync(firstImageId);
+                    if (firstImage != null)
+                    {
+                        thumbnailUrl = firstImage.ThumbnailUrl;
+                    }
+                }
+
+                return new CollectionDTO
+                {
+                    Id = collection.Id,
+                    Name = collection.Name,
+                    Description = collection.Description,
+                    IsPublic = collection.IsPublic,
+                    UserId = collection.UserId,
+                    ImageCount = collectionImages.Count, // ✅ Đếm số ảnh
+                    ThumbnailUrl = thumbnailUrl  // ✅ Lấy thumbnail
+                };
+            });
+
+            var collectionDtos = await Task.WhenAll(collectionDtoTasks);
+
+            return Ok(collectionDtos.ToList());
         }
     }
 }

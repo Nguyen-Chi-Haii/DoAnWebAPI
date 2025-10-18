@@ -212,5 +212,24 @@ namespace DoAnWebAPI.Controllers
             // Trình duyệt sẽ tự động xử lý việc tải file xuống
             return Redirect(image.FileUrl);
         }
+        [HttpGet("/api/users/{userId}/images")]
+        public async Task<ActionResult<IEnumerable<ImageDTO>>> GetImagesByUser(int userId)
+        {
+            if (userId <= 0)
+            {
+                return BadRequest("UserID không hợp lệ.");
+            }
+
+            // Gọi phương thức mới trong repository
+            var userImages = await _repository.GetByUserIdAsync(userId);
+
+            // Lọc để chỉ trả về các ảnh public nếu người xem không phải là chủ sở hữu hoặc admin
+            var currentUserId = GetCurrentUserIdOrDefault();
+            var accessibleImages = userImages.Where(image =>
+                image.IsPublic || image.UserId == currentUserId || IsAdmin()
+            );
+
+            return Ok(accessibleImages.ToList());
+        }
     }
 }

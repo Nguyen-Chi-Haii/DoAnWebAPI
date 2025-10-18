@@ -192,5 +192,15 @@ namespace DoAnWebAPI.Services.Repositories
             await _firebase.DeleteAsync($"images/{id}");
             return true;
         }
+
+        public async Task<IEnumerable<ImageDTO>> GetByUserIdAsync(int userId)
+        {
+            // Cách làm này tận dụng lại logic đã có trong GetAllAsync
+            // để lấy tất cả ảnh và các thông tin liên quan.
+            var allImages = await GetAllAsync();
+
+            // Dùng LINQ để lọc ra những ảnh có UserId khớp.
+            return allImages.Where(img => img.UserId == userId);
+        }
     }
 }

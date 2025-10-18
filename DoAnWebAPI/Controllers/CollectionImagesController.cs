@@ -3,7 +3,6 @@ using DoAnWebAPI.Model.DTO.CollectionImage;
 using DoAnWebAPI.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
 using DoAnWebAPI.Services;
 
@@ -11,7 +10,6 @@ namespace DoAnWebAPI.Controllers
 {
     [ApiController]
     [Route("api/collections/{collectionId}/images")]
-    [Authorize(Policy = "UserOrAdmin")]
     public class CollectionImagesController : ControllerBase
     {
         private readonly ICollectionImageRepository _collectionImageRepository;
@@ -20,10 +18,10 @@ namespace DoAnWebAPI.Controllers
         private readonly FirebaseService _firebaseService;
 
         public CollectionImagesController(
-       ICollectionImageRepository collectionImageRepository,
-       ICollectionRepository collectionRepository,
-       IImageRepository imageRepository,
-       FirebaseService firebaseService)
+            ICollectionImageRepository collectionImageRepository,
+            ICollectionRepository collectionRepository,
+            IImageRepository imageRepository,
+            FirebaseService firebaseService)
         {
             _collectionImageRepository = collectionImageRepository;
             _collectionRepository = collectionRepository;
@@ -31,15 +29,25 @@ namespace DoAnWebAPI.Controllers
             _firebaseService = firebaseService;
         }
 
+        // 🧩 Phương thức dùng chung để lấy thông tin user
+        private async Task<(int userId, bool isAdmin)> GetUserContextAsync()
+        {
+            var userIdClaim = User.FindFirst("local_id")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                throw new UnauthorizedAccessException("Missing or invalid local_id in token.");
+
+            var isAdmin = await _firebaseService.IsAdminAsync(userIdClaim);
+            return (userId, isAdmin);
+        }
+
+
+        // 📸 GET: Lấy danh sách ảnh trong collection
         [HttpGet]
         public async Task<ActionResult<List<CollectionImageDto>>> GetImages(int collectionId)
         {
             try
             {
-                if (collectionId <= 0)
-                {
-                    return BadRequest("Collection ID must be a positive integer.");
-                }
+                var (userId, isAdmin) = await GetUserContextAsync();
 
                 var collection = await _collectionRepository.GetByIdAsync(collectionId);
                 if (collection == null)
@@ -47,24 +55,24 @@ namespace DoAnWebAPI.Controllers
                     return NotFound("Collection not found.");
                 }
 
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var isAdmin = await _firebaseService.IsAdminAsync(userId);
-                if (!isAdmin && collection.UserId.ToString() != userId)
+                if (!isAdmin && collection.UserId != userId)
                 {
                     return Forbid("You are not authorized to view this collection's images.");
                 }
 
+
                 var collectionImages = await _collectionImageRepository.GetImagesByCollectionIdAsync(collectionId);
+
                 var dtos = collectionImages.Select(ci => new CollectionImageDto
                 {
                     ImageId = ci.ImageId,
                     AddedAt = ci.AddedAt
                 }).ToList();
 
+                // Xác thực dữ liệu DTO
                 foreach (var dto in dtos)
                 {
-                    var validationContext = new ValidationContext(dto);
-                    Validator.ValidateObject(dto, validationContext, validateAllProperties: true);
+                    Validator.ValidateObject(dto, new ValidationContext(dto), validateAllProperties: true);
                 }
 
                 return Ok(dtos);
@@ -73,64 +81,56 @@ namespace DoAnWebAPI.Controllers
             {
                 return BadRequest($"Validation error: {ex.Message}");
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
             catch (Exception ex)
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
 
+        // ➕ POST: Thêm ảnh vào collection
         [HttpPost("{imageId}")]
         public async Task<ActionResult> AddImage(int collectionId, int imageId)
         {
             try
             {
-                if (collectionId <= 0 || imageId <= 0)
-                {
-                    return BadRequest("Collection ID and Image ID must be positive integers.");
-                }
+                var (userId, isAdmin) = await GetUserContextAsync();
 
                 var collection = await _collectionRepository.GetByIdAsync(collectionId);
                 if (collection == null)
-                {
                     return NotFound("Collection not found.");
-                }
 
-                var image = await _imageRepository.GetByIdAsync(imageId.ToString()); // Sửa: Chuyển int imageId thành string
-                if (image == null)
-                {
-                    return NotFound("Image not found.");
-                }
-
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var isAdmin = await _firebaseService.IsAdminAsync(userId);
-                if (!isAdmin && collection.UserId.ToString() != userId)
-                {
+                if (!isAdmin && collection.UserId != userId)
                     return Forbid("You are not authorized to add images to this collection.");
-                }
+
+                var image = await _imageRepository.GetByIdAsync(imageId.ToString());
+                if (image == null)
+                    return NotFound("Image not found.");
 
                 var result = await _collectionImageRepository.AddImageToCollectionAsync(collectionId, imageId);
                 if (result == null)
-                {
                     return BadRequest("Image already exists in this collection or invalid input.");
-                }
 
-                var responseDto = new CollectionImageDto
+                var dto = new CollectionImageDto
                 {
                     ImageId = result.ImageId,
                     AddedAt = result.AddedAt
                 };
 
-                var validationContext = new ValidationContext(responseDto);
-                Validator.ValidateObject(responseDto, validationContext, validateAllProperties: true);
+                Validator.ValidateObject(dto, new ValidationContext(dto), validateAllProperties: true);
 
-                return CreatedAtAction(
-                    nameof(GetImages),
-                    new { collectionId },
-                    responseDto);
+                return CreatedAtAction(nameof(GetImages), new { collectionId }, dto);
             }
             catch (ValidationException ex)
             {
                 return BadRequest($"Validation error: {ex.Message}");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
             }
             catch (Exception ex)
             {
@@ -138,42 +138,34 @@ namespace DoAnWebAPI.Controllers
             }
         }
 
+        // ❌ DELETE: Xóa ảnh khỏi collection
         [HttpDelete("{imageId}")]
         public async Task<ActionResult> RemoveImage(int collectionId, int imageId)
         {
             try
             {
-                if (collectionId <= 0 || imageId <= 0)
-                {
-                    return BadRequest("Collection ID and Image ID must be positive integers.");
-                }
+                var (userId, isAdmin) = await GetUserContextAsync();
 
                 var collection = await _collectionRepository.GetByIdAsync(collectionId);
                 if (collection == null)
-                {
                     return NotFound("Collection not found.");
-                }
 
-                var image = await _imageRepository.GetByIdAsync(imageId.ToString()); // Sửa: Chuyển int imageId thành string
-                if (image == null)
-                {
-                    return NotFound("Image not found.");
-                }
-
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var isAdmin = await _firebaseService.IsAdminAsync(userId);
-                if (!isAdmin && collection.UserId.ToString() != userId)
-                {
+                if (!isAdmin && collection.UserId != userId)
                     return Forbid("You are not authorized to remove images from this collection.");
-                }
+
+                var image = await _imageRepository.GetByIdAsync(imageId.ToString());
+                if (image == null)
+                    return NotFound("Image not found.");
 
                 var success = await _collectionImageRepository.RemoveImageFromCollectionAsync(collectionId, imageId);
                 if (!success)
-                {
                     return NotFound("Image not found in this collection.");
-                }
 
                 return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
             }
             catch (Exception ex)
             {
