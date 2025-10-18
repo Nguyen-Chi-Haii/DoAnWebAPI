@@ -21,4 +21,9 @@
     @* Thêm 2 file script cần thiết cho trang chủ *@
     <script src="~/js/ImageDetail.js" asp-append-version="true"></script>
     <script src="~/js/HomeBody.js" asp-append-version="true"></script>
+    <script>
+        // Truyền các ID cần thiết sang cho JavaScript
+        const COLLECTION_ID = '@ViewBag.CollectionId';
+        const CURRENT_USER_ID = '@(Context.Session.GetString("UserId"))';
+    </script>
 }

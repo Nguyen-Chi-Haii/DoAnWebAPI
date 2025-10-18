@@ -1,180 +1,270 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
-    // ======= DỮ LIỆU GIẢ LẬP =======
-    const mockImages = Array.from({ length: 27 }, (_, i) => ({
-        id: i + 1,
-        title: `Ảnh chờ duyệt #${i + 1}`,
-        description: `Mô tả ngắn cho ảnh ${i + 1}. Đây là ảnh phong cảnh thiên nhiên.`,
-        uploader: `user_${100 + i}`,
-        uploadedAt: new Date(2025, 9, (i % 9) + 1, 14, (i * 7) % 60), // Dùng đối tượng Date để sắp xếp
-        url: `https://picsum.photos/500/300?image=${200 + i}`,
-    }));
-
+﻿// File: wwwroot/js/AdminApproval.js
+document.addEventListener('DOMContentLoaded', function () {
     // ======= BIẾN TRẠNG THÁI =======
     let currentPage = 1;
-    let searchTerm = "";
-    let filter = "Mới nhất"; // 'Mới nhất' hoặc 'Cũ nhất'
-    const imagesPerPage = 10;
+    let filters = { search: "" }; // Chỉ cần tìm kiếm cơ bản
+    const imagesPerPage = 9; // Có thể điều chỉnh số lượng mỗi trang
+    const userCache = {}; // Cache tên user
 
     // ======= LẤY CÁC PHẦN TỬ DOM =======
     const imageListContainer = document.getElementById('image-list-container');
     const searchInput = document.getElementById('search-input');
-    const filterSelect = document.getElementById('filter-select');
+    const noResults = document.getElementById('no-results');
     const prevPageBtn = document.getElementById('prev-page');
     const nextPageBtn = document.getElementById('next-page');
     const pageInfo = document.getElementById('page-info');
-    const noResults = document.getElementById('no-results');
+    const loadingSpinner = document.getElementById('loading-spinner');
 
-    // Popup DOMs
-    const detailsPopup = document.getElementById('details-popup');
-    const closePopupBtn = document.getElementById('close-popup-btn');
-    const popupTitle = document.getElementById('popup-title');
-    const popupImage = document.getElementById('popup-image');
-    const popupDescription = document.getElementById('popup-description');
-    const popupUploader = document.getElementById('popup-uploader');
-    const popupUploadedAt = document.getElementById('popup-uploadedAt');
-    const popupApproveBtn = document.getElementById('popup-approve-btn');
-    const popupRejectBtn = document.getElementById('popup-reject-btn');
+    // ======= HÀM SPINNER =======
+    function showSpinner() {
+        if (loadingSpinner) loadingSpinner.classList.remove('hidden');
+        imageListContainer.innerHTML = '';
+        noResults.classList.add('hidden');
+    }
+
+    function hideSpinner() {
+        if (loadingSpinner) loadingSpinner.classList.add('hidden');
+    }
 
     // ======= HÀM RENDER CHÍNH =======
-    function render() {
-        // 1. Lọc và Sắp xếp
-        let processedImages = mockImages
-            .filter(img => img.title.toLowerCase().includes(searchTerm.toLowerCase()))
-            .sort((a, b) => {
-                if (filter === 'Mới nhất') {
-                    return b.uploadedAt - a.uploadedAt;
-                } else {
-                    return a.uploadedAt - b.uploadedAt;
-                }
-            });
+    async function fetchAndRenderData() {
+        showSpinner();
+        try {
+            const filterParams = {
+                search: filters.search || "",
+                page: currentPage,
+                pageSize: imagesPerPage,
+                status: "pending" // ✅ CHỈ LẤY ẢNH PENDING
+            };
 
-        // 2. Phân trang
-        const totalPages = Math.ceil(processedImages.length / imagesPerPage);
-        currentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
-        const displayedImages = processedImages.slice(
-            (currentPage - 1) * imagesPerPage,
-            currentPage * imagesPerPage
-        );
+            const pagedResult = await api.images.getAll(filterParams); // Gọi API cũ nhưng với status=pending
+            const images = pagedResult.items;
+            imageListContainer.innerHTML = ''; // Xóa spinner
 
-        // 3. Render danh sách ảnh
-        imageListContainer.innerHTML = '';
-        if (displayedImages.length === 0) {
-            noResults.classList.remove('hidden');
-        } else {
-            noResults.classList.add('hidden');
-            displayedImages.forEach(img => {
-                const dateString = img.uploadedAt.toLocaleDateString('vi-VN');
-                const timeString = img.uploadedAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            if (!images || images.length === 0) {
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+                // Dùng Promise.all để tải tên user
+                const imageCardPromises = images.map(img => createApprovalCard(img));
+                const imageCardElements = await Promise.all(imageCardPromises);
+                imageCardElements.forEach(el => imageListContainer.appendChild(el));
+                if (window.lucide) lucide.createIcons(); // Cập nhật icons
+            }
+            updatePagination(pagedResult);
 
-                const card = document.createElement('div');
-                card.className = "flex flex-col sm:flex-row bg-white rounded-xl shadow-sm hover:shadow-md cursor-pointer transition group";
-                card.dataset.id = img.id;
-                card.innerHTML = `
-                    <img src="${img.url}" alt="${img.title}" class="w-full sm:w-40 h-52 sm:h-28 object-cover rounded-t-xl sm:rounded-l-xl sm:rounded-t-none bg-gray-100"/>
-                    <div class="flex flex-col flex-grow p-4">
-                        <h3 class="font-semibold text-lg group-hover:text-blue-600">${img.title}</h3>
-                        <p class="text-gray-600 text-sm">${img.description}</p>
-                        <div class="flex items-center gap-4 text-xs text-gray-500 mt-2">
-                            <span class="flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${img.uploader}
-                            </span>
-                            <span class="flex items-center gap-1">
-                               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5l3 3"/><circle cx="12" cy="12" r="10"/></svg> ${dateString} ${timeString}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="flex sm:flex-col items-center justify-center gap-2 p-3 sm:pr-4 border-t sm:border-t-0 sm:border-l border-gray-100">
-                        <button data-id="${img.id}" class="approve-btn bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-1 transition w-full sm:w-auto justify-center">✅ Duyệt</button>
-                        <button data-id="${img.id}" class="reject-btn bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-1 transition w-full sm:w-auto justify-center">❌ Hủy</button>
-                    </div>
-                `;
-                imageListContainer.appendChild(card);
-            });
+        } catch (error) {
+            console.error("Lỗi khi tải ảnh chờ duyệt:", error);
+            hideSpinner();
+            if (error.message !== "Unauthorized") {
+                imageListContainer.innerHTML = `<p class="text-red-500 text-center col-span-full">Không thể tải dữ liệu. ${error.message}</p>`;
+            }
+        } finally {
+            // Đảm bảo spinner luôn ẩn sau khi xong (trừ khi lỗi đã ẩn)
+            if (loadingSpinner && !loadingSpinner.classList.contains('hidden')) {
+                hideSpinner();
+            }
+        }
+    }
+
+    // ======= HÀM HỖ TRỢ =======
+    async function getUserName(userId) {
+        // (Giữ nguyên hàm getUserName từ AdminImages.js)
+        if (!userId) return "N/A";
+        if (userCache[userId]) return userCache[userId];
+        try {
+            const user = await api.users.getById(userId);
+            const userName = user.userName || `User ${userId}`;
+            userCache[userId] = userName;
+            return userName;
+        } catch (error) {
+            console.error(`Lỗi lấy user ${userId}:`, error);
+            userCache[userId] = `User ${userId}`;
+            return `User ${userId}`;
+        }
+    }
+
+    // ✅ HÀM TẠO CARD DUYỆT ẢNH MỚI
+    async function createApprovalCard(image) {
+        const div = document.createElement('div');
+        // Thêm data-id vào card chính để dễ lấy khi xử lý nút
+        div.className = 'approval-card bg-white rounded-lg shadow-md overflow-hidden flex flex-col border border-gray-200';
+        div.dataset.id = image.id; // Lưu ID ảnh vào card
+
+        const userName = await getUserName(image.userId);
+
+        div.innerHTML = `
+            <div class="relative group">
+                <img src="${image.thumbnailUrl || image.fileUrl || '/img/placeholder-image.png'}"
+                     alt="${image.title || 'Ảnh chờ duyệt'}"
+                     class="w-full h-48 object-cover bg-gray-100">
+                 </div>
+            <div class="p-4 flex-grow flex flex-col justify-between">
+                <div>
+                    <p class="font-semibold text-gray-800 truncate mb-1" title="${image.title || ''}">${image.title || '(Chưa có tiêu đề)'}</p>
+                    <p class="text-xs text-gray-500 mb-1">
+                        Người đăng: <span class="font-medium text-blue-600">${userName}</span>
+                    </p>
+                    <p class="text-xs text-gray-500 mb-3">
+                        Ngày đăng: <span class="font-medium">${new Date(image.createdAt).toLocaleDateString('vi-VN')}</span>
+                    </p>
+                    <p class="text-sm text-gray-600 line-clamp-2 mb-3">${image.description || 'Không có mô tả.'}</p>
+                </div>
+                 <div class="flex justify-end gap-2 mt-auto pt-3 border-t border-gray-100">
+                    <button class="reject-btn text-sm font-medium text-red-600 bg-red-100 hover:bg-red-200 px-3 py-1.5 rounded-md transition flex items-center gap-1" data-id="${image.id}">
+                        <i data-lucide="x" class="w-4 h-4"></i> Từ chối
+                    </button>
+                    <button class="approve-btn text-sm font-medium text-white bg-green-500 hover:bg-green-600 px-3 py-1.5 rounded-md transition flex items-center gap-1" data-id="${image.id}">
+                        <i data-lucide="check" class="w-4 h-4"></i> Duyệt
+                    </button>
+                </div>
+            </div>
+        `;
+        return div;
+    }
+
+    // (Hàm updatePagination giữ nguyên từ AdminImages.js)
+    function updatePagination(pagedResult) {
+        if (!pagedResult) return;
+        pageInfo.innerHTML = `Trang <b>${pagedResult.page}</b> / ${pagedResult.totalPages || 1}`;
+        prevPageBtn.disabled = (pagedResult.page <= 1);
+        nextPageBtn.disabled = (pagedResult.page >= pagedResult.totalPages);
+        currentPage = pagedResult.page;
+    }
+
+    // ======= HÀM XỬ LÝ SỰ KIỆN =======
+
+    // Hàm xử lý khi bấm nút "Duyệt"
+    async function handleApprove(button) {
+        const imageId = button.dataset.id;
+        if (!imageId) {
+            alert("Không tìm thấy ID ảnh để duyệt.");
+            return;
         }
 
-        // 4. Cập nhật phân trang
-        pageInfo.innerHTML = `Trang <b>${currentPage}</b> / ${totalPages || 1}`;
-        prevPageBtn.disabled = currentPage === 1;
-        nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+        button.disabled = true;
+        button.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-1"></i> Đang duyệt...';
+        if (window.lucide) lucide.createIcons();
+
+        try {
+            // 🔹 1. Lấy thông tin gốc của ảnh từ API
+            const imageData = await api.images.getById(imageId);
+
+            // 🔹 2. Tạo object mới, giữ nguyên toàn bộ dữ liệu gốc
+            const updatedData = {
+                Title: imageData.title,
+                Description: imageData.description,
+                IsPublic: imageData.isPublic,
+                Status: "approved", // ✅ Chỉ thay đổi trạng thái
+                TagIds: imageData.tags ? imageData.tags.map(t => t.id) : [],
+                TopicIds: imageData.topics ? imageData.topics.map(t => t.id) : []
+            };
+
+            // 🔹 3. Gọi API cập nhật
+            await api.images.update(imageId, updatedData);
+
+            alert(`✅ Ảnh ID ${imageId} đã được duyệt thành công!`);
+
+            // 🔹 4. Xử lý UI sau khi duyệt
+            const card = button.closest('.approval-card');
+            if (card) {
+                card.remove();
+                if (!imageListContainer.hasChildNodes()) {
+                    noResults.classList.remove('hidden');
+                }
+            } else {
+                fetchAndRenderData(); // fallback nếu không có card
+            }
+
+        } catch (error) {
+            console.error(`❌ Lỗi khi duyệt ảnh ${imageId}:`, error);
+            alert(`Duyệt ảnh thất bại: ${error.message}`);
+            button.disabled = false;
+            button.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Duyệt';
+            if (window.lucide) lucide.createIcons();
+        }
     }
 
-    // ======= HÀM XỬ LÝ POPUP =======
-    function showDetailsPopup(img) {
-        popupTitle.textContent = img.title;
-        popupImage.src = img.url;
-        popupDescription.textContent = img.description;
-        const dateString = img.uploadedAt.toLocaleDateString('vi-VN');
-        const timeString = img.uploadedAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-        popupUploader.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Người tải: <b>${img.uploader}</b>`;
-        popupUploadedAt.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5l3 3"/><circle cx="12" cy="12" r="10"/></svg> Thời gian: ${dateString} ${timeString}`;
 
-        popupApproveBtn.dataset.id = img.id;
-        popupRejectBtn.dataset.id = img.id;
+    // Hàm xử lý khi bấm nút "Từ chối" (Xóa ảnh)
+    async function handleReject(button) {
+        const imageId = button.dataset.id;
+        if (!imageId) return;
 
-        detailsPopup.classList.remove('hidden');
+        if (confirm(`Bạn có chắc muốn TỪ CHỐI (xóa) ảnh ID ${imageId} không? Hành động này không thể hoàn tác.`)) {
+            button.disabled = true; // Vô hiệu hóa nút
+            button.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-1"></i> Đang xóa...';
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                // Gọi API xóa ảnh
+                await api.images.delete(imageId); //
+                alert(`Đã từ chối (xóa) thành công ảnh ID ${imageId}.`);
+                // Xóa card khỏi giao diện hoặc tải lại trang hiện tại
+                const card = button.closest('.approval-card');
+                if (card) {
+                    card.remove(); // Xóa ngay lập tức
+                    // Kiểm tra nếu container rỗng sau khi xóa
+                    if (!imageListContainer.hasChildNodes()) {
+                        noResults.classList.remove('hidden');
+                    }
+                } else {
+                    fetchAndRenderData(); // Hoặc tải lại nếu không tìm thấy card
+                }
+
+            } catch (error) {
+                console.error(`Lỗi khi từ chối ảnh ${imageId}:`, error);
+                alert(`Từ chối ảnh thất bại: ${error.message}`);
+                // Kích hoạt lại nút nếu lỗi
+                button.disabled = false;
+                button.innerHTML = '<i data-lucide="x" class="w-4 h-4"></i> Từ chối';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
     }
 
-    function hideDetailsPopup() {
-        detailsPopup.classList.add('hidden');
+    // Hàm debounce cho tìm kiếm (giữ nguyên)
+    let searchTimer;
+    function debounceSearch(e) {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            filters.search = e.target.value.trim();
+            currentPage = 1; // Reset về trang 1 khi tìm kiếm
+            fetchAndRenderData();
+        }, 500);
     }
 
     // ======= GẮN SỰ KIỆN =======
-    searchInput.addEventListener('input', (e) => {
-        searchTerm = e.target.value;
-        currentPage = 1;
-        render();
-    });
-
-    filterSelect.addEventListener('change', (e) => {
-        filter = e.target.value;
-        render();
-    });
+    searchInput?.addEventListener('input', debounceSearch); // Thêm ? để tránh lỗi nếu không có ô search
 
     prevPageBtn.addEventListener('click', () => {
         if (currentPage > 1) {
             currentPage--;
-            render();
+            fetchAndRenderData();
         }
     });
 
     nextPageBtn.addEventListener('click', () => {
-        const totalPages = Math.ceil(mockImages.filter(img => img.title.toLowerCase().includes(searchTerm.toLowerCase())).length / imagesPerPage);
-        if (currentPage < totalPages) {
-            currentPage++;
-            render();
-        }
+        // Chỉ tăng trang, hàm fetchAndRenderData sẽ kiểm tra totalPages
+        currentPage++;
+        fetchAndRenderData();
     });
 
-    // Sự kiện cho danh sách (event delegation)
+    // Event delegation cho các nút trong danh sách ảnh
     imageListContainer.addEventListener('click', (e) => {
         const approveBtn = e.target.closest('.approve-btn');
         const rejectBtn = e.target.closest('.reject-btn');
-        const card = e.target.closest('.group');
 
         if (approveBtn) {
             e.stopPropagation();
-            alert(`Ảnh ID ${approveBtn.dataset.id} đã được duyệt ✅`);
+            handleApprove(approveBtn);
         } else if (rejectBtn) {
             e.stopPropagation();
-            alert(`Ảnh ID ${rejectBtn.dataset.id} đã bị từ chối ❌`);
-        } else if (card) {
-            const imgId = parseInt(card.dataset.id, 10);
-            const selectedImage = mockImages.find(img => img.id === imgId);
-            if (selectedImage) showDetailsPopup(selectedImage);
+            handleReject(rejectBtn);
         }
+        // Có thể thêm xử lý click vào card để mở popup chi tiết sau
     });
 
-    // Sự kiện cho popup
-    closePopupBtn.addEventListener('click', hideDetailsPopup);
-    popupApproveBtn.addEventListener('click', (e) => {
-        alert(`Ảnh ID ${e.target.dataset.id} đã được duyệt ✅`);
-        hideDetailsPopup();
-    });
-    popupRejectBtn.addEventListener('click', (e) => {
-        alert(`Ảnh ID ${e.target.dataset.id} đã bị từ chối ❌`);
-        hideDetailsPopup();
-    });
-
-    // Lần render đầu tiên
-    render();
+    // ======= KHỞI CHẠY =======
+    fetchAndRenderData(); // Tải dữ liệu ban đầu
 });

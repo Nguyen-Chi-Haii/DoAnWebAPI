@@ -25,8 +25,12 @@
     <footer class="admin-layout-footer">
         @await Html.PartialAsync("_layoutFooter")
     </footer>
-
+    <script>
+        window.jwtToken = @Html.Raw(Json.Serialize(Context.Session.GetString("JWToken")));
+        window.CURRENT_USER_ID = '@Context.Session.GetString("UserId")';
+    </script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/apiServices.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

@@ -205,3 +205,59 @@ body {
     border: 2px solid #ef4444; /* Màu đỏ */
     opacity: 0.8;
 }
+/* =============================================== */
+/* CSS CHO PHÂN TRANG                             */
+/* =============================================== */
+
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px; /* Khoảng cách giữa các nút */
+    margin-top: 24px; /* Khoảng cách với lưới item bên trên */
+    padding: 16px 0;
+    user-select: none; /* Ngăn người dùng bôi đen số trang */
+}
+
+.page-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #d1d5db; /* Màu viền xám */
+    border-radius: 8px; /* Bo góc */
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #374151; /* Màu chữ xám đậm */
+    background-color: #ffffff; /* Nền trắng */
+    transition: all 0.2s ease-in-out;
+}
+
+    .page-item:hover {
+        background-color: #f3f4f6; /* Hiệu ứng hover */
+        border-color: #9ca3af;
+    }
+
+    /* Kiểu cho nút trang đang được chọn */
+    .page-item.active {
+        background-color: #3b82f6; /* Nền xanh dương */
+        color: #ffffff; /* Chữ trắng */
+        border-color: #3b82f6;
+        font-weight: 700;
+        cursor: default;
+    }
+
+    /* Kiểu cho nút bị vô hiệu hóa (trang đầu/cuối) */
+    .page-item.disabled {
+        background-color: #f3f4f6; /* Nền xám nhạt */
+        color: #9ca3af; /* Chữ xám nhạt */
+        cursor: not-allowed;
+        border-color: #e5e7eb;
+    }
+
+        .page-item.disabled:hover {
+            background-color: #f3f4f6; /* Không có hiệu ứng hover */
+            border-color: #e5e7eb;
+        }

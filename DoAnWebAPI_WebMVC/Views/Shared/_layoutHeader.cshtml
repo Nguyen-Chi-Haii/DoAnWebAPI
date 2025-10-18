@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Http
+﻿﻿@using Microsoft.AspNetCore.Http
 @inject IHttpContextAccessor HttpContextAccessor
 
 <div id="app-container" class="shadow-xl">
@@ -16,10 +16,22 @@
             </div>
 
             <div class="flex items-center gap-3 min-w-[200px] justify-end">
-                <a href="/Image/AddImage" class="flex items-center gap-1 bg-blue-500 text-white font-medium px-4 py-2 rounded-lg hover:bg-blue-600 transition shadow-md">
-                    <i data-lucide="upload"></i>
-                    <span>Tải ảnh lên</span>
-                </a>
+                @if (!string.IsNullOrEmpty(HttpContextAccessor.HttpContext.Session.GetString("JWToken")))
+                {
+                    // Người dùng đã đăng nhập: Dẫn đến trang tải ảnh
+                    <a href="/Image/AddImage" class="flex items-center gap-1 bg-blue-500 text-white font-medium px-4 py-2 rounded-lg hover:bg-blue-600 transition shadow-md">
+                        <i data-lucide="upload"></i>
+                        <span>Tải ảnh lên</span>
+                    </a>
+                }
+                else
+                {
+                    // Người dùng chưa đăng nhập: Dẫn đến trang đăng nhập
+                    <a asp-controller="Account" asp-action="Login" class="flex items-center gap-1 bg-blue-500 text-white font-medium px-4 py-2 rounded-lg hover:bg-blue-600 transition shadow-md">
+                        <i data-lucide="upload"></i>
+                        <span>Tải ảnh lên</span>
+                    </a>
+                }
 
                 @if (!string.IsNullOrEmpty(HttpContextAccessor.HttpContext.Session.GetString("JWToken")))
                 {
@@ -46,7 +58,7 @@
                                     <span>Cá nhân</span>
                                 </a>
 
-                                @if (User.IsInRole("Admin"))
+                                @if (HttpContextAccessor.HttpContext.Session.GetString("UserRole") == "Admin")
                                 {
                                     <a asp-controller="Admin" asp-action="AdminHome" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <div data-lucide="shield-check" class="w-4 h-4"></div>

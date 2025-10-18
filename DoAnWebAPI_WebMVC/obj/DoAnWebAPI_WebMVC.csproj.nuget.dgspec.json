@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\baitap\\vs\\New folder\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj": {}
+    "D:\\Code\\Web2\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj": {}
   },
   "projects": {
-    "D:\\baitap\\vs\\New folder\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj": {
+    "D:\\Code\\Web2\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\baitap\\vs\\New folder\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj",
+        "projectUniqueName": "D:\\Code\\Web2\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj",
         "projectName": "DoAnWebAPI_WebMVC",
-        "projectPath": "D:\\baitap\\vs\\New folder\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj",
-        "packagesPath": "C:\\Users\\KatHuyn\\.nuget\\packages\\",
-        "outputPath": "D:\\baitap\\vs\\New folder\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\obj\\",
+        "projectPath": "D:\\Code\\Web2\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\DoAnWebAPI_WebMVC.csproj",
+        "packagesPath": "C:\\Users\\haila\\.nuget\\packages\\",
+        "outputPath": "D:\\Code\\Web2\\DoAnWebAPI\\DoAnWebAPI_WebMVC\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "D:\\App\\vs\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\KatHuyn\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\haila\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -74,7 +74,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

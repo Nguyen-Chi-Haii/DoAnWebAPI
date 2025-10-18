@@ -1,3 +1,4 @@
+wwwroot\css\addCollectionModal.css
 wwwroot\css\AdminPanel.css
 wwwroot\css\Collection.css
 wwwroot\css\CollectionDetail.css
@@ -14,14 +15,12 @@ wwwroot\css\UserStats.css
 wwwroot\favicon.ico
 wwwroot\js\AddCollection.js
 wwwroot\js\addImage.js
-wwwroot\js\AdminApproval.js
 wwwroot\js\AdminHome.js
 wwwroot\js\AdminImages.js
 wwwroot\js\AdminLogs.js
 wwwroot\js\AdminStats.js
 wwwroot\js\AdminTags_Topics.js
 wwwroot\js\AdminUsers.js
-wwwroot\js\apiServices.js
 wwwroot\js\Collection.js
 wwwroot\js\CollectionDetail.js
 wwwroot\js\editCollection.js
@@ -94,3 +93,5 @@ wwwroot\lib\jquery\dist\jquery.min.js
 wwwroot\lib\jquery\dist\jquery.min.map
 wwwroot\lib\jquery\LICENSE.txt
 wwwroot\Logo.png
+wwwroot\js\AdminApproval.js
+wwwroot\js\apiServices.js

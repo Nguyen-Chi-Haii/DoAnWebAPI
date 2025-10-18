@@ -1,4 +1,6 @@
-﻿document.addEventListener("DOMContentLoaded", async () => {
+﻿// File: wwwroot/js/addImage.js (Phiên bản đã sửa cho HTML mới)
+
+document.addEventListener("DOMContentLoaded", async () => {
     // --- KHAI BÁO BIẾN TRẠNG THÁI VÀ DOM ---
     let formState = {
         title: "",
@@ -11,15 +13,20 @@
     let allTags = [];
     let allTopics = [];
 
-    const submitBtn = form.querySelector('button[type="submit"]');
+    // Lấy các phần tử DOM
     const form = document.getElementById("add-image-form");
+    if (!form) {
+        console.error("Lỗi nghiêm trọng: Không tìm thấy form#add-image-form trên trang.");
+        return;
+    }
+    const submitBtn = form.querySelector('button[type="submit"]');
     const titleInput = document.getElementById("image-title");
-    const descriptionInput = document.getElementById("image-description"); // Lấy thêm input này
+    const descriptionInput = document.getElementById("image-description");
     const imagePreview = document.getElementById("image-preview");
     const uploadImageBtn = document.getElementById("upload-image-btn");
     const fileInput = document.getElementById("file-input");
-    const privacyToggleBtn = document.getElementById("privacy-toggle-btn"); // Lấy nút này
-    const privacyStatusText = document.getElementById("privacy-status-text"); // Lấy text này
+    const privacyToggleBtn = document.getElementById("privacy-toggle-btn");
+    const privacyStatusText = document.getElementById("privacy-status-text"); // Chữ bên ngoài
     const tagInput = document.getElementById("tag-input");
     const tagSuggestionsEl = document.getElementById("tag-suggestions");
     const selectedTagsEl = document.getElementById("selected-tags");
@@ -28,16 +35,34 @@
     const selectedTopicsEl = document.getElementById("selected-topics");
     const cancelBtn = document.getElementById("cancel-btn");
 
+    // Kiểm tra các phần tử quan trọng
+    if (!privacyToggleBtn || !privacyStatusText) {
+        console.error("Lỗi: Không tìm thấy nút #privacy-toggle-btn hoặc #privacy-status-text.");
+        return;
+    }
+
+
+    /// --- LẤY DỮ LIỆU BAN ĐẦU TỪ API ---
     /// --- LẤY DỮ LIỆU BAN ĐẦU TỪ API ---
     try {
         allTags = await api.tags.getAll();
         allTopics = await api.topics.getAll();
     } catch (error) {
-        console.error("Lỗi khi tải tags/topics:", error);
-        alert("Không thể tải danh sách thẻ và chủ đề. Vui lòng thử lại.");
+        // Kiểm tra xem lỗi có phải là lỗi phản hồi từ server và có mã trạng thái 401 không
+        if (error.response && error.response.status === 401) {
+            // Ghi lại lỗi để debug (tùy chọn)
+            console.error("Chưa xác thực (401). Đang chuyển hướng đến trang đăng nhập...");
+
+            // Chuyển hướng người dùng đến trang đăng nhập
+            window.location.href = '/Acount/Login'; // <-- Sửa lại đường dẫn nếu cần
+        } else {
+            // Nếu là lỗi khác (mất mạng, lỗi 500,...), thì hiển thị thông báo như cũ
+            console.error("Lỗi khi tải tags/topics:", error);
+            alert("Không thể tải danh sách thẻ và chủ đề. Vui lòng thử lại.");
+        }
     }
 
-    // --- CÁC HÀM RENDER (chỉnh sửa lại để dùng ID và Name) ---
+    // --- CÁC HÀM RENDER ---
     const renderPills = (container, pills, pillClass, onRemove) => {
         container.innerHTML = pills.map(item => `
         <span class="${pillClass}" data-id="${item.id}">
@@ -64,7 +89,30 @@
         });
     };
 
-    // --- CÁC HÀM XỬ LÝ (cập nhật để dùng ID) ---
+    // ✅ HÀM ĐÃ ĐƯỢC VIẾT LẠI HOÀN TOÀN
+    const updatePrivacyStatus = () => {
+        // Tìm thẻ span và icon BÊN TRONG nút bấm
+        const buttonTextSpan = privacyToggleBtn.querySelector('span');
+
+        if (formState.isPublic) {
+            const newText = 'Công khai';
+            // Cập nhật chữ bên ngoài
+            privacyStatusText.textContent = newText;
+            // Cập nhật chữ và icon bên trong nút
+            privacyToggleBtn.innerHTML = `<i data-lucide="globe"></i><span>${newText}</span>`;
+        } else {
+            const newText = 'Riêng tư';
+            // Cập nhật chữ bên ngoài
+            privacyStatusText.textContent = newText;
+            // Cập nhật chữ và icon bên trong nút
+            privacyToggleBtn.innerHTML = `<i data-lucide="lock"></i><span>${newText}</span>`;
+        }
+        // Luôn gọi lại sau khi thay đổi innerHTML để render icon
+        if (window.lucide) lucide.createIcons();
+    };
+
+
+    // --- CÁC HÀM XỬ LÝ (Không thay đổi) ---
     const addTag = (tagObject) => {
         if (tagObject && !formState.tags.some(t => t.id === tagObject.id)) {
             formState.tags.push(tagObject);
@@ -86,7 +134,6 @@
         renderSuggestions(tagSuggestionsEl, filtered, addTag);
     };
 
-    // Tương tự cho Topic
     const addTopic = (topicObject) => {
         if (topicObject && !formState.topics.some(t => t.id === topicObject.id)) {
             formState.topics.push(topicObject);
@@ -114,10 +161,11 @@
             formState.file = file;
             imagePreview.src = URL.createObjectURL(file);
             imagePreview.classList.remove('hidden');
+            // Ẩn nút placeholder sau khi chọn ảnh
+            if (uploadImageBtn) uploadImageBtn.classList.add('hidden');
         }
     }
 
-    // MODIFIED: Cập nhật hàm handleSubmit
     async function handleSubmit(event) {
         event.preventDefault();
         formState.title = titleInput.value;
@@ -130,52 +178,61 @@
 
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Đang lưu...';
-        lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
 
         const formData = new FormData();
         formData.append('Title', formState.title);
         formData.append('Description', formState.description);
         formData.append('IsPublic', formState.isPublic);
-        formData.append('File', formState.file); // API mong đợi key là 'File'
+        formData.append('File', formState.file);
         formState.tags.forEach(tag => formData.append('TagIds', tag.id));
         formState.topics.forEach(topic => formData.append('TopicIds', topic.id));
 
         try {
             const newImage = await api.images.create(formData);
             alert(`✅ Ảnh "${newImage.title}" đã được thêm thành công!`);
-            window.location.href = '/Collection/Collection'; // Chuyển hướng về trang collection
+            window.location.href = '/Collection/Collection';
         } catch (error) {
             alert(`❌ Lỗi: ${error.message}`);
-        } finally {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i data-lucide="check"></i> Lưu ảnh';
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
     }
 
 
     // --- GÁN SỰ KIỆN ---
-    uploadImageBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', handleImageUpload);
+    if (uploadImageBtn) uploadImageBtn.addEventListener('click', () => fileInput.click());
+    if (fileInput) fileInput.addEventListener('change', handleImageUpload);
 
-    tagInput.addEventListener('input', updateTagSuggestions);
-    tagInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addTag(e.target.value);
-        }
-    });
+    if (privacyToggleBtn) {
+        privacyToggleBtn.addEventListener('click', () => {
+            formState.isPublic = !formState.isPublic;
+            updatePrivacyStatus();
+        });
+    }
 
-    topicInput.addEventListener('input', updateTopicSuggestions);
-    topicInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addTopic(e.target.value);
-        }
-    });
+    if (tagInput) {
+        tagInput.addEventListener('input', updateTagSuggestions);
+        tagInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Logic để chọn suggestion đầu tiên nếu có, hoặc thêm tag mới
+            }
+        });
+    }
+
+    if (topicInput) {
+        topicInput.addEventListener('input', updateTopicSuggestions);
+        topicInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+    }
 
     form.addEventListener('submit', handleSubmit);
-    cancelBtn.addEventListener('click', () => window.history.back());
+    if (cancelBtn) cancelBtn.addEventListener('click', () => window.history.back());
 
     // --- KHỞI TẠO ---
     if (window.lucide) lucide.createIcons();

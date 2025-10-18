@@ -1,155 +1,203 @@
 ﻿document.addEventListener("DOMContentLoaded", () => {
-    // --- LẤY DỮ LIỆU BAN ĐẦU ---
-    const container = document.getElementById("edit-collection-form").closest('.form-container');
+    // --- Lấy ID từ container ---
+    const container = document.querySelector('.form-container');
     const collectionId = container.dataset.collectionId;
-    const allCollectionsData = JSON.parse(localStorage.getItem('allCollectionsData'));
-    const initialData = allCollectionsData ? allCollectionsData.find(c => c.id === collectionId) : null;
 
-    if (!initialData) {
-        container.innerHTML = "<h2>Lỗi: Không tìm thấy dữ liệu của bộ sưu tập này.</h2>";
+    if (!collectionId) {
+        container.innerHTML = "<h2>Lỗi: Không tìm thấy ID của bộ sưu tập.</h2>";
         return;
     }
 
-    // --- KHAI BÁO CÁC BIẾN TRẠNG THÁI ---
+    // --- Khai báo biến trạng thái ---
     let formState = {
-        name: initialData.name,
-        description: initialData.description,
-        isPublic: initialData.isPublic ?? true,
+        name: "",
+        description: "",
+        isPublic: true,
+        imageIds: [],
     };
-    // Mảng quản lý các ảnh sẽ hiển thị trên UI
-    let displayedImages = initialData.images.map(img => ({ ...img, isNew: false, src: img.thumbnail }));
 
-    // Mảng quản lý các file mới cần tải lên
-    let newFilesToUpload = [];
-    // Mảng quản lý ID của các ảnh cũ cần xóa
-    let deletedImageIds = [];
-
-
-    // --- LẤY CÁC PHẦN TỬ DOM ---
+    // --- Lấy các phần tử DOM ---
     const form = document.getElementById("edit-collection-form");
     const nameInput = document.getElementById("collection-name");
     const descriptionInput = document.getElementById("collection-description");
     const privacyToggleBtn = document.getElementById("privacy-toggle-btn");
-    const privacyStatusText = document.getElementById("privacy-status-text");
-    const fileInput = document.getElementById("file-input");
     const addImageBtn = document.getElementById("add-image-btn");
     const imagePreviewContainer = document.getElementById("image-preview-container");
     const cancelBtn = document.getElementById("cancel-btn");
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const selectPhotosModal = document.getElementById('select-photos-modal');
+    const selectPhotosCloseBtn = document.getElementById('select-photos-close-btn');
+    const myPhotosGrid = document.getElementById('my-photos-grid');
+    const selectionCounter = document.getElementById('selection-counter');
+    const updateSelectedPhotosBtn = document.getElementById('update-selected-photos-btn');
 
-    // --- CÁC HÀM RENDER VÀ XỬ LÝ ---
-    function renderPreviewImages() {
-        imagePreviewContainer.innerHTML = '';
-        displayedImages.forEach((image) => {
-            const item = document.createElement('div');
-            item.className = 'image-preview-item';
-            const img = document.createElement('img');
-            img.src = image.src; // src có thể là thumbnail cũ hoặc blob URL mới
-            const removeBtn = document.createElement('button');
-            removeBtn.type = 'button';
-            removeBtn.className = 'remove-image-btn';
-            removeBtn.textContent = '×';
-            removeBtn.onclick = () => handleRemoveImage(image.id);
-            item.appendChild(img);
-            item.appendChild(removeBtn);
-            imagePreviewContainer.appendChild(item);
-        });
-        imagePreviewContainer.appendChild(addImageBtn);
-        lucide.createIcons();
-    }
+    let tempSelectedIds = [];
 
-    function handleRemoveImage(idToRemove) {
-        const imageToRemove = displayedImages.find(img => img.id === idToRemove);
-        if (!imageToRemove) return;
+    // --- Các hàm xử lý Modal ---
+    const openSelectPhotosModal = async () => {
+        selectPhotosModal.classList.remove('hidden');
+        myPhotosGrid.innerHTML = '<div class="loader">Đang tải ảnh của bạn...</div>';
+        tempSelectedIds = [...formState.imageIds];
+        updateSelectionCounter();
 
-        // Nếu là ảnh cũ (không phải mới thêm), ghi nhận ID để xóa ở server
-        if (!imageToRemove.isNew) {
-            deletedImageIds.push(idToRemove);
+        try {
+            const allUserImages = await api.images.getByUser(CURRENT_USER_ID);
+
+            // ✅ THAY ĐỔI Ở ĐÂY: Lọc để chỉ lấy ảnh đã được duyệt
+            const approvedImages = allUserImages.filter(img => img.status && img.status.toLowerCase() === 'approved');
+
+            myPhotosGrid.innerHTML = '';
+            if (approvedImages.length === 0) {
+                myPhotosGrid.innerHTML = '<p>Bạn chưa có ảnh nào được duyệt để thêm vào bộ sưu tập.</p>';
+                return;
+            }
+
+            approvedImages.forEach(img => {
+                const item = document.createElement('div');
+                item.className = 'my-photos-item';
+                item.dataset.imageId = img.id;
+                item.innerHTML = `<img src="${img.thumbnailUrl}" alt="${img.title}" />`;
+
+                if (tempSelectedIds.includes(img.id)) {
+                    item.classList.add('selected');
+                }
+
+                item.addEventListener('click', () => toggleImageSelection(item));
+                myPhotosGrid.appendChild(item);
+            });
+        } catch (error) {
+            myPhotosGrid.innerHTML = `<p class="error">Lỗi khi tải ảnh: ${error.message}</p>`;
+        }
+    };
+    const closeSelectPhotosModal = () => selectPhotosModal.classList.add('hidden');
+
+    const toggleImageSelection = (item) => {
+        item.classList.toggle('selected');
+        const imageId = parseInt(item.dataset.imageId);
+        if (item.classList.contains('selected')) {
+            if (!tempSelectedIds.includes(imageId)) tempSelectedIds.push(imageId);
         } else {
-            // Nếu là ảnh mới, tìm và xóa file tương ứng trong newFilesToUpload
-            newFilesToUpload = newFilesToUpload.filter(file => file.tempId !== idToRemove);
-            URL.revokeObjectURL(imageToRemove.src); // Giải phóng bộ nhớ
+            tempSelectedIds = tempSelectedIds.filter(id => id !== imageId);
+        }
+        updateSelectionCounter();
+    };
+
+    const updateSelectionCounter = () => {
+        selectionCounter.textContent = `Đã chọn: ${tempSelectedIds.length} ảnh`;
+    };
+
+    // --- Hàm render ảnh xem trước ---
+    async function renderPreviewImages() {
+        imagePreviewContainer.innerHTML = ''; // Xóa sạch preview cũ
+
+        if (formState.imageIds.length > 0) {
+            const imageInfoPromises = formState.imageIds.map(id => api.images.getById(id));
+            try {
+                const imagesData = await Promise.all(imageInfoPromises);
+                const previewItems = imagesData.map(imgData => `
+                    <div class="image-preview-item" data-image-id="${imgData.id}">
+                        <img src="${imgData.thumbnailUrl}" />
+                        <button type="button" class="remove-btn">&times;</button>
+                    </div>
+                `).join('');
+                imagePreviewContainer.innerHTML = previewItems;
+            } catch (e) {
+                console.error("Lỗi khi render ảnh xem trước:", e);
+                imagePreviewContainer.innerHTML = '<p class="error">Không thể tải ảnh xem trước.</p>';
+            }
         }
 
-        // Cập nhật lại mảng ảnh hiển thị
-        displayedImages = displayedImages.filter(img => img.id !== idToRemove);
-        renderPreviewImages();
+        imagePreviewContainer.appendChild(addImageBtn);
     }
 
-    function handleImageUpload(event) {
-        const newFiles = Array.from(event.target.files);
-        if (newFiles.length === 0) return;
+    // --- Hàm tải dữ liệu ban đầu ---
+    async function loadInitialData() {
+        try {
+            const collectionData = await api.collections.getById(collectionId);
+            const imagesInCollection = collectionData.images || [];
 
-        const newImageObjects = newFiles.map(file => {
-            const tempId = `new_${Date.now()}_${Math.random()}`;
-            file.tempId = tempId; // Gán ID tạm cho file để xóa nếu cần
-            return {
-                id: tempId,
-                src: URL.createObjectURL(file),
-                isNew: true, // Đánh dấu đây là ảnh mới
+            formState = {
+                name: collectionData.name,
+                description: collectionData.description,
+                isPublic: collectionData.isPublic,
+                imageIds: imagesInCollection.map(img => img.id),
             };
-        });
 
-        newFilesToUpload.push(...newFiles);
-        displayedImages.push(...newImageObjects);
-        renderPreviewImages();
-        fileInput.value = "";
+            nameInput.value = formState.name;
+            descriptionInput.value = formState.description;
+
+            updatePrivacyStatus();
+            await renderPreviewImages();
+        } catch (error) {
+            container.innerHTML = `<h2>Lỗi khi tải dữ liệu bộ sưu tập: ${error.message}</h2>`;
+        }
     }
 
-    function handleSubmit(event) {
+    // --- Các hàm cập nhật UI khác ---
+    const updatePrivacyStatus = () => {
+        const privacyStatusText = document.getElementById("privacy-status-text");
+        const newText = formState.isPublic ? 'Công khai' : 'Riêng tư';
+        const newIcon = formState.isPublic ? 'globe' : 'lock';
+        privacyStatusText.textContent = newText;
+        privacyToggleBtn.innerHTML = `<i data-lucide="${newIcon}"></i><span>${newText}</span>`;
+        lucide.createIcons();
+    };
+
+    // --- Hàm Submit Form ---
+    async function handleSubmit(event) {
         event.preventDefault();
-        // ... (validation)
+        formState.name = nameInput.value;
+        formState.description = descriptionInput.value;
 
-        const formData = new FormData();
-        formData.append('Id', collectionId); // Gửi ID của bộ sưu tập đang sửa
-        formData.append('Name', formState.name);
-        formData.append('Description', formState.description);
-        formData.append('IsPublic', formState.isPublic);
+        if (!formState.name.trim()) {
+            alert("Vui lòng nhập tên bộ sưu tập!");
+            return;
+        }
 
-        // Gửi danh sách ID ảnh cần xóa
-        deletedImageIds.forEach(id => {
-            formData.append('DeletedImageIds', id);
-        });
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Đang lưu...';
+        lucide.createIcons();
 
-        // Gửi danh sách file ảnh mới cần thêm
-        newFilesToUpload.forEach(file => {
-            formData.append('NewImages', file, file.name);
-        });
-
-        console.log("Dữ liệu cập nhật sẵn sàng để gửi:", {
-            ...formState,
-            id: collectionId,
-            deletedImageIds,
-            newImageCount: newFilesToUpload.length
-        });
-
-        alert("✅ Đã cập nhật bộ sưu tập! (Kiểm tra console để xem FormData)");
-        // fetch(`/api/collections/${collectionId}`, { method: 'PUT', body: formData })...
-        window.location.href = "/Collection/Collection";
+        try {
+            const updateDto = {
+                Name: formState.name,
+                Description: formState.description,
+                IsPublic: formState.isPublic,
+                ImageIds: formState.imageIds
+            };
+            await api.collections.update(collectionId, updateDto);
+            alert("✅ Cập nhật bộ sưu tập thành công!");
+            window.location.href = "/Collection/Collection";
+        } catch (error) {
+            alert(`❌ Lỗi khi cập nhật: ${error.message}`);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i data-lucide="check"></i> Lưu thay đổi';
+            lucide.createIcons();
+        }
     }
 
-    function populateForm() {
-        nameInput.value = formState.name;
-        descriptionInput.value = formState.description;
+    // --- Gán sự kiện ---
+    addImageBtn.addEventListener('click', openSelectPhotosModal);
+    selectPhotosCloseBtn.addEventListener('click', closeSelectPhotosModal);
+    selectPhotosModal.addEventListener('click', (e) => { if (e.target === selectPhotosModal) closeSelectPhotosModal(); });
 
-        // Cập nhật nút privacy
-        const isPublic = formState.isPublic;
-        privacyStatusText.textContent = isPublic ? "Công khai" : "Riêng tư";
-        privacyToggleBtn.innerHTML = `<i data-lucide="${isPublic ? 'globe' : 'lock'}"></i><span>${isPublic ? 'Công khai' : 'Riêng tư'}</span>`;
-        privacyToggleBtn.className = `btn ${isPublic ? 'btn-blue' : 'btn-gray'}`;
-
-        renderPreviewImages();
-    }
-
-    // --- GÁN SỰ KIỆN ---
-    // (Các sự kiện input, toggle, cancel, submit tương tự như file addCollection.js)
-    nameInput.addEventListener('input', (e) => formState.name = e.target.value);
-    descriptionInput.addEventListener('input', (e) => formState.description = e.target.value);
-    privacyToggleBtn.addEventListener('click', () => {
-        formState.isPublic = !formState.isPublic;
-        populateForm(); // Gọi lại để cập nhật UI
+    updateSelectedPhotosBtn.addEventListener('click', async () => {
+        formState.imageIds = [...tempSelectedIds];
+        await renderPreviewImages();
+        closeSelectPhotosModal();
     });
-    addImageBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', handleImageUpload);
+
+    imagePreviewContainer.addEventListener('click', (e) => {
+        const removeBtn = e.target.closest('.remove-btn');
+        if (removeBtn) {
+            const item = removeBtn.closest('.image-preview-item');
+            const imageIdToRemove = parseInt(item.dataset.imageId);
+
+            formState.imageIds = formState.imageIds.filter(id => id !== imageIdToRemove);
+            renderPreviewImages();
+        }
+    });
+
     form.addEventListener('submit', handleSubmit);
     cancelBtn.addEventListener('click', () => {
         if (confirm("Bạn có chắc muốn hủy? Mọi thay đổi sẽ không được lưu.")) {
@@ -157,6 +205,11 @@
         }
     });
 
-    // --- KHỞI TẠO ---
-    populateForm(); // Điền dữ liệu ban đầu vào form
+    privacyToggleBtn.addEventListener('click', () => {
+        formState.isPublic = !formState.isPublic;
+        updatePrivacyStatus();
+    });
+
+    // --- KHỞI CHẠY ---
+    loadInitialData();
 });

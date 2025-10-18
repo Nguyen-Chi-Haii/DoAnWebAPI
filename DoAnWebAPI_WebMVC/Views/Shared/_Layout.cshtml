@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="~/css/HomeFilter.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/HomeBody.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/ImageDetail.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/addCollectionModal.css" asp-append-version="true" />
 
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -30,18 +31,23 @@
     <footer class="border-top footer text-muted flex-shrink-0">
         @await Html.PartialAsync("_layoutFooter")
     </footer>
+    @await Html.PartialAsync("_addCollectionModal")
+    <script>
+        window.jwtToken = @Html.Raw(Json.Serialize(Context.Session.GetString("JWToken")));
+        window.CURRENT_USER_ID = '@Context.Session.GetString("UserId")';
+    </script>
     @await Html.PartialAsync("~/Views/Image/ImageDetail.cshtml")
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/js/apiServices.js"></script>
     <script src="~/js/Header.js"></script>
     <script src="~/js/Filter.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/Footer.js" asp-append-version="true"></script>
+    <script src="~/js/apiServices.js" asp-append-version="true"></script>
     
     <script src="https://unpkg.com/lucide@latest"></script>
 
 
     @await RenderSectionAsync("Scripts", required: false)
-    
+
 </body>
 </html>

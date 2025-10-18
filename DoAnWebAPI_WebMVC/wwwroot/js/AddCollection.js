@@ -4,151 +4,178 @@
         name: "",
         description: "",
         isPublic: true,
+        imageIds: [], // Chỉ cần mảng ID ảnh đã chọn
     };
-    let filesToUpload = []; // Mảng chứa các đối tượng File thật sự để gửi đi
-    let previewImageUrls = []; // Mảng chứa các URL tạm thời để xem trước
 
     // --- Lấy các phần tử DOM ---
     const form = document.getElementById("add-collection-form");
     const nameInput = document.getElementById("collection-name");
     const descriptionInput = document.getElementById("collection-description");
     const privacyToggleBtn = document.getElementById("privacy-toggle-btn");
-    const privacyStatusText = document.getElementById("privacy-status-text");
-    const fileInput = document.getElementById("file-input");
     const addImageBtn = document.getElementById("add-image-btn");
     const imagePreviewContainer = document.getElementById("image-preview-container");
     const cancelBtn = document.getElementById("cancel-btn");
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    const selectPhotosModal = document.getElementById('select-photos-modal');
+    const selectPhotosCloseBtn = document.getElementById('select-photos-close-btn');
+    const myPhotosGrid = document.getElementById('my-photos-grid');
+    const selectionCounter = document.getElementById('selection-counter');
+    const addSelectedPhotosBtn = document.getElementById('add-selected-photos-btn');
+
+    let tempSelectedIds = [];
+
+    // --- Các hàm xử lý Modal ---
+    const openSelectPhotosModal = async () => {
+        selectPhotosModal.classList.remove('hidden');
+        myPhotosGrid.innerHTML = '<div class="loader">Đang tải ảnh của bạn...</div>';
+        tempSelectedIds = [...formState.imageIds];
+        updateSelectionCounter();
+
+        try {
+            const allUserImages = await api.images.getByUser(CURRENT_USER_ID);
+            const approvedImages = allUserImages.filter(img => img.status && img.status.toLowerCase() === 'approved');
+
+            myPhotosGrid.innerHTML = '';
+            if (approvedImages.length === 0) {
+                myPhotosGrid.innerHTML = '<p>Bạn chưa có ảnh nào được duyệt để thêm.</p>';
+                return;
+            }
+
+            approvedImages.forEach(img => {
+                const item = document.createElement('div');
+                item.className = 'my-photos-item';
+                item.dataset.imageId = img.id;
+                item.innerHTML = `<img src="${img.thumbnailUrl}" alt="${img.title}" />`;
+                if (tempSelectedIds.includes(img.id)) {
+                    item.classList.add('selected');
+                }
+                item.addEventListener('click', () => toggleImageSelection(item));
+                myPhotosGrid.appendChild(item);
+            });
+        } catch (error) {
+            myPhotosGrid.innerHTML = `<p class="error">Lỗi khi tải ảnh: ${error.message}</p>`;
+        }
+    };
+    const closeSelectPhotosModal = () => selectPhotosModal.classList.add('hidden');
+
+    const toggleImageSelection = (item) => {
+        item.classList.toggle('selected');
+        const imageId = parseInt(item.dataset.imageId);
+        if (item.classList.contains('selected')) {
+            if (!tempSelectedIds.includes(imageId)) tempSelectedIds.push(imageId);
+        } else {
+            tempSelectedIds = tempSelectedIds.filter(id => id !== imageId);
+        }
+        updateSelectionCounter();
+    };
+
+    const updateSelectionCounter = () => {
+        selectionCounter.textContent = `Đã chọn: ${tempSelectedIds.length} ảnh`;
+        addSelectedPhotosBtn.disabled = tempSelectedIds.length === 0;
+    };
+
 
     // --- Hàm render ảnh xem trước ---
-    function renderPreviewImages() {
-        // Xóa tất cả ảnh cũ (trừ nút "Thêm ảnh")
-        imagePreviewContainer.innerHTML = '';
-
-        previewImageUrls.forEach((url, index) => {
-            const item = document.createElement('div');
-            item.className = 'image-preview-item';
-
-            const img = document.createElement('img');
-            img.src = url;
-
-            const removeBtn = document.createElement('button');
-            removeBtn.type = 'button';
-            removeBtn.className = 'remove-image-btn';
-            removeBtn.textContent = '×';
-            removeBtn.onclick = () => handleRemoveImage(index);
-
-            item.appendChild(img);
-            item.appendChild(removeBtn);
-            imagePreviewContainer.appendChild(item);
-        });
-
-        // Luôn thêm lại nút "Thêm ảnh" vào cuối
+    async function renderPreviewImages() {
+        imagePreviewContainer.innerHTML = ''; // Xóa preview cũ
+        if (formState.imageIds.length > 0) {
+            const imageInfoPromises = formState.imageIds.map(id => api.images.getById(id));
+            try {
+                const imagesData = await Promise.all(imageInfoPromises);
+                const previewItems = imagesData.map(imgData => `
+                    <div class="image-preview-item" data-image-id="${imgData.id}">
+                        <img src="${imgData.thumbnailUrl}" />
+                        <button type="button" class="remove-btn">&times;</button>
+                    </div>
+                `).join('');
+                imagePreviewContainer.innerHTML = previewItems;
+            } catch (e) { console.error("Lỗi render preview", e); }
+        }
         imagePreviewContainer.appendChild(addImageBtn);
-        lucide.createIcons(); // Cập nhật lại các icon
     }
 
-    // --- Các hàm xử lý sự kiện ---
-    function handleInputChange(field, value) {
-        formState[field] = value;
-    }
+    // --- Xử lý sự kiện ---
+    addImageBtn.addEventListener('click', openSelectPhotosModal); // Nút "Thêm ảnh" giờ trực tiếp mở modal chọn ảnh
+    selectPhotosCloseBtn.addEventListener('click', closeSelectPhotosModal);
+    selectPhotosModal.addEventListener('click', (e) => { if (e.target === selectPhotosModal) closeSelectPhotosModal(); });
 
-    function handlePrivacyToggle() {
-        formState.isPublic = !formState.isPublic;
-        const isPublic = formState.isPublic;
-
-        privacyStatusText.textContent = isPublic ? "Công khai" : "Riêng tư";
-        privacyToggleBtn.innerHTML = `
-            <i data-lucide="${isPublic ? 'globe' : 'lock'}"></i>
-            <span>${isPublic ? 'Công khai' : 'Riêng tư'}</span>
-        `;
-        privacyToggleBtn.className = `btn ${isPublic ? 'btn-blue' : 'btn-gray'}`;
-        lucide.createIcons();
-    }
-
-    function handleImageUpload(event) {
-        const newFiles = Array.from(event.target.files);
-        if (newFiles.length === 0) return;
-
-        // Thêm file mới vào mảng
-        filesToUpload.push(...newFiles);
-
-        // Tạo URL xem trước cho các file mới
-        const newUrls = newFiles.map(file => URL.createObjectURL(file));
-        previewImageUrls.push(...newUrls);
-
+    addSelectedPhotosBtn.addEventListener('click', () => {
+        formState.imageIds = [...tempSelectedIds];
         renderPreviewImages();
+        closeSelectPhotosModal();
+    });
 
-        // Reset input để có thể chọn lại cùng 1 file
-        fileInput.value = "";
-    }
+    imagePreviewContainer.addEventListener('click', (e) => {
+        const removeBtn = e.target.closest('.remove-btn');
+        if (removeBtn) {
+            const item = removeBtn.closest('.image-preview-item');
+            const imageId = parseInt(item.dataset.imageId);
+            formState.imageIds = formState.imageIds.filter(id => id !== imageId);
+            renderPreviewImages();
+        }
+    });
 
-    function handleRemoveImage(index) {
-        // Thu hồi URL cũ để giải phóng bộ nhớ
-        URL.revokeObjectURL(previewImageUrls[index]);
-
-        // Xóa file và URL xem trước tại vị trí index
-        filesToUpload.splice(index, 1);
-        previewImageUrls.splice(index, 1);
-
-        renderPreviewImages();
-    }
-
-    function handleSubmit(event) {
+    // --- Hàm Submit Form ---
+    async function handleSubmit(event) {
         event.preventDefault();
+        formState.name = nameInput.value;
+        formState.description = descriptionInput.value;
+
         if (!formState.name.trim()) {
             alert("Vui lòng nhập tên bộ sưu tập!");
-            nameInput.focus();
             return;
         }
 
-        // Tạo đối tượng FormData để gửi đi (bao gồm cả file)
-        const formData = new FormData();
-        formData.append('Name', formState.name);
-        formData.append('Description', formState.description);
-        formData.append('IsPublic', formState.isPublic);
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Đang lưu...';
+        lucide.createIcons();
 
-        // Thêm từng file ảnh vào FormData
-        filesToUpload.forEach((file, index) => {
-            formData.append('Images', file, file.name);
-        });
+        try {
+            const collectionData = {
+                Name: formState.name,
+                Description: formState.description,
+                IsPublic: formState.isPublic,
+                UserId: parseInt(CURRENT_USER_ID),
+                ImageIds: formState.imageIds // Chỉ gửi danh sách ID đã chọn
+            };
 
-        console.log("Dữ liệu sẵn sàng để gửi lên server:", formState);
-        console.log("Số lượng ảnh:", filesToUpload.length);
+            await api.collections.create(collectionData);
 
-        // --- Logic gửi formData lên server của bạn sẽ ở đây ---
-        // Ví dụ:
-        // fetch('/api/collections', {
-        //     method: 'POST',
-        //     body: formData 
-        // }).then(...);
+            alert("✅ Tạo bộ sưu tập thành công!");
+            window.location.href = "/Collection/Collection";
 
-        alert("✅ Đã tạo bộ sưu tập mới! (Kiểm tra console để xem dữ liệu)");
-        // Chuyển hướng hoặc reset form sau khi thành công
-        // window.location.href = "/Collection";
+        } catch (error) {
+            alert(`❌ Lỗi khi tạo bộ sưu tập: ${error.message}`);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i data-lucide="check"></i> Lưu bộ sưu tập';
+            lucide.createIcons();
+        }
+    }
+    function preloadInitialImage() {
+        // Các biến này được truyền từ AddCollection.cshtml
+        if (typeof INITIAL_IMAGE_ID !== 'undefined' && INITIAL_IMAGE_ID) {
+            formState.imageIds.push(parseInt(INITIAL_IMAGE_ID));
+            renderPreviewImages();
+        }
     }
 
-    // --- Gán sự kiện ---
-    nameInput.addEventListener('input', (e) => handleInputChange('name', e.target.value));
-    descriptionInput.addEventListener('input', (e) => handleInputChange('description', e.target.value));
-    privacyToggleBtn.addEventListener('click', handlePrivacyToggle);
-    addImageBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', handleImageUpload);
+    // --- Gán các sự kiện còn lại ---
     form.addEventListener('submit', handleSubmit);
     cancelBtn.addEventListener('click', () => {
         if (confirm("Bạn có chắc muốn hủy? Mọi thay đổi sẽ bị mất.")) {
-            window.location.href = "/Collection/Collection"; // Hoặc trang trước đó
-        }
-    });
-    cancelBtn.addEventListener('click', () => {
-        // 1. Hiển thị hộp thoại xác nhận để tránh mất dữ liệu
-        if (confirm("Bạn có chắc muốn hủy? Mọi thay đổi sẽ bị mất.")) {
-
-            // 2. Nếu người dùng nhấn "OK", chuyển hướng về trang Collection
             window.location.href = "/Collection/Collection";
         }
-        // 3. Nếu người dùng nhấn "Cancel", không làm gì cả
     });
 
-    // --- Khởi tạo ---
-    lucide.createIcons(); // Render icon lần đầu
+    const privacyStatusText = document.getElementById("privacy-status-text");
+    privacyToggleBtn.addEventListener('click', () => {
+        formState.isPublic = !formState.isPublic;
+        const newText = formState.isPublic ? 'Công khai' : 'Riêng tư';
+        const newIcon = formState.isPublic ? 'globe' : 'lock';
+        privacyStatusText.textContent = newText;
+        privacyToggleBtn.innerHTML = `<i data-lucide="${newIcon}"></i><span>${newText}</span>`;
+        lucide.createIcons();
+    });
+    preloadInitialImage();
 });

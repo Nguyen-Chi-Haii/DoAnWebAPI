@@ -1,36 +1,69 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// File: Controllers/AdminController.cs
 
-namespace DoAnWebAPI_WebMVC.Controllers
+// using Microsoft.AspNetCore.Authorization; // <-- CÓ THỂ XÓA DÒNG NÀY
+using Microsoft.AspNetCore.Mvc;
+
+// ✅ BƯỚC 1: GỠ BỎ ATTRIBUTE NÀY KHỎI CONTROLLER
+// [Authorize(Roles = "Admin")] 
+public class AdminController : Controller
 {
-    public class AdminController : Controller
+    // ✅ BƯỚC 2: TẠO MỘT HÀM KIỂM TRA CHUNG (TÙY CHỌN, ĐỂ CHO GỌN)
+    private bool IsAdmin()
     {
-        public IActionResult AdminHome()
+        return HttpContext.Session.GetString("UserRole") == "Admin";
+    }
+
+    public IActionResult AdminHome()
+    {
+        // ✅ BƯỚC 3: THÊM ĐOẠN KIỂM TRA NÀY VÀO ĐẦU MỖI ACTION
+        if (!IsAdmin())
         {
-            return View();
+            // Nếu không phải Admin, đá về trang đăng nhập
+            return RedirectToAction("Login", "Account");
         }
-        public IActionResult AdminStats()
-        {
-            return View();
-        }
-        public IActionResult AdminImages()
-        {
-            return View();
-        }
-        public IActionResult AdminUsers()
-        {
-              return View();
-        }
-        public IActionResult AdminTags_Topics()
-        {
-            return View();
-        }
-        public IActionResult AdminLogs()
-        {
-            return View();
-        }
-        public IActionResult AdminApproval()
-        {
-            return View();
-        }
+
+        // Nếu là Admin, code sẽ tiếp tục chạy như bình thường
+        return View();
+    }
+
+    public IActionResult AdminUsers()
+    {
+        // ✅ THÊM VÀO ĐÂY
+        if (!IsAdmin()) return RedirectToAction("Login", "Account");
+
+        return View();
+    }
+
+    public IActionResult AdminImages()
+    {
+        // ✅ THÊM VÀO ĐÂY
+        if (!IsAdmin()) return RedirectToAction("Login", "Account");
+
+        return View();
+    }
+
+    // LÀM TƯƠNG TỰ CHO TẤT CẢ CÁC ACTION CÒN LẠI TRONG CONTROLLER NÀY...
+    public IActionResult AdminTags_Topics()
+    {
+        if (!IsAdmin()) return RedirectToAction("Login", "Account");
+        return View();
+    }
+
+    public IActionResult AdminApproval()
+    {
+        if (!IsAdmin()) return RedirectToAction("Login", "Account");
+        return View();
+    }
+
+    public IActionResult AdminStats()
+    {
+        if (!IsAdmin()) return RedirectToAction("Login", "Account");
+        return View();
+    }
+
+    public IActionResult AdminLogs()
+    {
+        if (!IsAdmin()) return RedirectToAction("Login", "Account");
+        return View();
     }
 }

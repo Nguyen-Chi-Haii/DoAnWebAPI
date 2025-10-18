@@ -1,6 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Chỉnh Sửa Bộ Sưu Tập";
-    Layout = "_FormLayout"; // <-- Sử dụng layout cho form
+    Layout = "_FormLayout";
 }
 
 <div class="form-container" data-collection-id="@ViewBag.CollectionId">
@@ -29,15 +29,14 @@
 
         <div>
             <label class="form-label label-with-icon">
-                <i data-lucide="upload"></i> Ảnh trong bộ sưu tập
+                <i data-lucide="image-plus"></i> Ảnh của bộ sưu tập
             </label>
             <div id="image-preview-container" class="image-preview-container">
                 <button type="button" id="add-image-btn" class="add-image-placeholder">
                     <i data-lucide="plus"></i>
-                    <span class="add-image-text">Thêm ảnh</span>
+                    <span class="add-image-text">Thêm/Bớt ảnh</span>
                 </button>
             </div>
-            <input type="file" id="file-input" accept="image/*" multiple class="hidden-input" />
         </div>
 
         <div class="form-actions">
@@ -49,6 +48,28 @@
     </form>
 </div>
 
+<div id="select-photos-modal" class="select-photos-modal-overlay hidden">
+    <div class="select-photos-modal-container">
+        <div class="select-photos-modal-header">
+            <h3 class="select-photos-modal-title">Quản lý ảnh trong bộ sưu tập</h3>
+            <button id="select-photos-close-btn" class="select-photos-modal-close">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div id="my-photos-grid" class="select-photos-modal-grid">
+        </div>
+        <div class="select-photos-modal-footer">
+            <span id="selection-counter">Đã chọn: 0 ảnh</span>
+            <button id="update-selected-photos-btn" class="btn btn-blue">
+                <i data-lucide="check-circle"></i> Cập nhật danh sách
+            </button>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
+    <script>
+        const CURRENT_USER_ID = '@(Context.Session.GetString("UserId"))';
+    </script>
     <script src="~/js/editCollection.js" asp-append-version="true"></script>
 }

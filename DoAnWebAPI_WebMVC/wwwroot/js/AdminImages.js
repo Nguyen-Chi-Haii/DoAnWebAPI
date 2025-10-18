@@ -1,183 +1,297 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
-    // ======= DỮ LIỆU GIẢ LẬP =======
-    const mockImages = Array.from({ length: 26 }, (_, i) => ({
-        id: i + 1,
-        title: `Ảnh Phong Cảnh #${i + 1}`,
-        description: `Mô tả chi tiết cho ảnh phong cảnh núi rừng hùng vĩ ${i + 1}.`,
-        uploader: `user_${100 + i}`,
-        uploadedAt: `2025-10-0${(i % 9) + 1}`,
-        topic: ["Thiên nhiên", "Động vật", "Kiến trúc"][i % 3],
-        tag: ["Phong cảnh", "Chân dung", "Hoàng hôn"][i % 3],
-        url: `https://picsum.photos/500/300?random=${200 + i}`,
-    }));
-
-    // ======= BIẾN TRẠNG THÁI (Đã bổ sung 'filters') =======
+﻿// File: wwwroot/js/AdminImages.js
+document.addEventListener('DOMContentLoaded', function () {
+    // ======= STATE VARIABLES =======
     let currentPage = 1;
-    let searchTerm = "";
-    let filters = { topic: "Tất cả", tag: "", date: "" };
-    const imagesPerPage = 10;
+    let filters = {
+        search: "",
+        topicId: "Tất cả", // Use topicId
+        tagName: "",     // Use tagName for filtering (API expects this)
+        date: ""
+    };
+    const imagesPerPage = 10; // Corresponds to pageSize in API call
+    const userCache = {}; // Cache for user names
 
-    // ======= LẤY CÁC PHẦN TỬ DOM (Đã bổ sung đầy đủ) =======
+    // ======= DOM ELEMENTS =======
     const imageListContainer = document.getElementById('image-list-container');
     const searchInput = document.getElementById('search-input');
     const noResults = document.getElementById('no-results');
     const prevPageBtn = document.getElementById('prev-page');
     const nextPageBtn = document.getElementById('next-page');
     const pageInfo = document.getElementById('page-info');
-
-    // DOM cho Popup
     const filterPopup = document.getElementById('filter-popup');
     const filterButton = document.getElementById('filter-button');
     const closeFilterPopupBtn = document.getElementById('close-filter-popup');
     const topicFilterSelect = document.getElementById('topic-filter-select');
-    const tagFilterInput = document.getElementById('tag-filter-input');
+    const tagFilterInput = document.getElementById('tag-filter-input'); // Input for tag name
     const dateFilterInput = document.getElementById('date-filter-input');
     const clearFiltersBtn = document.getElementById('clear-filters-btn');
     const applyFiltersBtn = document.getElementById('apply-filters-btn');
+    const loadingSpinner = document.getElementById('loading-spinner'); // Get spinner element
 
-    // ======= HÀM RENDER CHÍNH =======
-    function render() {
-        const filteredImages = mockImages.filter(img => {
-            const matchSearch = img.title.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchTopic = filters.topic === "Tất cả" || img.topic === filters.topic;
-            const matchTag = !filters.tag || img.tag.toLowerCase().includes(filters.tag.toLowerCase());
-            const matchDate = !filters.date || img.uploadedAt === filters.date;
-            return matchSearch && matchTopic && matchTag && matchDate;
-        });
-
-        const totalPages = Math.ceil(filteredImages.length / imagesPerPage);
-        currentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
-
-        const displayedImages = filteredImages.slice(
-            (currentPage - 1) * imagesPerPage,
-            currentPage * imagesPerPage
-        );
-
-        imageListContainer.innerHTML = '';
-        if (displayedImages.length === 0) {
-            noResults.classList.remove('hidden');
-        } else {
-            noResults.classList.add('hidden');
-            displayedImages.forEach(img => {
-                const imageCard = document.createElement('div');
-                imageCard.className = "flex flex-col sm:flex-row bg-white rounded-xl shadow-sm hover:shadow-md cursor-pointer transition group";
-                imageCard.innerHTML = `
-                    <img src="${img.url}" alt="${img.title}" class="w-full sm:w-40 h-52 sm:h-28 object-cover rounded-t-xl sm:rounded-l-xl sm:rounded-t-none bg-gray-100" />
-                    <div class="flex flex-col flex-grow p-4">
-                        <h3 class="font-semibold text-lg group-hover:text-blue-600">${img.title}</h3>
-                        <p class="text-gray-600 text-sm line-clamp-2">${img.description}</p>
-                        <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500 mt-2">
-                            <span class="flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 
-                                ${img.uploader}
-                            </span>
-                            <span class="flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 
-                                ${img.uploadedAt}
-                            </span>
-                            <span>🎯 ${img.topic}</span>
-                            <span>🏷️ ${img.tag}</span>
-                        </div>
-                    </div>
-                    <div class="flex sm:flex-col items-center justify-center gap-2 p-3 sm:pr-4 border-t sm:border-t-0 sm:border-l border-gray-100">
-                        <button data-id="${img.id}" class="edit-btn bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-1 transition">
-                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 20h9m-6.5-6.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4l12.5-12.5z"/></svg> Sửa
-                        </button>
-                        <button data-id="${img.id}" class="delete-btn bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-1 transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 5v6m4-6v6"/></svg> Xóa
-                        </button>
-                    </div>`;
-                imageListContainer.appendChild(imageCard);
-            });
-        }
-
-        pageInfo.innerHTML = `Trang <b>${currentPage}</b> / ${totalPages || 1}`;
-        prevPageBtn.disabled = currentPage === 1;
-        nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+    // ======= SPINNER FUNCTIONS =======
+    function showSpinner() {
+        if (loadingSpinner) loadingSpinner.classList.remove('hidden');
+        imageListContainer.innerHTML = ''; // Clear old content
+        noResults.classList.add('hidden'); // Hide no results message
     }
 
-    // ======= HÀM XỬ LÝ POPUP =======
+    function hideSpinner() {
+        if (loadingSpinner) loadingSpinner.classList.add('hidden');
+    }
+
+    // ======= MAIN FETCH AND RENDER FUNCTION =======
+    async function fetchAndRenderData() {
+        showSpinner(); // Bật spinner
+
+        try {
+            // ✅ SỬA Ở ĐÂY: Tạo đối tượng filterParams trống trước
+            const filterParams = {
+                page: currentPage,
+                pageSize: imagesPerPage,
+                status: "approved" // Luôn gửi trạng thái
+            };
+
+            // ✅ Thêm các bộ lọc CHỈ KHI chúng có giá trị
+            if (filters.search) {
+                filterParams.search = filters.search;
+            }
+            // Chỉ thêm topicId nếu nó không phải "Tất cả"
+            if (filters.topicId && filters.topicId !== "Tất cả") {
+                // Đảm bảo API nhận đúng kiểu int?
+                filterParams.topicId = parseInt(filters.topicId);
+            }
+            // API của bạn dùng tagId (int?) và topicId (int?)
+            // nhưng code JS đang gửi tagName (string?). Cần thống nhất.
+            // Tạm thời gửi tagName nếu API đã được sửa để nhận string? tagName
+            if (filters.tagName) {
+                filterParams.tagName = filters.tagName; // Hoặc gửi tagId nếu API dùng int? tagId
+            }
+            if (filters.date) {
+                filterParams.date = filters.date;
+            }
+
+            // Gọi API với filterParams đã được lọc sạch
+            const pagedResult = await api.images.getAll(filterParams); //
+
+            const images = pagedResult.items;
+            imageListContainer.innerHTML = ''; // Xóa spinner/nội dung cũ
+
+            if (!images || images.length === 0) {
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+                const imageCardPromises = images.map(img => createImageRow(img));
+                const imageCardElements = await Promise.all(imageCardPromises);
+                imageCardElements.forEach(el => imageListContainer.appendChild(el));
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
+            }
+
+            // Cập nhật phân trang
+            updatePagination(pagedResult);
+
+        } catch (error) {
+            console.error("Lỗi khi render ảnh:", error);
+            if (error.message !== "Unauthorized") {
+                imageListContainer.innerHTML = `<p class="text-red-500 text-center">Không thể tải dữ liệu ảnh. ${error.message}</p>`;
+            }
+        } finally {
+            hideSpinner(); // Luôn tắt spinner
+        }
+    }
+
+    // ======= HELPER FUNCTIONS =======
+
+    // Fetches user name (with caching)
+    async function getUserName(userId) {
+        if (!userId) return "N/A";
+        if (userCache[userId]) {
+            return userCache[userId];
+        }
+        try {
+            // Ensure api.users.getById exists in apiServices.js
+            const user = await api.users.getById(userId);
+            // Adjust 'user.userName' if your UserDTO has a different property name
+            const userName = user.userName || `User ${userId}`;
+            userCache[userId] = userName;
+            return userName;
+        } catch (error) {
+            console.error(`Error fetching user ${userId}:`, error);
+            userCache[userId] = `User ${userId}`; // Cache fallback name
+            return `User ${userId}`;
+        }
+    }
+
+    // Creates the HTML structure for a single image row
+    async function createImageRow(image) {
+        const div = document.createElement('div');
+        div.className = 'admin-card flex flex-col sm:flex-row items-center gap-4 p-4 border border-gray-200 rounded-lg shadow-sm'; // Added shadow
+
+        const userName = await getUserName(image.userId); // Fetch user name
+
+        // Use properties from ImageDTO
+        div.innerHTML = `
+            <img src="${image.thumbnailUrl || image.fileUrl || '/img/placeholder-image.png'}" alt="${image.title || 'Image'}" class="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-md flex-shrink-0 bg-gray-100" loading="lazy" />
+            <div class="flex-1 text-sm text-center sm:text-left min-w-0"> <p class="font-semibold text-gray-800 truncate" title="${image.title || ''}">${image.title || '(No Title)'}</p>
+                <p class="text-gray-500 mt-1">
+                    By: <span class="font-medium text-blue-600">${userName}</span>
+                </p>
+                <p class="text-gray-500 mt-1">
+                    Uploaded: <span class="font-medium">${new Date(image.createdAt).toLocaleDateString('en-GB')}</span> </p>
+                </div>
+            <div class="flex-shrink-0 flex gap-2 mt-3 sm:mt-0">
+                <a href="/Image/EditImage/${image.id}" class="edit-btn p-2 bg-yellow-100 text-yellow-600 rounded-lg hover:bg-yellow-200 transition no-underline" title="Edit Image ${image.id}">
+                    <i data-lucide="edit-3" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                </a>
+                <button class="delete-btn p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition" data-id="${image.id}" title="Delete Image ${image.id}">
+                    <i data-lucide="trash-2" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                </button>
+            </div>
+        `;
+        return div;
+    }
+
+    // Updates pagination button states and text
+    function updatePagination(pagedResult) {
+        if (!pagedResult) return;
+        pageInfo.innerHTML = `Page <b>${pagedResult.page}</b> / ${pagedResult.totalPages || 1}`;
+        prevPageBtn.disabled = (pagedResult.page <= 1);
+        nextPageBtn.disabled = (pagedResult.page >= pagedResult.totalPages);
+        currentPage = pagedResult.page; // Update current page state
+    }
+
+    // Loads topics for the filter dropdown
+    async function loadFilterData() {
+        try {
+            const topics = await api.topics.getAll();
+            topicFilterSelect.innerHTML = '<option value="Tất cả">All Topics</option>'; // Reset
+            if (topics && topics.length > 0) {
+                topics.forEach(topic => {
+                    const option = document.createElement('option');
+                    option.value = topic.id; // Use topic ID as value
+                    option.textContent = topic.name;
+                    topicFilterSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error("Error loading topics:", error);
+            // Optionally display an error message to the user
+        }
+    }
+
+    // ======= EVENT HANDLERS =======
     function showFilterPopup() {
-        topicFilterSelect.value = filters.topic;
-        tagFilterInput.value = filters.tag;
+        // Pre-fill popup with current filter values
+        topicFilterSelect.value = filters.topicId;
+        tagFilterInput.value = filters.tagName;
         dateFilterInput.value = filters.date;
         filterPopup.classList.remove('hidden');
     }
 
-    function hideFilterPopup() { filterPopup.classList.add('hidden'); }
+    function hideFilterPopup() {
+        filterPopup.classList.add('hidden');
+    }
 
+    // Applies filters from the popup and refreshes data
     function applyFilters() {
-        filters.topic = topicFilterSelect.value;
-        filters.tag = tagFilterInput.value;
-        filters.date = dateFilterInput.value;
-        currentPage = 1;
-        render();
+        filters = {
+            topicId: topicFilterSelect.value, // Get selected Topic ID
+            tagName: tagFilterInput.value.trim(), // Get tag name input
+            date: dateFilterInput.value,
+            search: searchInput.value.trim() // Keep existing search term
+        };
+        currentPage = 1; // Reset to page 1 when filters change
+        fetchAndRenderData(); // Fetch data with new filters
         hideFilterPopup();
     }
 
+    // Clears all filters and refreshes data
     function clearFilters() {
-        filters = { topic: "Tất cả", tag: "", date: "" };
+        filters = { topicId: "Tất cả", tagName: "", date: "", search: "" };
+        // Reset form elements
+        topicFilterSelect.value = "Tất cả";
+        tagFilterInput.value = "";
+        dateFilterInput.value = "";
+        searchInput.value = ""; // Also clear search input
+
         currentPage = 1;
-        render();
+        fetchAndRenderData(); // Fetch data without filters
         hideFilterPopup();
     }
 
-    // ======= GẮN SỰ KIỆN =======
-    searchInput.addEventListener('input', (e) => {
-        searchTerm = e.target.value;
-        currentPage = 1;
-        render();
-    });
+    // Debounce function for search input
+    let searchTimer;
+    function debounceSearch(e) {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            filters.search = e.target.value.trim(); // Update search filter state
+            currentPage = 1; // Reset page on new search
+            fetchAndRenderData(); // Fetch data based on search
+        }, 500); // Wait 500ms after user stops typing
+    }
+
+    // Handles delete button clicks
+    async function handleDeleteClick(imageId) {
+        if (!imageId) return;
+        if (confirm(`Are you sure you want to delete image ID ${imageId}? This cannot be undone.`)) {
+            try {
+                showSpinner(); // Show spinner during deletion
+                await api.images.delete(imageId);
+                alert('Image deleted successfully!');
+                // Reset to page 1 or stay on current page? Resetting is simpler.
+                currentPage = 1;
+                fetchAndRenderData(); // Refresh the list
+            } catch (err) {
+                hideSpinner(); // Hide spinner on error
+                alert(`Failed to delete image: ${err.message}`);
+            }
+            // No finally needed here as fetchAndRenderData handles hiding spinner
+        }
+    }
+
+    // ======= EVENT LISTENERS =======
+    searchInput.addEventListener('input', debounceSearch);
 
     prevPageBtn.addEventListener('click', () => {
         if (currentPage > 1) {
             currentPage--;
-            render();
+            fetchAndRenderData(); // Fetch previous page
         }
     });
 
-    // THAY THẾ TOÀN BỘ SỰ KIỆN DƯỚI ĐÂY
     nextPageBtn.addEventListener('click', () => {
-        // Tính lại totalPages một cách chính xác bằng cách áp dụng TẤT CẢ bộ lọc
-        const filteredImages = mockImages.filter(img => {
-            const matchSearch = img.title.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchTopic = filters.topic === "Tất cả" || img.topic === filters.topic;
-            const matchTag = !filters.tag || img.tag.toLowerCase().includes(filters.tag.toLowerCase());
-            const matchDate = !filters.date || img.uploadedAt === filters.date;
-            return matchSearch && matchTopic && matchTag && matchDate;
-        });
-
-        const totalPages = Math.ceil(filteredImages.length / imagesPerPage);
-
-        if (currentPage < totalPages) {
-            currentPage++;
-            render();
-        }
+        // Fetch next page (API handles the check for last page via pagedResult)
+        currentPage++;
+        fetchAndRenderData();
     });
 
-    // Sự kiện cho popup
+    // Filter popup buttons
     filterButton.addEventListener('click', showFilterPopup);
     closeFilterPopupBtn.addEventListener('click', hideFilterPopup);
     applyFiltersBtn.addEventListener('click', applyFilters);
     clearFiltersBtn.addEventListener('click', clearFilters);
 
-    // Sự kiện cho nút Sửa/Xóa (dùng event delegation)
+    // Event delegation for delete buttons within the list container
     imageListContainer.addEventListener('click', (e) => {
-        const editBtn = e.target.closest('.edit-btn');
-        if (editBtn) {
-            e.stopPropagation();
-            alert(`✏️ Sửa thông tin ảnh ID: ${editBtn.dataset.id}`);
-        }
-
         const deleteBtn = e.target.closest('.delete-btn');
         if (deleteBtn) {
-            e.stopPropagation();
-            if (confirm(`Bạn có chắc muốn xóa ảnh ID ${deleteBtn.dataset.id}?`)) {
-                alert(`🗑️ Ảnh ID ${deleteBtn.dataset.id} đã bị xóa.`);
-            }
+            e.stopPropagation(); // Prevent triggering other clicks
+            const imageId = deleteBtn.dataset.id;
+            handleDeleteClick(imageId); // Call the async delete handler
         }
+        // Edit button is an <a> tag, handled by its href
     });
 
-    // Lần render đầu tiên khi tải trang
-    render();
+    // Listen for image deletion events (e.g., from ImageDetail modal)
+    document.addEventListener('imageDeleted', (event) => {
+        console.log('Image deleted event received, refreshing list.');
+        // Simple refresh - assumes deletion was successful
+        fetchAndRenderData();
+    });
+
+
+    // ======= INITIALIZATION =======
+    loadFilterData(); // Load topics into the dropdown first
+    fetchAndRenderData(); // Then fetch the initial image data
 });

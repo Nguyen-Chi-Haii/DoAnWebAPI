@@ -20,11 +20,10 @@
 
     // Nút khác
     const logoutBtn = document.getElementById("settings-logout-btn");
-
-    let activeTabName = 'profile';
+    // Lấy ID người dùng (giả định biến này có sẵn toàn cục)
+    const CURRENT_USER_ID = window.CURRENT_USER_ID;
+    let activeTabName = 'profile'; // Tab mặc định là 'profile'
     let isAnimating = false;
-
-    // --- CÁC HÀM XỬ LÝ ---
 
     // ====> CẬP NHẬT LOGIC TÌM TAB TRONG HÀM NÀY <====
     function setActiveTab(newTabName) {
@@ -59,7 +58,28 @@
             avatarPreview.src = previewUrl;
         }
     }
+    async function loadUserProfile() {
+        if (!CURRENT_USER_ID) {
+            console.error("Không tìm thấy CURRENT_USER_ID");
+            alert("Lỗi: Không thể xác thực người dùng.");
+            return;
+        }
 
+        try {
+            // Giả định api.users.getById('me') sẽ tự động lấy user đã đăng nhập
+            // Hoặc dùng: const user = await api.users.getById(CURRENT_USER_ID);
+            const user = await api.users.getById(CURRENT_USER_ID);
+
+            profileName.value = user.name;
+            profileEmail.value = user.email;
+            if (user.avatarUrl) {
+                avatarPreview.src = user.avatarUrl;
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải hồ sơ:", error);
+            alert(`Không thể tải thông tin của bạn: ${error.message}`);
+        }
+    }
     // --- GÁN SỰ KIỆN (Không thay đổi logic, chỉ sử dụng biến mới) ---
 
     navButtons.forEach(button => {
@@ -68,30 +88,73 @@
 
     uploadAvatarBtn.addEventListener("click", () => avatarFileInput.click());
     avatarFileInput.addEventListener("change", handleAvatarUpload);
-
-    profileForm.addEventListener("submit", (e) => {
+    profileForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const profileData = {
-            name: profileName.value,
-            email: profileEmail.value,
-            avatarFile: avatarFileInput.files[0]
-        };
-        console.log("Submitting Profile Data:", profileData);
-        alert("✅ Hồ sơ đã được cập nhật!");
+        const saveButton = profileForm.querySelector('button[type="submit"]');
+        const originalButtonText = saveButton.innerHTML;
+        saveButton.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Đang lưu...';
+        lucide.createIcons();
+        saveButton.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('Name', profileName.value);
+            formData.append('Email', profileEmail.value);
+
+            if (avatarFileInput.files[0]) {
+                formData.append('AvatarFile', avatarFileInput.files[0]);
+            }
+
+            // Dùng "me" hoặc CURRENT_USER_ID
+            await api.users.update(CURRENT_USER_ID, formData);
+
+            alert("✅ Hồ sơ đã được cập nhật!");
+            // Tùy chọn: Cập nhật lại header nếu tên/avatar thay đổi
+            // document.dispatchEvent(new CustomEvent('userProfileUpdated'));
+        } catch (error) {
+            console.error("Lỗi cập nhật hồ sơ:", error);
+            alert(`Lỗi: ${error.message}`);
+        } finally {
+            saveButton.innerHTML = originalButtonText;
+            lucide.createIcons();
+            saveButton.disabled = false;
+        }
     });
 
-    passwordForm.addEventListener("submit", (e) => {
+    /**
+     * ✅ CẬP NHẬT: Xử lý submit Password Form
+     */
+    passwordForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         if (newPassword.value !== confirmPassword.value) {
             alert("⚠️ Mật khẩu mới không khớp!");
             return;
         }
+
+        const updateButton = passwordForm.querySelector('button[type="submit"]');
+        const originalButtonText = updateButton.innerHTML;
+        updateButton.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Đang cập nhật...';
+        lucide.createIcons();
+        updateButton.disabled = true;
+
         const passwordData = {
-            current: currentPassword.value,
-            newPass: newPassword.value
+            currentPassword: currentPassword.value,
+            newPassword: newPassword.value,
+            confirmPassword: confirmPassword.value
         };
-        console.log("Changing password with data:", passwordData);
-        alert("🔑 Mật khẩu đã được thay đổi!");
+
+        try {
+            await api.users.changePassword(passwordData);
+            alert("🔑 Mật khẩu đã được thay đổi thành công!");
+            passwordForm.reset(); // Xóa các trường mật khẩu
+        } catch (error) {
+            console.error("Lỗi đổi mật khẩu:", error);
+            alert(`Lỗi: ${error.message}`);
+        } finally {
+            updateButton.innerHTML = originalButtonText;
+            lucide.createIcons();
+            updateButton.disabled = false;
+        }
     });
 
     logoutBtn.addEventListener('click', () => {
@@ -102,4 +165,5 @@
 
     // --- KHỞI TẠO ---
     lucide.createIcons();
+    loadUserProfile();
 });

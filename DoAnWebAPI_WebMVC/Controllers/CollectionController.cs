@@ -4,46 +4,57 @@ namespace DoAnWebAPI_WebMVC.Controllers
 {
     public class CollectionController : Controller
     {
+        // Action này hiển thị trang chính của bộ sưu tập
         public IActionResult Collection()
         {
+            // Lấy ID người dùng từ Session
+            var userId = HttpContext.Session.GetString("UserId");
+
+            // Nếu không có UserId (chưa đăng nhập), chuyển hướng về trang Login
+            if (string.IsNullOrEmpty(userId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Truyền UserId sang cho View để JavaScript có thể sử dụng
+            ViewBag.UserId = userId;
+
             return View();
         }
-        public IActionResult CollectionDetail(string id)
+
+        // Các action khác như AddCollection, EditCollection, CollectionDetail giữ nguyên...
+        public IActionResult AddCollection(string initialImageId, string previewUrl)
         {
-            // Truyền ID vào View để JavaScript có thể sử dụng
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Truyền dữ liệu sang View
+            ViewBag.InitialImageId = initialImageId;
+            ViewBag.PreviewUrl = previewUrl;
+
+            return View();
+        }
+
+        public IActionResult EditCollection(string id)
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
+            {
+                return RedirectToAction("Login", "Account");
+            }
             ViewBag.CollectionId = id;
             return View();
         }
-        public IActionResult AddCollection()
+
+        public IActionResult CollectionDetail(string id)
         {
-            return View();
-        }
-        public IActionResult EditCollection(string id)
-        {
-            if (string.IsNullOrEmpty(id))
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
             {
-                return BadRequest("ID không được để trống.");
+                return RedirectToAction("Login", "Account");
             }
-
-            // Tại đây bạn sẽ lấy dữ liệu của bộ sưu tập từ DB dựa vào 'id'
-            // và truyền nó vào View để form sửa có thể hiển thị thông tin cũ.
-
-            ViewBag.CollectionId = id; // Truyền ID sang View
-
-            // Giả sử bạn có một View tên là Edit.cshtml
+            ViewBag.CollectionId = id;
             return View();
-        }
-        public IActionResult Delete(string id)
-        {
-            if (string.IsNullOrEmpty(id))
-            {
-                return BadRequest("ID không được để trống.");
-            }
-            // Tại đây bạn sẽ lấy dữ liệu của bộ sưu tập từ DB dựa vào 'id'
-            // và truyền nó vào View để xác nhận việc xóa.
-            ViewBag.CollectionId = id; // Truyền ID sang View
-            // Giả sử bạn có một View tên là Delete.cshtml
-            return View("~/View/Collection/Collection");
         }
     }
 }

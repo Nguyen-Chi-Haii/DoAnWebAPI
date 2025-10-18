@@ -298,3 +298,217 @@
     .pill-remove-btn:hover {
         color: #ef4444; /* text-red-500 */
     }
+/* =============================================== */
+/* CSS CHO MODAL LỰA CHỌN (Tải lên / Chọn ảnh)    */
+/* =============================================== */
+
+.choice-modal-overlay,
+.select-photos-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    z-index: 100;
+    opacity: 1;
+    transition: opacity 150ms ease-in-out;
+}
+
+    .choice-modal-overlay.hidden,
+    .select-photos-modal-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+.choice-modal-container {
+    position: relative;
+    background-color: white;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+}
+
+.choice-modal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.choice-modal-description {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+}
+
+.choice-modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.choice-modal-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background-color: #f9fafb;
+    color: #374151;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 150px;
+}
+
+    .choice-modal-button:hover {
+        border-color: #3b82f6;
+        background-color: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .choice-modal-button i {
+        width: 32px;
+        height: 32px;
+    }
+
+.choice-modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    border: none;
+    background: none;
+    padding: 0.5rem;
+    border-radius: 999px;
+    cursor: pointer;
+    color: #9ca3af;
+    transition: background-color 0.2s;
+}
+
+    .choice-modal-close:hover {
+        background-color: #f3f4f6;
+        color: #1f2937;
+    }
+
+
+/* =============================================== */
+/* CSS CHO MODAL CHỌN ẢNH TỪ THƯ VIỆN              */
+/* =============================================== */
+
+.select-photos-modal-container {
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    width: 90vw;
+    max-width: 900px;
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.select-photos-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.select-photos-modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.select-photos-modal-close {
+    border: none;
+    background: none;
+    padding: 0.5rem;
+    border-radius: 999px;
+    cursor: pointer;
+    color: #9ca3af;
+    transition: background-color 0.2s;
+}
+
+    .select-photos-modal-close:hover {
+        background-color: #f3f4f6;
+        color: #1f2937;
+    }
+
+.select-photos-modal-grid {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.my-photos-item {
+    position: relative;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 3px solid transparent;
+    transition: border-color 0.2s;
+}
+
+    .my-photos-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .my-photos-item::after {
+        content: '✔';
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 24px;
+        height: 24px;
+        background-color: white;
+        border: 2px solid #ccc;
+        border-radius: 50%;
+        color: #ccc;
+        font-weight: bold;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transform: scale(0);
+        transition: transform 0.2s;
+    }
+
+    .my-photos-item.selected {
+        border-color: #3b82f6;
+    }
+
+        .my-photos-item.selected::after {
+            transform: scale(1);
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+.select-photos-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+    flex-shrink: 0;
+}
+
+#selection-counter {
+    color: #4b5563;
+    font-weight: 500;
+}

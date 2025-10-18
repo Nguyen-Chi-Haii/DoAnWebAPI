@@ -10,15 +10,16 @@
     <link rel="stylesheet" href="~/css/Header.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/ImageDetail.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/CollectionDetail.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/addCollectionModal.css" asp-append-version="true" />
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-100 flex flex-col min-h-screen">
+<body class="bg-gray-100">
     <header class="flex-shrink-0">
         @await Html.PartialAsync("_layoutHeader")
     </header>
 
-    <main role="main" class="flex-grow flex justify-center items-center">
+    <main role="main" class="flex justify-center items-center">
         @RenderBody()
     </main>
 
@@ -26,11 +27,19 @@
         @await Html.PartialAsync("_layoutFooter")
     </footer>
 
+    <script>
+        // "Tiêm" token từ Session vào biến JavaScript toàn cục
+        window.jwtToken = @Html.Raw(Json.Serialize(Context.Session.GetString("JWToken")));
+    </script>
+    <script src="~/js/apiServices.js" asp-append-version="true"></script>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/Footer.js" asp-append-version="true"></script>
     <script src="~/js/Header.js" asp-append-version="true"></script>
-
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

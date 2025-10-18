@@ -34,12 +34,18 @@
         </footer>
 
     </div>
+    <script>
+        // Gán token từ Session của server vào một biến JavaScript toàn cục.
+        // Biến này sẽ có giá trị là chuỗi token nếu đã đăng nhập, hoặc null nếu chưa.
+        window.jwtToken = @Html.Raw(Json.Serialize(Context.Session.GetString("JWToken")));
+    </script>
 
     <div id="backdrop" class="fixed inset-0 bg-black/30 z-40 lg:hidden hidden"></div>
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="~/js/Footer.js"></script>
     <script src="~/js/Sidebar.js"></script>
+    <script src="~/js/apiServices.js" asp-append-version="true"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </body>
 </html>

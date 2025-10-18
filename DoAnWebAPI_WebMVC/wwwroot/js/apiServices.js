@@ -1,14 +1,14 @@
-﻿// File: wwwroot/js/apiService.js
-
+﻿
 // ⚠️ QUAN TRỌNG: Thay thế bằng URL của API của bạn
 const API_BASE_URL = 'http://localhost:5186/api'; // Ví dụ cho môi trường dev
 
 /**
- * Lấy JWT token từ localStorage.
+
+ * Lấy JWT token từ biến global được truyền từ server.
  * @returns {string|null} Token hoặc null nếu không tồn tại.
  */
 function getToken() {
-    return localStorage.getItem('jwtToken');
+    return window.jwtToken;
 }
 
 /**
@@ -45,10 +45,14 @@ async function request(endpoint, method, body = null) {
     if (!response.ok) {
         if (response.status === 401) {
             // Xử lý khi token hết hạn hoặc không hợp lệ
-            alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-            // Xóa token cũ và chuyển hướng đến trang đăng nhập
+            // Xóa token cũ để tránh lặp lại lỗi
             localStorage.removeItem('jwtToken');
-            window.location.href = '/Account/Login'; // ⚠️ Điều chỉnh URL trang đăng nhập nếu cần
+
+            if (response.status === 401) {
+                throw new Error("Unauthorized"); // Ném ra lỗi có tên cụ thể
+            }
+            // Dừng thực thi hàm ngay lập tức để ngăn các lỗi tiếp theo
+            return Promise.reject(new Error("Unauthorized"));
         }
         // Cố gắng parse lỗi từ body của response
         const errorData = await response.json().catch(() => ({ message: response.statusText }));
@@ -75,6 +79,63 @@ const api = {
         update: (id, data) => request(`/images/${id}`, 'PUT', data),
         delete: (id) => request(`/images/${id}`, 'DELETE'),
         getByUser: (userId) => request(`/users/${userId}/images`, 'GET'),
+        download: async (id, filename = 'download') => {
+            const headers = new Headers();
+            const token = getToken();
+            if (token) {
+                headers.append('Authorization', `Bearer ${token}`);
+            }
+
+            // Gọi fetch trực tiếp đến endpoint download
+            const response = await fetch(`${API_BASE_URL}/images/${id}/download`, { headers });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    localStorage.removeItem('jwtToken');
+                }
+
+                // Tạo một đối tượng lỗi và đính kèm response để code ở nơi gọi có thể kiểm tra
+                const error = new Error('API request failed');
+                error.response = response; // <-- DÒNG QUAN TRỌNG NHẤT
+
+                // Ném lỗi ra ngoài để khối catch (ví dụ trong addImage.js) có thể bắt được
+                throw error;
+            }
+
+            // Chuyển response thành một Blob (Binary Large Object)
+            const blob = await response.blob();
+
+            // Tạo một URL tạm thời cho blob trong bộ nhớ trình duyệt
+            const url = window.URL.createObjectURL(blob);
+
+            // Tạo một thẻ <a> ẩn để kích hoạt việc tải xuống
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+
+            // Gợi ý tên file cho trình duyệt
+            const extension = blob.type.split('/')[1] || 'jpg';
+            a.download = `${filename}.${extension}`;
+
+            // Thêm thẻ <a> vào trang, click vào nó, rồi xóa đi
+            document.body.appendChild(a);
+            a.click();
+
+            // Dọn dẹp URL tạm thời để giải phóng bộ nhớ
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+    },
+    collections: {
+        getAll: () => request('/collections', 'GET'),
+        getById: (id) => request(`/collections/${id}`, 'GET'),
+        getByUser: (userId) => request(`/users/${userId}/collections`, 'GET'),
+        create: (data) => request('/collections', 'POST', data),
+        update: (id, data) => request(`/collections/${id}`, 'PUT', data),
+        delete: (id) => request(`/collections/${id}`, 'DELETE'),
+        addImage: (collectionId, imageId) =>
+            request(`/collections/${collectionId}/images/${imageId}`, 'POST'),
+
     },
     likes: {
         // Lưu ý: Body trống là cần thiết cho hàm POST/DELETE nếu API yêu cầu
@@ -85,11 +146,20 @@ const api = {
     stats: {
         get: (imageId) => request(`/images/${imageId}/stats`, 'GET'),
         incrementView: (imageId) => request(`/images/${imageId}/stats/increment-view`, 'POST', {}),
+        incrementDownloadsAsync: (imageId) => request(`/images/${imageId}/stats/download`, 'POST', {})
     },
     tags: {
         getAll: () => request('/tags', 'GET'),
     },
     topics: {
         getAll: () => request('/topics', 'GET'),
+    },
+    // ✅ BƯỚC 1: THÊM ĐỐI TƯỢNG 'users'
+    users: {
+
+        getById: (id) => request(`/users/${id}`, 'GET'),
+
+        update: (id, formData) => request(`/users/${id}`, 'PUT', formData),
+        changePassword: (data) => request('/auth/change-password', 'POST', data)
     }
 };

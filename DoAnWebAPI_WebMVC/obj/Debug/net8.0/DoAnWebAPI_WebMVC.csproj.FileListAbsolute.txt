@@ -31,40 +31,6 @@ D:\Code\Web2\DoAnWebAPI_WebMVC\obj\Debug\net8.0\refint\DoAnWebAPI_WebMVC.dll
 D:\Code\Web2\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.pdb
 D:\Code\Web2\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.genruntimeconfig.cache
 D:\Code\Web2\DoAnWebAPI_WebMVC\obj\Debug\net8.0\ref\DoAnWebAPI_WebMVC.dll
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\appsettings.Development.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\appsettings.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.staticwebassets.runtime.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.staticwebassets.endpoints.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.exe
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.deps.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.runtimeconfig.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.dll
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.pdb
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\rpswa.dswa.cache.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.GeneratedMSBuildEditorConfig.editorconfig
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.AssemblyInfoInputs.cache
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.AssemblyInfo.cs
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.csproj.CoreCompileInputs.cache
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.MvcApplicationPartsAssemblyInfo.cache
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.RazorAssemblyInfo.cache
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.RazorAssemblyInfo.cs
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.sourcelink.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\rjimswa.dswa.cache.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\scopedcss\bundle\DoAnWebAPI_WebMVC.styles.css
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\scopedcss\projectbundle\DoAnWebAPI_WebMVC.bundle.scp.css
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\staticwebassets.build.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\staticwebassets.build.json.cache
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\staticwebassets.development.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.dll
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\refint\DoAnWebAPI_WebMVC.dll
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.pdb
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.genruntimeconfig.cache
-D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\ref\DoAnWebAPI_WebMVC.dll
 D:\baitap\vs\New folder\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\appsettings.Development.json
 D:\baitap\vs\New folder\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\appsettings.json
 D:\baitap\vs\New folder\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.staticwebassets.runtime.json
@@ -102,3 +68,40 @@ D:\baitap\vs\New folder\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\refint\DoA
 D:\baitap\vs\New folder\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.pdb
 D:\baitap\vs\New folder\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.genruntimeconfig.cache
 D:\baitap\vs\New folder\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\ref\DoAnWebAPI_WebMVC.dll
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\appsettings.Development.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\appsettings.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.staticwebassets.runtime.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.staticwebassets.endpoints.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.exe
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.deps.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.runtimeconfig.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.dll
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\DoAnWebAPI_WebMVC.pdb
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\bin\Debug\net8.0\Newtonsoft.Json.dll
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.csproj.AssemblyReference.cache
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\rpswa.dswa.cache.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.GeneratedMSBuildEditorConfig.editorconfig
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.AssemblyInfoInputs.cache
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.AssemblyInfo.cs
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.csproj.CoreCompileInputs.cache
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.MvcApplicationPartsAssemblyInfo.cache
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.RazorAssemblyInfo.cache
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.RazorAssemblyInfo.cs
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.sourcelink.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\rjimswa.dswa.cache.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\scopedcss\bundle\DoAnWebAPI_WebMVC.styles.css
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\scopedcss\projectbundle\DoAnWebAPI_WebMVC.bundle.scp.css
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\staticwebassets.build.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\staticwebassets.build.json.cache
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\staticwebassets.development.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebA.27ABF571.Up2Date
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.dll
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\refint\DoAnWebAPI_WebMVC.dll
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.pdb
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\DoAnWebAPI_WebMVC.genruntimeconfig.cache
+D:\Code\Web2\DoAnWebAPI\DoAnWebAPI_WebMVC\obj\Debug\net8.0\ref\DoAnWebAPI_WebMVC.dll

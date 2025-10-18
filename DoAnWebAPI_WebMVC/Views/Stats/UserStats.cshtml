@@ -6,7 +6,7 @@
 <div class="userStats-container">
     <div class="userStats-header">
         <h2 class="userStats-title">
-            <i data-lucide="bar-chart-2"></i> Thống kê ảnh
+            <i data-lucide="bar-chart-2"></i> Thống kê ảnh của bạn
         </h2>
     </div>
 
@@ -16,40 +16,50 @@
         <table class="userStats-table">
             <thead>
                 <tr>
-                    <th class="userStats-table-header">ID Ảnh</th>
+                    <th class="userStats-table-header">Ảnh</th>
+                    <th class="userStats-table-header">Tiêu đề</th>
                     <th class="userStats-table-header">Lượt xem</th>
-                    <th class="userStats-table-header">Lượt tải xuống</th>
+                    <th class="userStats-table-header">Lượt tải</th>
                     <th class="userStats-table-header">Lượt thích</th>
                 </tr>
             </thead>
-            <tbody id="userStats-table-body"></tbody>
+            <tbody id="userStats-table-body">
+            </tbody>
         </table>
+        <div id="userStats-loader" class="userStats-loader">
+            <i data-lucide="loader-2" class="animate-spin"></i>
+            <span>Đang tải dữ liệu...</span>
+        </div>
     </div>
 
     <div class="userStats-pagination-controls">
-        <button id="userStats-prev-page-btn" class="userStats-pagination-btn">
+        <button id="userStats-prev-page-btn" class="userStats-pagination-btn" disabled>
             <i data-lucide="chevron-left"></i> Trang trước
         </button>
         <span id="userStats-page-info" class="userStats-page-info"></span>
-        <button id="userStats-next-page-btn" class="userStats-pagination-btn">
+        <button id="userStats-next-page-btn" class="userStats-pagination-btn" disabled>
             Trang sau <i data-lucide="chevron-right"></i>
         </button>
     </div>
 
     <div class="userStats-summary-box">
-        <h3 class="userStats-summary-title">Tóm tắt</h3>
-        <p class="userStats-summary-text">Tổng số lượt xem: <span id="userStats-total-views" class="userStats-summary-value"></span></p>
-        <p class="userStats-summary-text">Tổng số lượt tải xuống: <span id="userStats-total-downloads" class="userStats-summary-value"></span></p>
-        <p class="userStats-summary-text">Tổng số lượt thích: <span id="userStats-total-likes" class="userStats-summary-value"></span></p>
+        <h3 class="userStats-summary-title">Tóm tắt tổng quan</h3>
+        <p class="userStats-summary-text">Tổng lượt xem: <span id="userStats-total-views" class="userStats-summary-value">0</span></p>
+        <p class="userStats-summary-text">Tổng lượt tải: <span id="userStats-total-downloads" class="userStats-summary-value">0</span></p>
+        <p class="userStats-summary-text">Tổng lượt thích: <span id="userStats-total-likes" class="userStats-summary-value">0</span></p>
     </div>
 
     <div class="userStats-exit-wrapper">
         <button id="userStats-exit-btn" class="userStats-exit-btn">
-            <i data-lucide="log-out"></i> Thoát
+            <i data-lucide="arrow-left"></i> Quay lại
         </button>
     </div>
 </div>
 
 @section Scripts {
-    <script src="~/js/userStats.js" asp-append-version="true"></script>
+    <script>
+        // Truyền UserId từ Controller sang biến JavaScript để UserStats.js sử dụng
+        const CURRENT_USER_ID = '@ViewBag.UserId';
+    </script>
+    <script src="~/js/UserStats.js" asp-append-version="true"></script>
 }

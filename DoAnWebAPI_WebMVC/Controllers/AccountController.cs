@@ -49,6 +49,8 @@ namespace DoAnWebAPI_WebMVC.Controllers
 
                 HttpContext.Session.SetString("JWToken", authResponse.Token);
                 HttpContext.Session.SetString("Username", authResponse.Username);
+                HttpContext.Session.SetString("UserId", authResponse.UserId);
+                HttpContext.Session.SetString("UserRole", authResponse.Role);
 
                 return RedirectToAction("Index", "Home");
             }
@@ -142,11 +144,27 @@ namespace DoAnWebAPI_WebMVC.Controllers
         {
             HttpContext.Session.Remove("JWToken");
             HttpContext.Session.Remove("Username");
+            HttpContext.Session.Remove("UserId");
+            HttpContext.Session.Remove("UserRole");
             return RedirectToAction("Login", "Account");
         }
 
         public IActionResult Setting()
         {
+            var token = HttpContext.Session.GetString("JWToken");
+            var username = HttpContext.Session.GetString("Username");
+            var userId = HttpContext.Session.GetString("UserId");
+
+            // Nếu chưa đăng nhập -> đá về trang Login
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login");
+            }
+
+            // ✅ Truyền token và userId sang View
+            ViewBag.JwtToken = token;
+            ViewBag.UserId = userId;
+
             return View();
         }
 

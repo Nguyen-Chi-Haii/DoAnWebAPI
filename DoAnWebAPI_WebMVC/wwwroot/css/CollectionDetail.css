@@ -184,3 +184,41 @@
 .back-button {
     padding: 0.5rem 0.75rem; /* Điều chỉnh padding cho gọn hơn */
 }
+/* File: wwwroot/css/CollectionDetail.css */
+
+.image-grid {
+    position: relative;
+}
+
+/* Hiển thị checkbox khi ở chế độ xóa */
+.delete-mode .image-item .delete-checkbox {
+    display: flex;
+}
+
+/* Overlay mờ khi ở chế độ xóa */
+.delete-mode .image-item .overlay {
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.delete-checkbox {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    background-color: white;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    display: none; /* Mặc định ẩn */
+    justify-content: center;
+    align-items: center;
+    color: transparent; /* Mặc định trong suốt */
+    transition: all 0.2s;
+}
+
+/* Kiểu cho ảnh được chọn để xóa */
+.image-item.selected-for-delete .delete-checkbox {
+    background-color: #ef4444; /* Màu đỏ */
+    border-color: #ef4444;
+    color: white; /* Màu của icon check */
+}
