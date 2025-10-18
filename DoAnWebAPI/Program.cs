@@ -107,8 +107,8 @@ builder.Services.AddAuthentication(options =>
 // --------------------
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy => policy.RequireClaim("role", "admin"));
-    options.AddPolicy("UserOrAdmin", policy => policy.RequireClaim("role", "user", "admin"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireClaim("role", "Admin"));
+    options.AddPolicy("UserOrAdmin", policy => policy.RequireClaim("role", "User", "Admin"));
 });
 
 // --------------------

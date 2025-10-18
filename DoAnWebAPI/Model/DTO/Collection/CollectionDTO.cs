@@ -18,5 +18,7 @@ namespace DoAnWebAPI.Model.DTO.Collection
 
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public string ThumbnailUrl { get; internal set; }
+        public int ImageCount { get; internal set; }
     }
 }

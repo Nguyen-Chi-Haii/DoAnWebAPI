@@ -141,7 +141,7 @@ namespace DoAnWebAPI.Services.Repositories
                 Width = width,
                 Height = height,
                 IsPublic = isPublic,
-                Status = "Approved",
+                Status = "pending",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 TagIds = tagIds,
@@ -191,6 +191,16 @@ namespace DoAnWebAPI.Services.Repositories
             // Nên xóa cả các dữ liệu liên quan (stats, likes, ...) nhưng tạm thời để đơn giản
             await _firebase.DeleteAsync($"images/{id}");
             return true;
+        }
+
+        public async Task<IEnumerable<ImageDTO>> GetByUserIdAsync(int userId)
+        {
+            // Cách làm này tận dụng lại logic đã có trong GetAllAsync
+            // để lấy tất cả ảnh và các thông tin liên quan.
+            var allImages = await GetAllAsync();
+
+            // Dùng LINQ để lọc ra những ảnh có UserId khớp.
+            return allImages.Where(img => img.UserId == userId);
         }
     }
 }

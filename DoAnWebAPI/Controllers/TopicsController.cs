@@ -17,7 +17,7 @@ namespace DoAnWebAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "UserOrAdmin")]
+        [AllowAnonymous]
         public async Task<ActionResult<List<TopicDTO>>> GetAll()
         {
             var topics = await _topicRepository.GetAllAsync();

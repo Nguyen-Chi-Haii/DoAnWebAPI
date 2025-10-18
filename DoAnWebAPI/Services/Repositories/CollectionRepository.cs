@@ -55,8 +55,6 @@ namespace DoAnWebAPI.Services.Repositories
             return response.ResultAs<Collection>();
         }
 
-        // ... (GetByUserIdAsync cần logic lọc phức tạp, nhưng giữ nguyên pattern FireSharp GetAsync) ...
-
         public async Task<List<Collection>> GetByUserIdAsync(int userId)
         {
             var response = await _firebase.GetAsync(GetCollectionPath());
