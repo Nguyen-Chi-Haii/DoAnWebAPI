@@ -21,7 +21,6 @@
 
     <header class="flex-shrink-0">
         @await Html.PartialAsync("_layoutHeader")
-        @await Html.PartialAsync("Filter")
     </header>
 
     <main id="content-container" role="main" class="flex-grow overflow-y-auto p-4">
@@ -39,7 +38,6 @@
     @await Html.PartialAsync("~/Views/Image/ImageDetail.cshtml")
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/Header.js"></script>
-    <script src="~/js/Filter.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/Footer.js" asp-append-version="true"></script>
     <script src="~/js/apiServices.js" asp-append-version="true"></script>

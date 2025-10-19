@@ -41,7 +41,6 @@ namespace DoAnWebAPI.Services.Repositories
             {
                 Id = nextId,
                 Name = createDto.Name,
-                Description = createDto.Description,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -57,7 +56,6 @@ namespace DoAnWebAPI.Services.Repositories
             if (existing == null) return null;
 
             existing.Name = updateDto.Name;
-            existing.Description = updateDto.Description;
             existing.UpdatedAt = DateTime.UtcNow;
 
             var key = $"topic_{id}";

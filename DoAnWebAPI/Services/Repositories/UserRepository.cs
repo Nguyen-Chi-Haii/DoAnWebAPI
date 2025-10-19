@@ -29,7 +29,8 @@ namespace DoAnWebAPI.Services.Repositories
                 Username = user.Username,
                 Email = user.Email,
                 AvatarUrl = user.AvatarUrl,
-                Role = user.Role
+                Role = user.Role,
+                CreatedAt = DateTime.Parse(user.CreatedAt)
             };
         }
 

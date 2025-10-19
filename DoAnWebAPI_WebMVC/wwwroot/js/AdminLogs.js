@@ -1,19 +1,6 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
-    // ======= DỮ LIỆU GIẢ LẬP =======
-    const mockNotifications = Array.from({ length: 48 }, (_, i) => ({
-        id: i + 1,
-        type: ["Ảnh tải lên", "Chờ duyệt", "Nhật ký mới"][i % 3],
-        message: [
-            `Người dùng user_${100 + i} đã tải lên một ảnh mới.`,
-            `Ảnh #${200 + i} của user_${50 + i} đang chờ được duyệt.`,
-            `Hệ thống ghi nhận hoạt động mới từ Admin.`
-        ][i % 3],
-        user: ["Nguyễn Văn A", "Admin", "Trần Thị B"][i % 3],
-        date: `2025-10-0${(i % 9) + 1}`,
-        time: `0${i % 9}:3${i % 6}:15`,
-    }));
-
     // ======= BIẾN TRẠNG THÁI =======
+    let allLogs = []; // Dữ liệu thật từ API
     let currentPage = 1;
     let searchTerm = "";
     let filterType = "Tất cả";
@@ -29,55 +16,86 @@
     const nextPageBtn = document.getElementById('next-page');
     const pageInfo = document.getElementById('page-info');
 
+    // ======= HÀM TẢI DỮ LIỆU TỪ API =======
+    async function loadData() {
+        tableBody.innerHTML = `
+            <tr><td colspan="6" class="text-center py-6 text-gray-500 italic">Đang tải nhật ký hệ thống...</td></tr>
+        `;
+        try {
+            // Lấy dữ liệu logs (đã bao gồm username và ngày tháng từ API)
+            const logs = await api.adminLogs.getAll();
+
+            // API đã trả về tất cả thông tin, chỉ cần lưu lại
+            allLogs = logs;
+
+            render();
+        } catch (error) {
+            console.error("Lỗi khi tải Admin Logs:", error);
+            tableBody.innerHTML = `
+                <tr><td colspan="6" class="text-center py-6 text-red-500 italic">
+                    Không thể tải dữ liệu: ${error.message}
+                </td></tr>
+            `;
+        }
+    }
+
     // ======= HÀM RENDER CHÍNH =======
     function render() {
-        // 1. Lọc và tìm kiếm
-        const filteredData = mockNotifications
-            .filter(n => filterType === "Tất cả" || n.type === filterType)
-            .filter(n =>
-                n.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                n.user.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-            .filter(n => !dateFilter || n.date === dateFilter);
+        // 1. Lọc dữ liệu
+        const filteredLogs = allLogs.filter(log => {
+            const matchesType = filterType === "Tất cả" || log.actionType === filterType;
+
+            const searchLower = searchTerm.toLowerCase();
+            const matchesSearch = log.meta.toString().toLowerCase().includes(searchLower) ||
+                log.adminUsername.toLowerCase().includes(searchLower) ||
+                log.target.toString().includes(searchLower);
+
+            // Chuyển đổi ngày từ API (ISO string) thành YYYY-MM-DD
+            const logDate = log.createdAt.split('T')[0];
+            const matchesDate = !dateFilter || logDate === dateFilter;
+
+            return matchesType && matchesSearch && matchesDate;
+        });
 
         // 2. Tính toán phân trang
-        const totalPages = Math.ceil(filteredData.length / perPage);
+        const totalPages = Math.ceil(filteredLogs.length / perPage);
         if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
-        if (currentPage < 1 && totalPages > 0) currentPage = 1;
+        if (currentPage < 1) currentPage = 1;
 
-        const displayed = filteredData.slice(
+        const displayedLogs = filteredLogs.slice(
             (currentPage - 1) * perPage,
             currentPage * perPage
         );
 
         // 3. Render bảng
         tableBody.innerHTML = '';
-        if (displayed.length === 0) {
+        if (displayedLogs.length === 0) {
             tableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center text-gray-500 py-6 italic">
-                        Không có thông báo nào phù hợp.
-                    </td>
-                </tr>
+                <tr><td colspan="6" class="text-center py-6 text-gray-500 italic">
+                    Không có nhật ký nào phù hợp.
+                </td></tr>
             `;
         } else {
-            displayed.forEach(n => {
-                let typeClass = '';
-                switch (n.type) {
-                    case 'Ảnh tải lên': typeClass = 'text-blue-600'; break;
-                    case 'Chờ duyệt': typeClass = 'text-orange-500'; break;
-                    case 'Nhật ký mới': typeClass = 'text-green-600'; break;
-                }
-
+            displayedLogs.forEach(log => {
                 const row = document.createElement('tr');
                 row.className = "border-b hover:bg-gray-50 transition";
+
+                // Định dạng ngày giờ
+                const logDateTime = new Date(log.createdAt);
+                const logDate = logDateTime.toLocaleDateString('vi-VN');
+                const logTime = logDateTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
                 row.innerHTML = `
-                    <td class="px-4 py-3 font-medium">${n.id}</td>
-                    <td class="px-4 py-3">${n.user}</td>
-                    <td class="px-4 py-3 font-medium ${typeClass}">${n.type}</td>
-                    <td class="px-4 py-3">${n.message}</td>
-                    <td class="px-4 py-3">${n.date}</td>
-                    <td class="px-4 py-3">${n.time}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900">${log.id}</td>
+                    <td class="px-4 py-3">${log.adminUsername} (ID: ${log.AdminId})</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                            ${log.actionType}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">${log.meta} (Target: ${log.target})</td>
+                    <td class="px-4 py-3">${logDate}</td>
+                    <td class="px-4 py-3">${logTime}</td>
                 `;
                 tableBody.appendChild(row);
             });
@@ -116,13 +134,24 @@
     });
 
     nextPageBtn.addEventListener('click', () => {
-        const totalPages = Math.ceil(mockNotifications.filter(n => filterType === "Tất cả" || n.type === filterType).filter(n => n.message.toLowerCase().includes(searchTerm.toLowerCase()) || n.user.toLowerCase().includes(searchTerm.toLowerCase())).filter(n => !dateFilter || n.date === dateFilter).length / perPage);
+        // Cần tính lại totalPages dựa trên bộ lọc hiện tại
+        const totalPages = Math.ceil(allLogs.filter(log => {
+            const matchesType = filterType === "Tất cả" || log.actionType === filterType;
+            const searchLower = searchTerm.toLowerCase();
+            const matchesSearch = log.meta.toString().toLowerCase().includes(searchLower) ||
+                log.adminUsername.toLowerCase().includes(searchLower) ||
+                log.target.toString().includes(searchLower);
+            const logDate = log.createdAt.split('T')[0];
+            const matchesDate = !dateFilter || logDate === dateFilter;
+            return matchesType && matchesSearch && matchesDate;
+        }).length / perPage);
+
         if (currentPage < totalPages) {
             currentPage++;
             render();
         }
     });
 
-    // Lần render đầu tiên
-    render();
+    // ======= TẢI DỮ LIỆU LẦN ĐẦU =======
+    loadData();
 });

@@ -60,9 +60,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Đảm bảo API nhận đúng kiểu int?
                 filterParams.topicId = parseInt(filters.topicId);
             }
-            // API của bạn dùng tagId (int?) và topicId (int?)
-            // nhưng code JS đang gửi tagName (string?). Cần thống nhất.
-            // Tạm thời gửi tagName nếu API đã được sửa để nhận string? tagName
             if (filters.tagName) {
                 filterParams.tagName = filters.tagName; // Hoặc gửi tagId nếu API dùng int? tagId
             }
@@ -113,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Ensure api.users.getById exists in apiServices.js
             const user = await api.users.getById(userId);
             // Adjust 'user.userName' if your UserDTO has a different property name
-            const userName = user.userName || `User ${userId}`;
+            const userName = user.username || `User ${userId}`;
             userCache[userId] = userName;
             return userName;
         } catch (error) {

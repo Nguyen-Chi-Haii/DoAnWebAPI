@@ -9,6 +9,8 @@ namespace DoAnWebAPI.Model.DTO.AdminLog
 
         [Required]
         public int AdminId { get; set; }
+        public string AdminUsername { get; set; } // Thêm tên Admin
+        public DateTime CreatedAt { get; set; } // Thêm ngày giờ
 
         [Required]
         [StringLength(50, MinimumLength = 1)]

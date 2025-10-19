@@ -78,5 +78,33 @@ namespace DoAnWebAPI.Services.Repositories
                 return null;
             }
         }
+        public async Task<int> GetNextIdAsync()
+        {
+            var dict = await _firebaseService.GetDataAsync<Dictionary<string, AdminLog>>(Collection);
+            if (dict == null || dict.Count == 0) return 1;
+
+            var maxId = dict.Values.Select(log => log.Id).DefaultIfEmpty(0).Max();
+            return maxId + 1;
+        }
+
+        // ✅ BƯỚC 1.2: THÊM HÀM CREATEASYNC
+        public async Task<AdminLog> CreateAsync(AdminLog adminLog)
+        {
+            try
+            {
+                // Tự động gán ID và thời gian
+                adminLog.Id = await GetNextIdAsync();
+                adminLog.CreatedAt = DateTime.UtcNow;
+
+                await _firebaseService.SaveDataAsync($"{Collection}/log_{adminLog.Id}", adminLog);
+                _logger.LogInformation("AdminLog created with ID {Id}", adminLog.Id);
+                return adminLog;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating admin log");
+                throw;
+            }
+        }
     }
 }

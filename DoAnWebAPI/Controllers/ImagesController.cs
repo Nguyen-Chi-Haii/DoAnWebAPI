@@ -1,10 +1,12 @@
 ﻿// File: Controllers/ImagesController.cs
 
+using DoAnWebAPI.Model;
 using DoAnWebAPI.Model.DTO.Image;
 using DoAnWebAPI.Model.DTO.Tag;
 using DoAnWebAPI.Model.DTO.Topics;
 using DoAnWebAPI.Services.Interface;
 using DoAnWebAPI.Services.Repositories;
+using FirebaseWebApi.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -23,12 +25,14 @@ namespace DoAnWebAPI.Controllers
         private readonly IImageRepository _repository;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IStatRepository _statRepository;
+        private readonly IAdminLogRepository _adminLogRepository;
 
-        public ImagesController(IImageRepository repository, ICloudinaryService cloudinaryService, IStatRepository statRepository)
+        public ImagesController(IImageRepository repository, ICloudinaryService cloudinaryService, IStatRepository statRepository,IAdminLogRepository adminLogRepository)
         {
             _repository = repository;
             _cloudinaryService = cloudinaryService;
             _statRepository = statRepository;
+            _adminLogRepository = adminLogRepository;
         }
 
         private int? GetCurrentUserIdOrDefault()
@@ -58,7 +62,9 @@ namespace DoAnWebAPI.Controllers
 
              // === THAM SỐ PHÂN TRANG (RẤT QUAN TRỌNG) ===
              [FromQuery] int page = 1,
-             [FromQuery] int pageSize = 10
+             [FromQuery] int pageSize = 10,
+             [FromQuery] string? sortBy = "date", 
+             [FromQuery] string? sortDirection = "desc"
          )
         {
             var currentUserId = GetCurrentUserIdOrDefault();
@@ -100,10 +106,18 @@ namespace DoAnWebAPI.Controllers
             {
                 query = query.Where(i => i.Status == status);
             }
-
-            // 3. SẮP XẾP (trên DTO)
-            query = query.OrderByDescending(i => i.CreatedAt); // DTO đã có CreatedAt
-
+            if (!string.IsNullOrEmpty(sortBy))
+            {
+                query = sortBy.ToLower() switch
+                {
+                   "date" => sortDirection?.ToLower() == "asc" ? query.OrderBy(i => i.CreatedAt) : query.OrderByDescending(i => i.CreatedAt),
+                    _ => query.OrderByDescending(i => i.CreatedAt) // mặc định
+                };
+            }
+            else
+            {
+                query = query.OrderByDescending(i => i.CreatedAt);
+            }
             // 4. PHÂN TRANG (trên kết quả lọc cuối cùng)
             var totalCount = query.Count();
             var pagedItems = query
@@ -185,7 +199,7 @@ namespace DoAnWebAPI.Controllers
             var currentUserId = GetCurrentUserIdOrDefault();
             if (!currentUserId.HasValue) return Unauthorized();
 
-            var image = await _repository.GetByIdAsync(id); // Lấy bản gốc để kiểm tra quyền
+            var image = await _repository.GetByIdAsync(id); // Lấy bản gốc
             if (image == null) return NotFound();
 
             if (image.UserId != currentUserId && !IsAdmin())
@@ -193,9 +207,36 @@ namespace DoAnWebAPI.Controllers
                 return Forbid();
             }
 
+            // ✅ BƯỚC 1: Lấy trạng thái CŨ trước khi cập nhật
+            // (Giả sử model 'Image' của bạn có thuộc tính 'Status')
+            var oldStatus = image.Status;
+
+            // Thực hiện cập nhật
             var success = await _repository.UpdateAsync(id, dto);
             if (!success) return NotFound();
 
+   
+            if (IsAdmin() && dto.Status != null && dto.Status == "approved" && oldStatus != "approved")
+            {
+                try
+                {
+                    var adminId = GetCurrentUserIdOrDefault(); // Chắc chắn có giá trị vì đã check IsAdmin()
+
+                    var log = new AdminLog
+                    {
+                        AdminId = adminId.Value,
+                        ActionType = "APPROVE_IMAGE", // ✅ Đã cố định
+                        Target = image.Id, // ✅ Lấy 'int' Id từ 'image', không dùng 'string id'
+                        Meta = $"Approved image (ID: {image.Id}, Title: {image.Title})" // ✅ Thông tin log rõ ràng hơn
+                    };
+                    _ = _adminLogRepository.CreateAsync(log); // Fire-and-forget
+                }
+                catch (Exception ex)
+                {
+                    // Ghi log lỗi nếu không tạo được AdminLog, nhưng không làm hỏng request chính
+                    Console.WriteLine($"Failed to create admin log: {ex.Message}");
+                }
+            }
             return NoContent();
         }
 

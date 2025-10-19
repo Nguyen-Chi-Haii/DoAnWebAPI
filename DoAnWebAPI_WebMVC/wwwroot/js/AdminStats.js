@@ -1,141 +1,172 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
-    // ---- Dữ liệu giả lập ----
-    const stats = {
-        totalImages: 1240,
-        totalUsers: 356,
-        totalLikes: 18340,
-        totalDownloads: 9210,
-    };
+﻿// File: wwwroot/js/AdminStats.js
 
-    const monthlyUsers = [
-        { month: "Thg 1", users: 25 }, { month: "Thg 2", users: 40 },
-        { month: "Thg 3", users: 55 }, { month: "Thg 4", users: 70 },
-        { month: "Thg 5", users: 80 }, { month: "Thg 6", users: 90 },
-        { month: "Thg 7", users: 100 }, { month: "Thg 8", users: 120 },
-        { month: "Thg 9", users: 130 }, { month: "Thg 10", users: 150 },
-    ];
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("Admin Stats script loaded.");
 
-    const topTags = [
-        { name: "Phong cảnh", count: 320 },
-        { name: "Động vật", count: 210 },
-        { name: "Kiến trúc", count: 150 },
-    ];
+    // DOM Elements to update
+    const totalApprovedImagesEl = document.getElementById('totalApprovedImages');
+    const totalUsersEl = document.getElementById('totalUsers');
+    const userGrowthChartCanvas = document.getElementById('userGrowthChart');
+    const chartErrorEl = document.getElementById('chart-error');
 
-    const topTopics = [
-        { name: "Thiên nhiên", count: 280 },
-        { name: "Con người", count: 200 },
-        { name: "Du lịch", count: 160 },
-    ];
+    let userGrowthChart = null; // Variable to hold the chart instance
 
-    const uploadDownloadData = [
-        { month: "Thg 1", uploads: 120, downloads: 400 }, { month: "Thg 2", uploads: 140, downloads: 420 },
-        { month: "Thg 3", uploads: 180, downloads: 460 }, { month: "Thg 4", uploads: 200, downloads: 480 },
-        { month: "Thg 5", uploads: 220, downloads: 520 }, { month: "Thg 6", uploads: 250, downloads: 540 },
-        { month: "Thg 7", uploads: 260, downloads: 580 }, { month: "Thg 8", uploads: 280, downloads: 600 },
-        { month: "Thg 9", uploads: 300, downloads: 620 }, { month: "Thg 10", uploads: 320, downloads: 650 },
-    ];
+    // --- Function to fetch data from APIs ---
+    async function loadStatsData() {
+        // Show loading state
+        if (totalApprovedImagesEl) totalApprovedImagesEl.textContent = '...';
+        if (totalUsersEl) totalUsersEl.textContent = '...';
+        if (chartErrorEl) chartErrorEl.classList.add('hidden'); // Hide previous errors
 
-    // --- Cập nhật các card thống kê ---
-    document.getElementById('totalImages').textContent = stats.totalImages.toLocaleString('vi-VN');
-    document.getElementById('totalUsers').textContent = stats.totalUsers.toLocaleString('vi-VN');
-    document.getElementById('totalLikes').textContent = stats.totalLikes.toLocaleString('vi-VN');
-    document.getElementById('totalDownloads').textContent = stats.totalDownloads.toLocaleString('vi-VN');
+        try {
+            // Fetch Approved Image Count and Total User Count in parallel
+            const [imageResult, users] = await Promise.all([
+                api.images.getAll({ status: 'approved', page: 1, pageSize: 1 }), // Get count efficiently
+                api.users.getAll() // Get all users for count and chart data
+            ]);
 
-    // --- Hiển thị Top Tags & Topics ---
-    const topTagsContainer = document.getElementById('topTagsContainer');
-    topTags.forEach(tag => {
-        topTagsContainer.innerHTML += `
-            <div class="flex justify-between py-2 border-b last:border-none text-sm">
-                <span>${tag.name}</span>
-                <span class="font-semibold text-blue-600">${tag.count}</span>
-            </div>
-        `;
-    });
-
-    const topTopicsContainer = document.getElementById('topTopicsContainer');
-    topTopics.forEach(topic => {
-        topTopicsContainer.innerHTML += `
-            <div class="flex justify-between py-2 border-b last:border-none text-sm">
-                <span>${topic.name}</span>
-                <span class="font-semibold text-green-600">${topic.count}</span>
-            </div>
-        `;
-    });
-
-    // --- Cấu hình chung cho biểu đồ ---
-    const chartOptions = {
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { display: true, position: 'top' },
-            tooltip: {
-                enabled: true,
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                titleFont: { size: 14, weight: 'bold' },
-                bodyFont: { size: 12 },
-                padding: 10,
-                cornerRadius: 6,
+            // 1. Update Total Approved Images Count
+            const approvedImageCount = imageResult.totalCount || 0;
+            if (totalApprovedImagesEl) {
+                totalApprovedImagesEl.textContent = approvedImageCount.toLocaleString('vi-VN');
             }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                grid: { color: '#e5e7eb' }, // gray-200
-                ticks: { color: '#6b7280' } // gray-500
-            },
-            x: {
-                grid: { display: false },
-                ticks: { color: '#6b7280' }
+            console.log("Approved Images:", approvedImageCount);
+
+            // 2. Update Total Users Count
+            const totalUserCount = users ? users.length : 0;
+            if (totalUsersEl) {
+                totalUsersEl.textContent = totalUserCount.toLocaleString('vi-VN');
+            }
+            console.log("Total Users:", totalUserCount);
+
+            // 3. Process User Data for Growth Chart
+            if (users && users.length > 0 && userGrowthChartCanvas) {
+                const userGrowthData = processUserDataForChart(users);
+                renderUserGrowthChart(userGrowthData);
+            } else if (userGrowthChartCanvas) {
+                // Handle case with no users or canvas not found
+                console.log("No user data or canvas to render chart.");
+                if (chartErrorEl) {
+                    chartErrorEl.textContent = 'Chưa có dữ liệu người dùng để vẽ biểu đồ.';
+                    chartErrorEl.classList.remove('hidden');
+                }
+            }
+
+        } catch (error) {
+            console.error("Error loading stats data:", error);
+            // Display error messages
+            if (totalApprovedImagesEl) totalApprovedImagesEl.textContent = 'Lỗi';
+            if (totalUsersEl) totalUsersEl.textContent = 'Lỗi';
+            if (chartErrorEl) {
+                chartErrorEl.textContent = `Lỗi tải dữ liệu: ${error.message}`;
+                chartErrorEl.classList.remove('hidden');
             }
         }
-    };
+    }
 
-    // --- Vẽ Biểu đồ Tăng trưởng Người dùng (Bar Chart) ---
-    const userCtx = document.getElementById('userGrowthChart').getContext('2d');
-    userCtx.canvas.height = 300;
-    new Chart(userCtx, {
-        type: 'bar',
-        data: {
-            labels: monthlyUsers.map(d => d.month),
-            datasets: [{
-                label: 'Người dùng mới',
-                data: monthlyUsers.map(d => d.users),
-                backgroundColor: '#3b82f6', // blue-500
-                borderColor: '#2563eb', // blue-600
-                borderWidth: 1,
-                borderRadius: { topLeft: 6, topRight: 6 }
-            }]
-        },
-        options: chartOptions,
-    });
+    // --- Function to process user data for the chart ---
+    function processUserDataForChart(users) {
+        const monthlyCounts = {}; // Object to store counts like: {"YYYY-MM": count}
 
-    // --- Vẽ Biểu đồ Hoạt động (Line Chart) ---
-    const activityCtx = document.getElementById('activityChart').getContext('2d');
-    activityCtx.canvas.height = 300;
-    new Chart(activityCtx, {
-        type: 'line',
-        data: {
-            labels: uploadDownloadData.map(d => d.month),
-            datasets: [
-                {
-                    label: 'Tải lên',
-                    data: uploadDownloadData.map(d => d.uploads),
-                    borderColor: '#22c55e', // green-500
-                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                },
-                {
-                    label: 'Tải xuống',
-                    data: uploadDownloadData.map(d => d.downloads),
-                    borderColor: '#3b82f6', // blue-500
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
+        users.forEach(user => {
+            if (user.createdAt && !user.createdAt.startsWith("0001-01-01")) { // Check for valid date
+                try {
+                    const date = new Date(user.createdAt);
+                    // Format as YYYY-MM for grouping
+                    const year = date.getFullYear();
+                    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // +1 because months are 0-indexed, padStart ensures '01', '02', etc.
+                    const yearMonth = `${year}-${month}`;
+
+                    monthlyCounts[yearMonth] = (monthlyCounts[yearMonth] || 0) + 1;
+                } catch (e) {
+                    console.warn("Could not parse date for user:", user.id, user.createdAt);
                 }
-            ]
-        },
-        options: chartOptions
-    });
+            }
+        });
+
+        // Convert to array and sort by date
+        const sortedData = Object.entries(monthlyCounts)
+            .map(([yearMonth, count]) => ({ month: yearMonth, users: count }))
+            .sort((a, b) => a.month.localeCompare(b.month)); // Sort chronologically
+
+        console.log("Processed User Growth Data:", sortedData);
+        return sortedData; // Example: [{ month: "2025-09", users: 2 }, { month: "2025-10", users: 10 }]
+    }
+
+    // --- Function to render the User Growth Chart ---
+    function renderUserGrowthChart(data) {
+        if (!userGrowthChartCanvas) return;
+        const ctx = userGrowthChartCanvas.getContext('2d');
+
+        // Destroy previous chart instance if it exists
+        if (userGrowthChart) {
+            userGrowthChart.destroy();
+        }
+
+
+        // Basic chart options (customize as needed)
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false, // Allow height control
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Số lượng người dùng mới'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Tháng'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false // Hide legend for single dataset
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return ` Người dùng mới: ${context.parsed.y}`;
+                        }
+                    }
+                }
+            }
+        };
+
+        // Create the new chart
+        userGrowthChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.month), // Use YYYY-MM as labels
+                datasets: [{
+                    label: 'Người dùng mới',
+                    data: data.map(d => d.users),
+                    backgroundColor: 'rgba(59, 130, 246, 0.6)', // Tailwind blue-500 with opacity
+                    borderColor: 'rgba(37, 99, 235, 1)',   // Tailwind blue-700
+                    borderWidth: 1,
+                    borderRadius: 4 // Add some rounding to bars
+                }]
+            },
+            options: chartOptions
+        });
+        userGrowthChartCanvas.style.height = '350px'; // Set a reasonable height
+    }
+
+    // --- Run Initialization ---
+    if (typeof api !== 'undefined' && api.images && api.users && typeof Chart !== 'undefined') {
+        loadStatsData();
+    } else {
+        console.error("API service or Chart.js is not available.");
+        if (chartErrorEl) {
+            chartErrorEl.textContent = 'Lỗi: Không thể tải thư viện biểu đồ hoặc dịch vụ API.';
+            chartErrorEl.classList.remove('hidden');
+        }
+        // Show error state for counts as well
+        if (totalApprovedImagesEl) totalApprovedImagesEl.textContent = 'Lỗi';
+        if (totalUsersEl) totalUsersEl.textContent = 'Lỗi';
+    }
 });

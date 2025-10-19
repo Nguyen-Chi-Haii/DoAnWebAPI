@@ -8,5 +8,7 @@
         public string AvatarUrl { get; set; }
         public string Role { get; set; }
         public IFormFile AvatarFile { get; set; }
+
+        public DateTime CreatedAt { get; set; }
     }
 }

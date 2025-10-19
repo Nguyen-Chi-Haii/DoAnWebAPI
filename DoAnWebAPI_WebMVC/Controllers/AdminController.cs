@@ -1,13 +1,7 @@
-﻿// File: Controllers/AdminController.cs
-
-// using Microsoft.AspNetCore.Authorization; // <-- CÓ THỂ XÓA DÒNG NÀY
+﻿
 using Microsoft.AspNetCore.Mvc;
-
-// ✅ BƯỚC 1: GỠ BỎ ATTRIBUTE NÀY KHỎI CONTROLLER
-// [Authorize(Roles = "Admin")] 
 public class AdminController : Controller
 {
-    // ✅ BƯỚC 2: TẠO MỘT HÀM KIỂM TRA CHUNG (TÙY CHỌN, ĐỂ CHO GỌN)
     private bool IsAdmin()
     {
         return HttpContext.Session.GetString("UserRole") == "Admin";

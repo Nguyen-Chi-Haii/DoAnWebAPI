@@ -1,12 +1,14 @@
-﻿using DoAnWebAPI.Model.DTO.User;
+﻿using DoAnWebAPI.Model;
+using DoAnWebAPI.Model.DTO.User;
 using DoAnWebAPI.Services.Interface;
+using FirebaseWebApi.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using System;
+using System.Threading.Tasks;
 
 namespace DoAnWebAPI.Controllers
 {
@@ -16,10 +18,13 @@ namespace DoAnWebAPI.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
+        // Add a private readonly field for IAdminLogRepository
+        private readonly IAdminLogRepository _adminLogRepository;
 
-        public UsersController(IUserRepository userRepository)
+        public UsersController(IUserRepository userRepository,IAdminLogRepository adminLogRepository)
         {
             _userRepository = userRepository;
+            _adminLogRepository = adminLogRepository;
         }
 
         // Helper để lấy ID người dùng đã xác thực
@@ -176,8 +181,30 @@ namespace DoAnWebAPI.Controllers
                 return StatusCode(403, new { Message = "Bạn không có quyền xóa hồ sơ người dùng này." });
             }
 
+            var userToLog = await _userRepository.GetByIdAsync(id);
+            if (userToLog == null) return NotFound();
+
             var result = await _userRepository.DeleteAsync(id);
             if (!result) return NotFound();
+
+            // ✅ GHI LOG HÀNH ĐỘNG
+            try
+            {
+                var adminId = GetCurrentUserId(); // Lấy ID admin đang thực hiện
+                var log = new AdminLog
+                {
+                    AdminId = adminId,
+                    ActionType = "DELETE_USER",
+                    Target = id,
+                    Meta = $"Deleted user: {userToLog.Username} (Email: {userToLog.Email})",
+                };
+                await _adminLogRepository.CreateAsync(log);
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi nếu không tạo được AdminLog, nhưng không làm hỏng request chính
+                Console.WriteLine($"Failed to create admin log: {ex.Message}");
+            }
             return NoContent();
         }
     }

@@ -1,93 +1,88 @@
-﻿<!-- home.html: Nội dung chính của trang Trang chủ -->
+﻿@using DoAnWebAPI.Model.DTO.AdminLog;
 @{
-        ViewData["Title"] = "Admin Home";
+    ViewData["Title"] = "Admin Home";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
+
 <h1 class="text-2xl font-bold mb-2">🏠 Trang chủ</h1>
 <p class="text-gray-500 mb-8">
     Chào mừng trở lại! Dưới đây là tổng quan hệ thống của bạn.
 </p>
+
 <div class="space-y-8">
-    <!-- THỐNG KÊ NHANH -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
         <a href="/Admin/AdminApproval" class="block text-current no-underline">
-            <div class="admin-card flex items-center gap-4 p-5 cursor-pointer">
+            @* ✅ Added relative positioning here *@
+            <div class="admin-card flex items-center gap-4 p-5 cursor-pointer relative">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" /><path d="m9 12 2 2 4-4" /></svg>
                 <div>
-                    <h3 class="text-lg font-semibold">Ảnh chờ duyệt</h3>
-                    <p class="text-gray-500">8 ảnh đang chờ duyệt</p>
+                    <h2 class="font-semibold text-lg">Ảnh chờ duyệt</h2> @* ✅ Changed h3 to h2 for consistency *@
+                    <p class="text-sm text-gray-500">Xem và phê duyệt ảnh mới</p> @* ✅ Added description *@
                 </div>
+                @* ✅ Correct ID for the first badge *@
+                <span id="pending-count-badge" class="absolute top-3 right-3 hidden items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">0</span>
             </div>
         </a>
-    </div>
-
-    <!-- DANH SÁCH THÔNG BÁO -->
-    <div class="admin-card p-6">
-        <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></svg>
-            Thông báo gần nhất
-        </h2>
-        <ul class="space-y-4">
-            <li class="border-b border-gray-100 pb-3 last:border-none">
-                <div class="flex justify-between items-center">
-                    <h3 class="font-semibold text-gray-800">Ảnh mới chờ duyệt</h3>
-                    <span class="text-xs text-gray-400">09/10/2025 08:35</span>
-                </div>
-                <p class="text-sm text-gray-600 mt-1">Có 5 ảnh mới được người dùng gửi lên đang chờ duyệt.</p>
-            </li>
-            <li class="border-b border-gray-100 pb-3 last:border-none">
-                <div class="flex justify-between items-center">
-                    <h3 class="font-semibold text-gray-800">Cập nhật chủ đề</h3>
-                    <span class="text-xs text-gray-400">09/10/2025 08:12</span>
-                </div>
-                <p class="text-sm text-gray-600 mt-1">Admin B vừa thêm chủ đề 'Thiên nhiên hoang dã'.</p>
-            </li>
-            <li class="border-b border-gray-100 pb-3 last:border-none">
-                <div class="flex justify-between items-center">
-                    <h3 class="font-semibold text-gray-800">Người dùng mới đăng ký</h3>
-                    <span class="text-xs text-gray-400">09/10/2025 07:50</span>
-                </div>
-                <p class="text-sm text-gray-600 mt-1">Tài khoản 'user_204' vừa đăng ký thành công.</p>
-            </li>
-        </ul>
-    </div>
-
-    <!-- CÁC PHÍM TẮT QUẢN LÝ -->
-    <div>
-        <h2 class="text-xl font-semibold mb-4">Chức năng quản lý nhanh</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-            <!-- Thay thế thẻ div bằng thẻ a và thêm href -->
-            <a href="/Admin/AdminStats" class="shortcut-card admin-card flex flex-col items-start p-5 cursor-pointer text-current no-underline">
-                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-blue-500"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
-                <h3 class="font-semibold text-lg mb-1">Thống kê hệ thống</h3>
-            </a>
-
-            <a href="/Admin/AdminImages" class="shortcut-card admin-card flex flex-col items-start p-5 cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-blue-500"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
-                <h3 class="font-semibold text-lg mb-1">Quản lý ảnh</h3>
-            </a>
-
-            <div href="/Admin/AdminUsers" data-page="Quản lý người dùng" class="shortcut-card admin-card flex flex-col items-start p-5 cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-blue-500"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                <h3 class="font-semibold text-lg mb-1">Quản lý người dùng</h3>
-            </div>
-
-            <div href="/Admin/AdminTags_Topics" data-page="Chủ đề & Tag" class="shortcut-card admin-card flex flex-col items-start p-5 cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-blue-500"><path d="M12.586 2.586a2 2 0 0 0-2.828 0L2.172 10.172a2 2 0 0 0 0 2.828l7.414 7.414a2 2 0 0 0 2.828 0l7.414-7.414a2 2 0 0 0 0-2.828Z"></path><path d="m18 8-8 8"></path><path d="M9.05 14.95 14.95 9.05"></path></svg>
-                <h3 class="font-semibold text-lg mb-1">Chủ đề & Tag</h3>
-            </div>
-
-            <div href="/Admin/AdminApproval" data-page="Duyệt ảnh" class="shortcut-card admin-card flex flex-col items-start p-5 cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-blue-500"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
-                <h3 class="font-semibold text-lg mb-1">Duyệt ảnh</h3>
-            </div>
-
-            <div href="/Admin/AdminLogs" data-page="Nhật ký hoạt động" class="shortcut-card admin-card flex flex-col items-start p-5 cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-blue-500"><path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1V14c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h1.8c.4 0 .8.2 1.1.5.3.3.5.7.5 1.1V22l5.3-5.3c.3-.3.5-.7.5-1.1V3.6c0-.4-.2-.8-.5-1.1-.3-.3-.7-.5-1.1-.5z"></path></svg>
-                <h3 class="font-semibold text-lg mb-1">Nhật ký hoạt động</h3>
+        @* Thống kê chung Card (Keep as is or make it a link if needed) *@
+        <div class="admin-card flex items-center gap-4 p-5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><line x1="18" x2="18" y1="20" y2="10" /><line x1="12" x2="12" y1="20" y2="4" /><line x1="6" x2="6" y1="20" y2="14" /></svg>
+            <div>
+                <h2 class="font-semibold text-lg">Thống kê chung</h2>
+                <p class="text-sm text-gray-500">Xem báo cáo và phân tích</p>
             </div>
         </div>
     </div>
+
+    <div>
+        <h2 class="text-xl font-semibold mb-4">🔔 Thông báo mới nhất</h2>
+        <div id="latest-logs-container" class="admin-card p-5 space-y-4">
+            <p id="logs-placeholder" class="text-center text-gray-500 italic">Đang tải thông báo...</p>
+        </div>
+    </div>
+
+    <div>
+        @* ✅ Changed title from "Chức năng quản lý nhanh" to match previous version *@
+        <h2 class="text-xl font-semibold mb-4">🚀 Lối tắt</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            @* ✅ Changed lg:grid-cols-3 back to 4 *@
+
+            @* ✅ Changed all shortcut divs to <a> tags with href and removed data-page *@
+            <a href="/Admin/AdminUsers" class="shortcut-card admin-card flex flex-col items-start p-5 cursor-pointer text-current no-underline relative">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-purple-500"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                <h3 class="font-semibold text-lg mb-1">Người dùng</h3>
+            </a>
+
+            <a href="/Admin/AdminImages" class="shortcut-card admin-card flex flex-col items-start p-5 cursor-pointer text-current no-underline relative">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-teal-500"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
+                <h3 class="font-semibold text-lg mb-1">Ảnh</h3>
+            </a>
+
+            <a href="/Admin/AdminTags_Topics" class="shortcut-card admin-card flex flex-col items-start p-5 cursor-pointer text-current no-underline relative">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-orange-500"><path d="M12.586 2.586a2 2 0 0 0-2.828 0L2.172 10.172a2 2 0 0 0 0 2.828l7.414 7.414a2 2 0 0 0 2.828 0l7.414-7.414a2 2 0 0 0 0-2.828Z" /><path d="m18 8-8 8" /><path d="M9.05 14.95 14.95 9.05" /></svg>
+                <h3 class="font-semibold text-lg mb-1">Chủ đề & Tag</h3>
+            </a>
+
+            <a href="/Admin/AdminApproval" class="shortcut-card admin-card flex flex-col items-start p-5 cursor-pointer text-current no-underline relative">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-blue-500"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" /><path d="m9 12 2 2 4-4" /></svg>
+                <h3 class="font-semibold text-lg mb-1">Duyệt ảnh</h3>
+                @* ✅ Added correct ID for the shortcut badge *@
+                <span id="pending-count-badge-shortcut" class="absolute top-1 right-1 hidden items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">0</span>
+            </a>
+
+            <a href="/Admin/AdminLogs" class="shortcut-card admin-card flex flex-col items-start p-5 cursor-pointer text-current no-underline relative">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-gray-500"><path d="M10 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2H14" /><polyline points="14 2 14 8 20 8" /><path d="M12 18v-6" /><path d="m9 15 3 3 3-3" /></svg>
+                <h3 class="font-semibold text-lg mb-1">Nhật ký</h3>
+            </a>
+
+            @* ✅ Added the Stats shortcut back, ensure /Admin/AdminStats route exists *@
+            <a href="/Admin/AdminStats" class="shortcut-card admin-card flex flex-col items-start p-5 cursor-pointer text-current no-underline relative">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-green-500"><line x1="18" x2="18" y1="20" y2="10" /><line x1="12" x2="12" y1="20" y2="4" /><line x1="6" x2="6" y1="20" y2="14" /></svg>
+                <h3 class="font-semibold text-lg mb-1">Thống kê</h3>
+            </a>
+
+        </div>
+    </div>
 </div>
+
+@* ✅ Ensure AdminHome.js path is correct *@
 <script src="~/js/AdminHome.js"></script>

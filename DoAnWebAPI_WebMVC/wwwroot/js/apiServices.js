@@ -149,17 +149,38 @@ const api = {
         incrementDownloadsAsync: (imageId) => request(`/images/${imageId}/stats/download`, 'POST', {})
     },
     tags: {
+
         getAll: () => request('/tags', 'GET'),
+
+        create: (data) => request('/tags', 'POST', data),
+
+
+        update: (id, data) => request(`/tags/${id}`, 'PUT', data),
+
+
+        delete: (id) => request(`/tags/${id}`, 'DELETE')
     },
+
+
     topics: {
-        getAll: () => request('/topics', 'GET'),
+
+        getAll: () => request('/topics', 'GET'), //
+
+  
+        create: (data) => request('/topics', 'POST', data), //
+
+ 
+        update: (id, data) => request(`/topics/${id}`, 'PUT', data), //
+
+        delete: (id) => request(`/topics/${id}`, 'DELETE') //
     },
-    // ✅ BƯỚC 1: THÊM ĐỐI TƯỢNG 'users'
     users: {
-
+        getAll: () => request('/users', 'GET'),
         getById: (id) => request(`/users/${id}`, 'GET'),
-
         update: (id, formData) => request(`/users/${id}`, 'PUT', formData),
-        changePassword: (data) => request('/auth/change-password', 'POST', data)
+        delete: (id) => request(`/users/${id}`, 'DELETE'),
+    },
+    adminLogs: {
+        getAll: () => request('/AdminLogs', 'GET') //
     }
 };

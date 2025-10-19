@@ -2,28 +2,59 @@
 document.addEventListener('DOMContentLoaded', function () {
     // ======= BIẾN TRẠNG THÁI =======
     let currentPage = 1;
-    let filters = { search: "" }; // Chỉ cần tìm kiếm cơ bản
-    const imagesPerPage = 9; // Có thể điều chỉnh số lượng mỗi trang
-    const userCache = {}; // Cache tên user
+    let filters = { search: "" };
+    const imagesPerPage = 9;
+    const userCache = {};
+    let sortOrder = "desc"; // ✅ Thêm: Mặc định là mới nhất
+    let currentTotalPages = 1; // Lưu tổng số trang
 
     // ======= LẤY CÁC PHẦN TỬ DOM =======
     const imageListContainer = document.getElementById('image-list-container');
     const searchInput = document.getElementById('search-input');
+    const sortSelect = document.getElementById('sort-select'); // ✅ Thêm
     const noResults = document.getElementById('no-results');
     const prevPageBtn = document.getElementById('prev-page');
     const nextPageBtn = document.getElementById('next-page');
     const pageInfo = document.getElementById('page-info');
     const loadingSpinner = document.getElementById('loading-spinner');
+    // Popup elements (Giữ nguyên)
+    const imagePopup = document.getElementById('image-popup');
+    const closePopupBtn = document.getElementById('close-popup-btn');
+    const popupImage = document.getElementById('popup-image');
+    const popupTitle = document.getElementById('popup-title');
+    const popupDescription = document.getElementById('popup-description');
+    const popupUploader = document.getElementById('popup-uploader');
+    const popupUploadedAt = document.getElementById('popup-uploadedAt');
+    const popupApproveBtn = document.getElementById('popup-approve-btn');
+    const popupRejectBtn = document.getElementById('popup-reject-btn');
 
-    // ======= HÀM SPINNER =======
+    // ======= HÀM SPINNER (Giữ nguyên) =======
     function showSpinner() {
         if (loadingSpinner) loadingSpinner.classList.remove('hidden');
         imageListContainer.innerHTML = '';
         noResults.classList.add('hidden');
     }
-
     function hideSpinner() {
         if (loadingSpinner) loadingSpinner.classList.add('hidden');
+    }
+
+    // ======= HÀM LẤY TÊN USER (Giữ nguyên) =======
+    async function getUserName(userId) {
+        // ... (Giữ nguyên logic cache và gọi API)
+        if (!userId) return "N/A";
+        if (userCache[userId]) {
+            return userCache[userId];
+        }
+        try {
+            const user = await api.users.getById(userId);
+            const userName = user.username || `User ${userId}`;
+            userCache[userId] = userName;
+            return userName;
+        } catch (error) {
+            console.error(`Error fetching user ${userId}:`, error);
+            userCache[userId] = `User ${userId}`; // Cache fallback
+            return `User ${userId}`;
+        }
     }
 
     // ======= HÀM RENDER CHÍNH =======
@@ -31,199 +62,164 @@ document.addEventListener('DOMContentLoaded', function () {
         showSpinner();
         try {
             const filterParams = {
-                search: filters.search || "",
+                search: filters.search || undefined, // Gửi undefined nếu rỗng
                 page: currentPage,
                 pageSize: imagesPerPage,
-                status: "pending" // ✅ CHỈ LẤY ẢNH PENDING
+                status: "pending", // Luôn lấy ảnh pending
+                sortBy: "date", // ✅ Luôn sắp xếp theo ngày
+                sortDirection: sortOrder // ✅ Sử dụng state sortOrder
             };
 
-            const pagedResult = await api.images.getAll(filterParams); // Gọi API cũ nhưng với status=pending
+            // Gọi API với tham số filter và sort
+            const pagedResult = await api.images.getAll(filterParams);
+
             const images = pagedResult.items;
-            imageListContainer.innerHTML = ''; // Xóa spinner
+            currentTotalPages = pagedResult.totalPages || 1; // Cập nhật tổng số trang
+
+            imageListContainer.innerHTML = ''; // Xóa spinner/nội dung cũ
 
             if (!images || images.length === 0) {
                 noResults.classList.remove('hidden');
             } else {
                 noResults.classList.add('hidden');
-                // Dùng Promise.all để tải tên user
-                const imageCardPromises = images.map(img => createApprovalCard(img));
+                // Tạo card ảnh song song
+                const imageCardPromises = images.map(img => createImageCard(img));
                 const imageCardElements = await Promise.all(imageCardPromises);
                 imageCardElements.forEach(el => imageListContainer.appendChild(el));
-                if (window.lucide) lucide.createIcons(); // Cập nhật icons
+                // Re-initialize icons if using Lucide
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
             }
-            updatePagination(pagedResult);
+
+            // Cập nhật phân trang
+            updatePagination(pagedResult.page, currentTotalPages);
 
         } catch (error) {
             console.error("Lỗi khi tải ảnh chờ duyệt:", error);
-            hideSpinner();
-            if (error.message !== "Unauthorized") {
-                imageListContainer.innerHTML = `<p class="text-red-500 text-center col-span-full">Không thể tải dữ liệu. ${error.message}</p>`;
-            }
+            noResults.textContent = `Lỗi: ${error.message}`;
+            noResults.classList.remove('hidden');
+            noResults.classList.add('text-red-500'); // Thêm màu đỏ cho lỗi
         } finally {
-            // Đảm bảo spinner luôn ẩn sau khi xong (trừ khi lỗi đã ẩn)
-            if (loadingSpinner && !loadingSpinner.classList.contains('hidden')) {
-                hideSpinner();
-            }
+            hideSpinner();
         }
     }
 
-    // ======= HÀM HỖ TRỢ =======
-    async function getUserName(userId) {
-        // (Giữ nguyên hàm getUserName từ AdminImages.js)
-        if (!userId) return "N/A";
-        if (userCache[userId]) return userCache[userId];
-        try {
-            const user = await api.users.getById(userId);
-            const userName = user.userName || `User ${userId}`;
-            userCache[userId] = userName;
-            return userName;
-        } catch (error) {
-            console.error(`Lỗi lấy user ${userId}:`, error);
-            userCache[userId] = `User ${userId}`;
-            return `User ${userId}`;
-        }
-    }
-
-    // ✅ HÀM TẠO CARD DUYỆT ẢNH MỚI
-    async function createApprovalCard(image) {
-        const div = document.createElement('div');
-        // Thêm data-id vào card chính để dễ lấy khi xử lý nút
-        div.className = 'approval-card bg-white rounded-lg shadow-md overflow-hidden flex flex-col border border-gray-200';
-        div.dataset.id = image.id; // Lưu ID ảnh vào card
+    // ======= HÀM TẠO CARD ẢNH =======
+    async function createImageCard(image) {
+        const card = document.createElement('div');
+        card.className = 'admin-card relative group bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow';
+        card.dataset.id = image.id; // Lưu ID để mở popup
 
         const userName = await getUserName(image.userId);
 
-        div.innerHTML = `
-            <div class="relative group">
-                <img src="${image.thumbnailUrl || image.fileUrl || '/img/placeholder-image.png'}"
-                     alt="${image.title || 'Ảnh chờ duyệt'}"
-                     class="w-full h-48 object-cover bg-gray-100">
-                 </div>
-            <div class="p-4 flex-grow flex flex-col justify-between">
-                <div>
-                    <p class="font-semibold text-gray-800 truncate mb-1" title="${image.title || ''}">${image.title || '(Chưa có tiêu đề)'}</p>
-                    <p class="text-xs text-gray-500 mb-1">
-                        Người đăng: <span class="font-medium text-blue-600">${userName}</span>
-                    </p>
-                    <p class="text-xs text-gray-500 mb-3">
-                        Ngày đăng: <span class="font-medium">${new Date(image.createdAt).toLocaleDateString('vi-VN')}</span>
-                    </p>
-                    <p class="text-sm text-gray-600 line-clamp-2 mb-3">${image.description || 'Không có mô tả.'}</p>
-                </div>
-                 <div class="flex justify-end gap-2 mt-auto pt-3 border-t border-gray-100">
-                    <button class="reject-btn text-sm font-medium text-red-600 bg-red-100 hover:bg-red-200 px-3 py-1.5 rounded-md transition flex items-center gap-1" data-id="${image.id}">
+        card.innerHTML = `
+            <img src="${image.thumbnailUrl || '/img/placeholder-image.png'}" alt="${image.title || 'Pending Image'}"
+                 class="w-full h-48 object-cover cursor-pointer group-hover:opacity-80 transition-opacity" loading="lazy">
+            <div class="p-4">
+                <p class="text-sm font-semibold text-gray-800 truncate mb-1" title="${image.title || ''}">${image.title || '(Chưa có tiêu đề)'}</p>
+                <p class="text-xs text-gray-500 mb-3">
+                    Bởi: <span class="font-medium text-blue-600">${userName}</span>
+                    vào ${new Date(image.createdAt).toLocaleDateString('vi-VN')}
+                </p>
+                <div class="flex justify-end gap-2">
+                    <button class="reject-btn p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition text-xs font-medium flex items-center gap-1" data-id="${image.id}" title="Từ chối ảnh ${image.id}">
                         <i data-lucide="x" class="w-4 h-4"></i> Từ chối
                     </button>
-                    <button class="approve-btn text-sm font-medium text-white bg-green-500 hover:bg-green-600 px-3 py-1.5 rounded-md transition flex items-center gap-1" data-id="${image.id}">
-                        <i data-lucide="check" class="w-4 h-4"></i> Duyệt
+                    <button class="approve-btn p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition text-xs font-medium flex items-center gap-1" data-id="${image.id}" title="Duyệt ảnh ${image.id}">
+                         <i data-lucide="check" class="w-4 h-4"></i> Duyệt
                     </button>
                 </div>
             </div>
+             <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity flex justify-center items-center cursor-pointer view-details-overlay">
+                 <span class="text-white text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">Xem chi tiết</span>
+            </div>
         `;
-        return div;
+        return card;
     }
 
-    // (Hàm updatePagination giữ nguyên từ AdminImages.js)
-    function updatePagination(pagedResult) {
-        if (!pagedResult) return;
-        pageInfo.innerHTML = `Trang <b>${pagedResult.page}</b> / ${pagedResult.totalPages || 1}`;
-        prevPageBtn.disabled = (pagedResult.page <= 1);
-        nextPageBtn.disabled = (pagedResult.page >= pagedResult.totalPages);
-        currentPage = pagedResult.page;
+    // ======= HÀM CẬP NHẬT PHÂN TRANG (Giữ nguyên) =======
+    function updatePagination(currentPageNum, totalPagesNum) {
+        pageInfo.innerHTML = `Trang <b>${currentPageNum}</b> / ${totalPagesNum || 1}`;
+        prevPageBtn.disabled = (currentPageNum <= 1);
+        nextPageBtn.disabled = (currentPageNum >= totalPagesNum);
     }
 
-    // ======= HÀM XỬ LÝ SỰ KIỆN =======
-
-    // Hàm xử lý khi bấm nút "Duyệt"
-    async function handleApprove(button) {
-        const imageId = button.dataset.id;
-        if (!imageId) {
-            alert("Không tìm thấy ID ảnh để duyệt.");
-            return;
-        }
-
-        button.disabled = true;
-        button.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-1"></i> Đang duyệt...';
-        if (window.lucide) lucide.createIcons();
-
+    // ======= HÀM XỬ LÝ POPUP (Giữ nguyên) =======
+    async function openImagePopup(imageId) {
         try {
-            // 🔹 1. Lấy thông tin gốc của ảnh từ API
-            const imageData = await api.images.getById(imageId);
+            // Fetch image details including user info
+            const image = await api.images.getById(imageId); // Assume API returns full details
+            const uploaderName = await getUserName(image.userId);
 
-            // 🔹 2. Tạo object mới, giữ nguyên toàn bộ dữ liệu gốc
-            const updatedData = {
-                Title: imageData.title,
-                Description: imageData.description,
-                IsPublic: imageData.isPublic,
-                Status: "approved", // ✅ Chỉ thay đổi trạng thái
-                TagIds: imageData.tags ? imageData.tags.map(t => t.id) : [],
-                TopicIds: imageData.topics ? imageData.topics.map(t => t.id) : []
-            };
+            if (!image || !imagePopup) return;
 
-            // 🔹 3. Gọi API cập nhật
-            await api.images.update(imageId, updatedData);
+            popupTitle.textContent = image.title || "(Chưa có tiêu đề)";
+            popupImage.src = image.fileUrl || '/img/placeholder-image.png'; // Use full URL
+            popupImage.alt = image.title || "Chi tiết ảnh";
+            popupDescription.textContent = image.description || "(Không có mô tả)";
+            popupUploader.innerHTML = `<i data-lucide="user" class="w-4 h-4"></i> Người đăng: <span class="font-medium text-blue-600 ml-1">${uploaderName}</span>`;
+            popupUploadedAt.innerHTML = `<i data-lucide="calendar" class="w-4 h-4"></i> Ngày đăng: <span class="font-medium ml-1">${new Date(image.createdAt).toLocaleString('vi-VN')}</span>`;
 
-            alert(`✅ Ảnh ID ${imageId} đã được duyệt thành công!`);
+            // Store imageId in buttons for approve/reject actions
+            popupApproveBtn.dataset.id = image.id;
+            popupRejectBtn.dataset.id = image.id;
 
-            // 🔹 4. Xử lý UI sau khi duyệt
-            const card = button.closest('.approval-card');
-            if (card) {
-                card.remove();
-                if (!imageListContainer.hasChildNodes()) {
-                    noResults.classList.remove('hidden');
-                }
-            } else {
-                fetchAndRenderData(); // fallback nếu không có card
-            }
+            if (window.lucide) lucide.createIcons(); // Redraw icons inside popup
+
+            imagePopup.classList.remove('hidden');
 
         } catch (error) {
-            console.error(`❌ Lỗi khi duyệt ảnh ${imageId}:`, error);
-            alert(`Duyệt ảnh thất bại: ${error.message}`);
-            button.disabled = false;
-            button.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Duyệt';
-            if (window.lucide) lucide.createIcons();
+            console.error("Error opening image popup:", error);
+            alert(`Không thể tải chi tiết ảnh: ${error.message}`);
         }
     }
 
+    function closeImagePopup() {
+        if (imagePopup) imagePopup.classList.add('hidden');
+        // Clear image src to prevent flashing old image
+        if (popupImage) popupImage.src = "";
+    }
 
-    // Hàm xử lý khi bấm nút "Từ chối" (Xóa ảnh)
-    async function handleReject(button) {
+
+    // ======= HÀM DUYỆT/TỪ CHỐI (Giữ nguyên) =======
+    async function handleApprovalAction(button, action) {
         const imageId = button.dataset.id;
         if (!imageId) return;
 
-        if (confirm(`Bạn có chắc muốn TỪ CHỐI (xóa) ảnh ID ${imageId} không? Hành động này không thể hoàn tác.`)) {
-            button.disabled = true; // Vô hiệu hóa nút
-            button.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-1"></i> Đang xóa...';
-            if (window.lucide) lucide.createIcons();
+        const isApprove = action === 'approve';
+        const confirmMsg = isApprove
+            ? `Bạn có chắc muốn duyệt ảnh ID ${imageId}?`
+            : `Bạn có chắc muốn từ chối ảnh ID ${imageId}?`;
+        const newStatus = isApprove ? 'Approved' : 'Rejected';
+
+        if (confirm(confirmMsg)) {
+            button.disabled = true;
+            button.textContent = isApprove ? 'Đang duyệt...' : 'Đang từ chối...';
 
             try {
-                // Gọi API xóa ảnh
-                await api.images.delete(imageId); //
-                alert(`Đã từ chối (xóa) thành công ảnh ID ${imageId}.`);
-                // Xóa card khỏi giao diện hoặc tải lại trang hiện tại
-                const card = button.closest('.approval-card');
-                if (card) {
-                    card.remove(); // Xóa ngay lập tức
-                    // Kiểm tra nếu container rỗng sau khi xóa
-                    if (!imageListContainer.hasChildNodes()) {
-                        noResults.classList.remove('hidden');
-                    }
-                } else {
-                    fetchAndRenderData(); // Hoặc tải lại nếu không tìm thấy card
-                }
+                // Gọi API để cập nhật status (Giả sử bạn có endpoint này)
+                // Cần endpoint PUT /api/images/{id}/status hoặc dùng Update thông thường
+                await api.images.update(imageId, { status: newStatus }); // Dùng Update chung
 
+                alert(`Đã ${isApprove ? 'phê duyệt' : 'từ chối'} ảnh ${imageId}.`);
+                closeImagePopup(); // Đóng popup nếu đang mở
+                fetchAndRenderData(); // Tải lại danh sách
             } catch (error) {
-                console.error(`Lỗi khi từ chối ảnh ${imageId}:`, error);
-                alert(`Từ chối ảnh thất bại: ${error.message}`);
-                // Kích hoạt lại nút nếu lỗi
-                button.disabled = false;
-                button.innerHTML = '<i data-lucide="x" class="w-4 h-4"></i> Từ chối';
-                if (window.lucide) lucide.createIcons();
+                console.error(`Lỗi khi ${action} ảnh ${imageId}:`, error);
+                alert(`Không thể ${isApprove ? 'phê duyệt' : 'từ chối'} ảnh: ${error.message}`);
+                button.disabled = false; // Bật lại nút nếu lỗi
+                // Khôi phục text gốc (có thể cần icon)
+                button.textContent = isApprove ? 'Phê duyệt' : 'Từ chối';
             }
         }
     }
+    // Wrapper functions for clarity
+    function handleApprove(button) { handleApprovalAction(button, 'approve'); }
+    function handleReject(button) { handleApprovalAction(button, 'reject'); }
 
-    // Hàm debounce cho tìm kiếm (giữ nguyên)
+
+    // Hàm debounce cho tìm kiếm (Giữ nguyên)
     let searchTimer;
     function debounceSearch(e) {
         clearTimeout(searchTimer);
@@ -235,7 +231,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ======= GẮN SỰ KIỆN =======
-    searchInput?.addEventListener('input', debounceSearch); // Thêm ? để tránh lỗi nếu không có ô search
+    searchInput?.addEventListener('input', debounceSearch);
+
+    // ✅ Thêm sự kiện cho dropdown sắp xếp
+    sortSelect?.addEventListener('change', (e) => {
+        sortOrder = e.target.value; // Cập nhật state 'desc' hoặc 'asc'
+        currentPage = 1; // Reset về trang 1
+        fetchAndRenderData(); // Tải lại dữ liệu với thứ tự mới
+    });
 
     prevPageBtn.addEventListener('click', () => {
         if (currentPage > 1) {
@@ -245,15 +248,19 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     nextPageBtn.addEventListener('click', () => {
-        // Chỉ tăng trang, hàm fetchAndRenderData sẽ kiểm tra totalPages
-        currentPage++;
-        fetchAndRenderData();
+        // Chỉ tăng trang nếu chưa phải trang cuối
+        if (currentPage < currentTotalPages) {
+            currentPage++;
+            fetchAndRenderData();
+        }
     });
 
-    // Event delegation cho các nút trong danh sách ảnh
+    // Event delegation cho các nút và overlay xem chi tiết
     imageListContainer.addEventListener('click', (e) => {
         const approveBtn = e.target.closest('.approve-btn');
         const rejectBtn = e.target.closest('.reject-btn');
+        const viewDetailsOverlay = e.target.closest('.view-details-overlay');
+        const imageInCard = e.target.closest('img'); // Click vào ảnh cũng mở popup
 
         if (approveBtn) {
             e.stopPropagation();
@@ -261,10 +268,34 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (rejectBtn) {
             e.stopPropagation();
             handleReject(rejectBtn);
+        } else if (viewDetailsOverlay || imageInCard) {
+            const card = e.target.closest('.admin-card');
+            if (card && card.dataset.id) {
+                openImagePopup(card.dataset.id);
+            }
         }
-        // Có thể thêm xử lý click vào card để mở popup chi tiết sau
     });
 
+    // Sự kiện cho nút đóng popup và các nút trong popup
+    closePopupBtn?.addEventListener('click', closeImagePopup);
+    popupApproveBtn?.addEventListener('click', (e) => handleApprove(e.currentTarget));
+    popupRejectBtn?.addEventListener('click', (e) => handleReject(e.currentTarget));
+    // Đóng popup khi click ra ngoài (optional but good UX)
+    imagePopup?.addEventListener('click', (e) => {
+        // If the click is directly on the backdrop (the popup element itself)
+        if (e.target === imagePopup) {
+            closeImagePopup();
+        }
+    });
+
+
     // ======= KHỞI CHẠY =======
-    fetchAndRenderData(); // Tải dữ liệu ban đầu
+    if (typeof api !== 'undefined' && api.images && api.users) {
+        fetchAndRenderData(); // Tải dữ liệu lần đầu
+    } else {
+        console.error("API service is not available.");
+        noResults.textContent = 'Lỗi: Không thể khởi tạo dịch vụ API.';
+        noResults.classList.remove('hidden');
+        noResults.classList.add('text-red-500');
+    }
 });
