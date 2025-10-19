@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </td>
                 <td class="userStats-table-cell userStats-title-cell">${data.image.title}</td>
                 <td class="userStats-table-cell">${data.stats.viewsCount ?? 0}</td>
-                <td class="userStats-table-cell">${data.stats.downloadsCount ?? 0}</td>
+                <td class="userStats-table-cell">${data.stats.downloadCount ?? 0}</td>
                 <td class="userStats-table-cell">${data.stats.likesCount ?? 0}</td>
             </tr>`;
             tableBody.appendChild(row);
@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
      */
     function renderSummary() {
         const totalViews = allImageData.reduce((sum, data) => sum + (data.stats.viewsCount ?? 0), 0);
-        const totalDownloads = allImageData.reduce((sum, data) => sum + (data.stats.downloadsCount ?? 0), 0);
+        const totalDownloads = allImageData.reduce((sum, data) => sum + (data.stats.downloadCount ?? 0), 0);
         const totalLikes = allImageData.reduce((sum, data) => sum + (data.stats.likesCount ?? 0), 0);
 
         totalViewsSpan.textContent = totalViews;

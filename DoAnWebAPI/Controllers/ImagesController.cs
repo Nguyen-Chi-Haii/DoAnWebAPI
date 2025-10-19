@@ -176,15 +176,16 @@ namespace DoAnWebAPI.Controllers
                 currentUserId.Value,
                 dto.Title,
                 dto.Description,
-                dto.IsPublic,
-                dto.TagIds ?? new List<int>(),
-                dto.TopicIds ?? new List<int>(),
                 uploadResult.fileUrl,
                 uploadResult.thumbnailUrl,
                 uploadResult.size,
                 uploadResult.width,
-                uploadResult.height
-            );
+                uploadResult.height,
+                dto.IsPublic,
+                dto.TagIds ?? new List<int>(),
+                dto.TopicIds ?? new List<int>(),
+                null // ✅ Status = null (sẽ tự set "pending" trong repository)
+            );  
 
             return CreatedAtAction(nameof(GetById), new { id = created.Id.ToString() }, created);
         }

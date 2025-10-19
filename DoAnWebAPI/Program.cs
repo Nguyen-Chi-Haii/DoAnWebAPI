@@ -135,7 +135,6 @@ builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
 builder.Services.AddScoped<ICollectionImageRepository, CollectionImageRepository>();
 builder.Services.AddScoped<ILikeRepository, LikeRepository>();
 builder.Services.AddScoped<IStatRepository, StatRepository>();
-builder.Services.AddScoped<IPendingImageRepository, PendingImageRepository>();
 
 // --------------------
 // 🌐 CORS

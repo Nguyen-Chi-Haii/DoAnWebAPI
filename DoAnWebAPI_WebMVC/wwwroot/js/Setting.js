@@ -70,7 +70,7 @@
             // Hoặc dùng: const user = await api.users.getById(CURRENT_USER_ID);
             const user = await api.users.getById(CURRENT_USER_ID);
 
-            profileName.value = user.name;
+            profileName.value = user.username;
             profileEmail.value = user.email;
             if (user.avatarUrl) {
                 avatarPreview.src = user.avatarUrl;
@@ -97,23 +97,41 @@
         saveButton.disabled = true;
 
         try {
-            const formData = new FormData();
-            formData.append('Name', profileName.value);
-            formData.append('Email', profileEmail.value);
+            let avatarUrl = null;
 
+            // ⚡ Nếu người dùng upload ảnh mới
             if (avatarFileInput.files[0]) {
-                formData.append('AvatarFile', avatarFileInput.files[0]);
+                const imageFormData = new FormData();
+                imageFormData.append("file", avatarFileInput.files[0]);
+                imageFormData.append("title", `avatar_${profileName.value}`);
+                imageFormData.append("description", "Ảnh đại diện người dùng");
+                imageFormData.append("isPublic", false); // chỉ mình người dùng này thấy
+                imageFormData.append("status", "approved"); // hoặc "pending" tùy hệ thống
+                imageFormData.append("tags", JSON.stringify([]));
+                imageFormData.append("topics", JSON.stringify([]));
+
+                // ✅ Gọi API tạo ảnh
+                
+                const createdImage = await api.images.create(imageFormData);
+
+                // Nếu thành công thì lấy fileUrl để dùng cập nhật user
+                avatarUrl = createdImage.fileUrl;
             }
 
-            // Dùng "me" hoặc CURRENT_USER_ID
-            await api.users.update(CURRENT_USER_ID, formData);
+            // ⚙️ Cập nhật hồ sơ người dùng
+            const updateData = new FormData();
+            updateData.append("Username", profileName.value);
+            updateData.append("AvatarUrl", avatarUrl || avatarPreview.src);
+            updateData.append("NewPassword", "");
+            console.log("➡️ Dữ liệu gửi lên API:", updateData);
+            await api.users.update(CURRENT_USER_ID, updateData);
 
-            alert("✅ Hồ sơ đã được cập nhật!");
-            // Tùy chọn: Cập nhật lại header nếu tên/avatar thay đổi
-            // document.dispatchEvent(new CustomEvent('userProfileUpdated'));
+            alert("✅ Hồ sơ đã được cập nhật thành công!");
+            if (avatarUrl) avatarPreview.src = avatarUrl;
+
         } catch (error) {
             console.error("Lỗi cập nhật hồ sơ:", error);
-            alert(`Lỗi: ${error.message}`);
+            alert(`❌ Lỗi khi lưu: ${error.message}`);
         } finally {
             saveButton.innerHTML = originalButtonText;
             lucide.createIcons();
@@ -121,13 +139,15 @@
         }
     });
 
-    /**
-     * ✅ CẬP NHẬT: Xử lý submit Password Form
-     */
     passwordForm.addEventListener("submit", async (e) => {
         e.preventDefault();
+
         if (newPassword.value !== confirmPassword.value) {
             alert("⚠️ Mật khẩu mới không khớp!");
+            return;
+        }
+        if (!currentPassword.value || !newPassword.value) {
+            alert("⚠️ Vui lòng điền đầy đủ mật khẩu!");
             return;
         }
 
@@ -137,19 +157,33 @@
         lucide.createIcons();
         updateButton.disabled = true;
 
-        const passwordData = {
-            currentPassword: currentPassword.value,
-            newPassword: newPassword.value,
-            confirmPassword: confirmPassword.value
-        };
+        // Xây dựng FormData giống như form profile
+        const updateData = new FormData();
+
+        // 1. Gửi thông tin profile (lấy từ tab kia) để API không ghi đè
+        updateData.append("Username", profileName.value);
+        updateData.append("AvatarUrl", avatarPreview.src);
+
+        // 2. Gửi thông tin mật khẩu
+        // Endpoint 'update' của bạn phải được lập trình để hiểu các trường này
+        updateData.append("CurrentPassword", currentPassword.value);
+        updateData.append("NewPassword", newPassword.value);
 
         try {
-            await api.users.changePassword(passwordData);
+            // Gọi_đúng_ endpoint `update`
+            await api.users.update(CURRENT_USER_ID, updateData);
+
             alert("🔑 Mật khẩu đã được thay đổi thành công!");
             passwordForm.reset(); // Xóa các trường mật khẩu
+
         } catch (error) {
             console.error("Lỗi đổi mật khẩu:", error);
-            alert(`Lỗi: ${error.message}`);
+            // API của bạn nên trả về lỗi 400 hoặc 403 nếu mật khẩu cũ sai
+            if (error.message.includes("400") || error.message.includes("403")) {
+                alert("Lỗi: Mật khẩu hiện tại không đúng.");
+            } else {
+                alert(`Lỗi: ${error.message}`);
+            }
         } finally {
             updateButton.innerHTML = originalButtonText;
             lucide.createIcons();

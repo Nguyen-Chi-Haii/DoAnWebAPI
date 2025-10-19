@@ -143,7 +143,7 @@
             await api.collections.create(collectionData);
 
             alert("✅ Tạo bộ sưu tập thành công!");
-            window.location.href = "/Collection/Collection";
+            window.history.back();
 
         } catch (error) {
             alert(`❌ Lỗi khi tạo bộ sưu tập: ${error.message}`);

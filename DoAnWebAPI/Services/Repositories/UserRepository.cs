@@ -96,7 +96,10 @@ namespace DoAnWebAPI.Services.Repositories
             if (existingUser == null) return false;
 
             if (dto.Username != null) existingUser.Username = dto.Username;
-            if (dto.AvatarUrl != null) existingUser.AvatarUrl = dto.AvatarUrl;
+            if (!string.IsNullOrEmpty(dto.AvatarUrl))
+            {
+                existingUser.AvatarUrl = dto.AvatarUrl;
+            }
 
             if (dto.NewPassword != null)
             {
@@ -105,7 +108,8 @@ namespace DoAnWebAPI.Services.Repositories
 
             existingUser.UpdatedAt = DateTime.UtcNow.ToString("o");
 
-            await _firebaseService.SaveDataAsync($"{Collection}/user_{id}", existingUser);
+            await _firebaseService.SetDataAsync($"{Collection}/user_{id}", existingUser);
+
             return true;
         }
 

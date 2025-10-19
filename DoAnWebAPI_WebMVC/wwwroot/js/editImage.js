@@ -180,7 +180,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             await api.images.update(imageId, updatedData);
             alert(`✅ Cập nhật thông tin ảnh thành công!`);
-            window.location.href = '/Collection/Collection';
+            window.history.back();
         } catch (error) {
             alert(`❌ Lỗi khi cập nhật: ${error.message}`);
             submitBtn.disabled = false;

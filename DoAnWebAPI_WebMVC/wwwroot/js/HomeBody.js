@@ -20,12 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const collectModalCloseBtn = document.getElementById('collect-modal-close');
     const createCollectionLink = document.getElementById('create-collection-link');
     let collectingImageInfo = { id: null, title: null, previewUrl: null };
-
-    document.addEventListener("searchChanged", (e) => {
-        currentSearchQuery = e.detail.query;
-        currentPage = 1;
-        fetchAndRenderImages(currentPage, currentSearchQuery);
-    });
     // --- HÀM TIỆN ÍCH ---
     const formatLikes = (num) => num >= 1000 ? (num / 1000).toFixed(1) + 'k' : num;
 
@@ -41,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 pageSize: imagesPerPage
             };
 
-            if (query) params.keyword = query; // 👈 thêm query tìm kiếm nếu có
+            if (query) params.search = query; // 👈 thêm query tìm kiếm nếu có
 
             const pagedResult = await api.images.getAll(params);
 
@@ -197,6 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } finally {
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
+                    await api.images.incrementDownloadCount(imageId);
                 }
                 break;
 
@@ -270,4 +265,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- KHỞI TẠO ---
     fetchAndRenderImages();
+    // ✅ Lắng nghe ngay khi script được load
+    document.addEventListener("searchChanged", (e) => {
+        const query = e.detail.query;
+        currentSearchQuery = query;
+        currentPage = 1;
+        fetchAndRenderImages(currentPage, currentSearchQuery);
+    });
 });
+

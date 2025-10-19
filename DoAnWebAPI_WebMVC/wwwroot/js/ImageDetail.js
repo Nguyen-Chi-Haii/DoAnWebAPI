@@ -339,9 +339,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Không thể tải ảnh. Lỗi: ${error.message}`);
             } finally {
                 // 4. Khôi phục lại trạng thái của nút sau khi hoàn tất (dù thành công hay thất bại)
+                await api.stats.incrementDownload(currentImageId);
                 downloadButton.disabled = false;
                 downloadButton.innerHTML = originalIcon;
                 if (window.lucide) lucide.createIcons();
+                
             }
         });
     }

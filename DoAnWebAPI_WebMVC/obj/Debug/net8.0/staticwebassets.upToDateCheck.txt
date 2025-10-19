@@ -12,6 +12,7 @@ wwwroot\css\Setting.css
 wwwroot\css\Sidebar.css
 wwwroot\css\site.css
 wwwroot\css\UserStats.css
+wwwroot\default-avatar.png.png
 wwwroot\favicon.ico
 wwwroot\js\AddCollection.js
 wwwroot\js\addImage.js

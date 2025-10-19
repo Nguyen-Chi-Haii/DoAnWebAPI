@@ -59,21 +59,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ======= HÀM RENDER CHÍNH =======
     async function fetchAndRenderData() {
+        console.log("🌀 Bắt đầu fetchAndRenderData()");
         showSpinner();
+
         try {
+            console.log("🔍 Kiểm tra biến api:", typeof api, api);
+            if (!api || !api.images || !api.images.getAll) {
+                throw new Error("❌ api.images.getAll chưa được định nghĩa!");
+            }
+
             const filterParams = {
-                search: filters.search || undefined, // Gửi undefined nếu rỗng
+                search: filters.search ||"",
                 page: currentPage,
                 pageSize: imagesPerPage,
-                status: "pending", // Luôn lấy ảnh pending
-                sortBy: "date", // ✅ Luôn sắp xếp theo ngày
-                sortDirection: sortOrder // ✅ Sử dụng state sortOrder
+                status: "pending",
+                sortBy: "date",
+                sortDirection: sortOrder
             };
+            console.log("📤 Gửi filterParams:", filterParams);
 
-            // Gọi API với tham số filter và sort
             const pagedResult = await api.images.getAll(filterParams);
+            console.log("📥 Nhận kết quả từ API:", pagedResult);
 
             const images = pagedResult.items;
+            console.log("📦 Có", images?.length || 0, "ảnh pending");
+
             currentTotalPages = pagedResult.totalPages || 1; // Cập nhật tổng số trang
 
             imageListContainer.innerHTML = ''; // Xóa spinner/nội dung cũ
@@ -82,7 +92,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 noResults.classList.remove('hidden');
             } else {
                 noResults.classList.add('hidden');
-                // Tạo card ảnh song song
+                // Tạo card ảnh song son
+                console.log("📦 Tạo card cho", images.length, "ảnh.");
                 const imageCardPromises = images.map(img => createImageCard(img));
                 const imageCardElements = await Promise.all(imageCardPromises);
                 imageCardElements.forEach(el => imageListContainer.appendChild(el));
@@ -107,6 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ======= HÀM TẠO CARD ẢNH =======
     async function createImageCard(image) {
+        console.log("🎨 createImageCard đang tạo card cho ảnh ID:", image.id);
         const card = document.createElement('div');
         card.className = 'admin-card relative group bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow';
         card.dataset.id = image.id; // Lưu ID để mở popup
@@ -288,14 +300,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-
+    console.log("🚀 Admin Approval script loaded.");
     // ======= KHỞI CHẠY =======
-    if (typeof api !== 'undefined' && api.images && api.users) {
-        fetchAndRenderData(); // Tải dữ liệu lần đầu
-    } else {
-        console.error("API service is not available.");
-        noResults.textContent = 'Lỗi: Không thể khởi tạo dịch vụ API.';
-        noResults.classList.remove('hidden');
-        noResults.classList.add('text-red-500');
-    }
+     fetchAndRenderData(); // Tải dữ liệu lần đầu
 });

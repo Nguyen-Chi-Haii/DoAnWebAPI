@@ -32,7 +32,23 @@
     <main class="settings-content">
         <div class="tabs-container">
             <div id="settings-profile-tab" class="tab-content is-active">
-                <h3 class="tab-title">Chức năng sẽ được phát triển<h3>
+                <h3 class="tab-title">Quản lý tài khoản</h3>
+                <form id="settings-profile-form" class="tab-form">
+                    <div class="avatar-section">
+                        <div class="avatar-uploader">
+                            <img id="settings-avatar-preview" src="https://placehold.co/100x100/E2E8F0/4A5568?text=Avatar" alt="avatar" class="avatar-img" /> <button type="button" id="settings-upload-avatar-btn" class="avatar-upload-btn">
+                                <i data-lucide="upload"></i>
+                            </button>
+                            <input type="file" id="settings-avatar-file-input" accept="image/*" class="hidden-input" />
+                        </div>
+                        <div class="profile-inputs">
+                            <input type="text" id="settings-profile-name" placeholder="Tên hiển thị" class="form-input" /> <input type="email" id="settings-profile-email" placeholder="Email" class="form-input" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-blue btn-with-icon">
+                        <i data-lucide="check"></i> Lưu thay đổi
+                    </button>
+                </form>
             </div>
 
             <div id="settings-password-tab" class="tab-content">

@@ -32,45 +32,70 @@
     // Xử lý input với debounce
     const handleSearchInput = (e) => {
         const value = e.target.value.trim();
-
-        // Đồng bộ giá trị giữa desktop và mobile
-        syncSearchInputs(value, e.target.id);
-
         // Debounce: đợi 500ms sau khi user ngừng gõ
         clearTimeout(searchTimer);
         searchTimer = setTimeout(() => {
             dispatchSearchEvent(value);
         }, 500);
     };
+    async function loadUserInfo(userId) {
+        const avatarImg = document.getElementById('user-avatar');
+        const userNameSpan = document.getElementById('user-name');
 
-    // Đồng bộ giá trị giữa 2 ô input
-    const syncSearchInputs = (value, sourceId) => {
-        const searchInputDesktop = document.getElementById('search-input-desktop');
-        const searchInputMobile = document.getElementById('search-input-mobile');
+        if (!avatarImg || !userNameSpan) {
+            console.error("Không tìm thấy phần tử avatar hoặc tên user.");
+            return;
+        }
 
-        if (sourceId === 'search-input-desktop' && searchInputMobile) {
-            searchInputMobile.value = value;
+        try {
+            // Gọi API bằng object 'api' đã định nghĩa trong file apiServices.js
+            const user = await api.users.getById(userId);
+
+            if (user) {
+                // Cập nhật tên
+                userNameSpan.textContent = user.username || "Người dùng";
+
+                // Cập nhật avatar
+                if (user.avatarUrl) {
+                    avatarImg.src = user.avatarUrl;
+                } else {
+                    // ⚠️ SỬA LỖI 404: Đã bỏ dấu '~'
+                    avatarImg.src = "/default-avatar.png";
+                }
+                console.log("✅ Tải thông tin user thành công:", user.name);
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải thông tin user:", error);
+            userNameSpan.textContent = "Lỗi";
+
+            if (error.message === "Unauthorized") {
+                console.warn("Token không hợp lệ hoặc hết hạn.");
+                window.location.href = '/Account/Login';
+            }
         }
-        if (sourceId === 'search-input-mobile' && searchInputDesktop) {
-            searchInputDesktop.value = value;
-        }
-    };
+    }
+
 
     // --- KHỞI TẠO ---
     document.addEventListener('DOMContentLoaded', () => {
         console.log("🎯 Header module initialized");
+        const currentUserId = window.CURRENT_USER_ID;
 
+        if (currentUserId && currentUserId !== '') {
+            // Nếu có User ID, gọi hàm tải thông tin
+            loadUserInfo(currentUserId);
+        } else {
+            console.warn("Không tìm thấy window.CURRENT_USER_ID. User có thể chưa đăng nhập.");
+            // (Tùy chọn) Ẩn nút user hoặc hiển thị "Khách"
+            document.getElementById('user-name').textContent = "Khách";
+            // document.getElementById('user-menu-button').style.display = 'none';
+        }
         // --- SEARCH INPUT ---
         const searchInputDesktop = document.getElementById('search-input-desktop');
-        const searchInputMobile = document.getElementById('search-input-mobile');
 
         if (searchInputDesktop) {
             searchInputDesktop.addEventListener('input', handleSearchInput);
             console.log("✅ Desktop search input ready");
-        }
-        if (searchInputMobile) {
-            searchInputMobile.addEventListener('input', handleSearchInput);
-            console.log("✅ Mobile search input ready");
         }
 
         // --- DROPDOWN MENU USER ---
@@ -99,16 +124,6 @@
             console.log("✅ User menu dropdown ready");
         }
 
-        // --- MOBILE MENU TOGGLE (nếu có) ---
-        const mobileMenuButton = document.getElementById('mobile-menu-button');
-        const mobileMenu = document.getElementById('mobile-menu');
-
-        if (mobileMenuButton && mobileMenu) {
-            mobileMenuButton.addEventListener('click', () => {
-                mobileMenu.classList.toggle('hidden');
-            });
-            console.log("✅ Mobile menu ready");
-        }
 
         // --- NOTIFICATION DROPDOWN (nếu có) ---
         const notificationButton = document.getElementById('notification-button');
@@ -143,16 +158,12 @@
         getCurrentQuery: () => currentSearchQuery,
         clearSearch: () => {
             const searchInputDesktop = document.getElementById('search-input-desktop');
-            const searchInputMobile = document.getElementById('search-input-mobile');
             if (searchInputDesktop) searchInputDesktop.value = "";
-            if (searchInputMobile) searchInputMobile.value = "";
             dispatchSearchEvent("");
         },
         setSearchQuery: (query) => {
             const searchInputDesktop = document.getElementById('search-input-desktop');
-            const searchInputMobile = document.getElementById('search-input-mobile');
             if (searchInputDesktop) searchInputDesktop.value = query;
-            if (searchInputMobile) searchInputMobile.value = query;
             dispatchSearchEvent(query);
         }
     };

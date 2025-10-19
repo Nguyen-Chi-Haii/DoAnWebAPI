@@ -51,7 +51,6 @@ namespace DoAnWebAPI_WebMVC.Controllers
                 HttpContext.Session.SetString("Username", authResponse.Username);
                 HttpContext.Session.SetString("UserId", authResponse.UserId);
                 HttpContext.Session.SetString("UserRole", authResponse.Role);
-
                 return RedirectToAction("Index", "Home");
             }
             else

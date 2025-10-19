@@ -140,7 +140,9 @@ namespace DoAnWebAPI.Services.Repositories
             };
         }
 
-        public async Task<ImageDTO> CreateAsync(int userId, string title, string? description, bool isPublic, List<int> tagIds, List<int> topicIds, string fileUrl, string thumbnailUrl, long size, int width, int height)
+        public async Task<ImageDTO> CreateAsync(int userId, string title, string description, string fileUrl, string thumbnailUrl,
+                                     long size, int width, int height, bool isPublic,
+                                     List<int> tagIds, List<int> topicIds, string status = null)
         {
             var image = new Image
             {
@@ -154,7 +156,7 @@ namespace DoAnWebAPI.Services.Repositories
                 Width = width,
                 Height = height,
                 IsPublic = isPublic,
-                Status = "pending",
+                Status = string.IsNullOrEmpty(status) ? "pending" : status,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 TagIds = tagIds,

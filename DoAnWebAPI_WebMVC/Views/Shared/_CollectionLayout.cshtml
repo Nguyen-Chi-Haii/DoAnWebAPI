@@ -30,6 +30,7 @@
     <script>
         // "Tiêm" token từ Session vào biến JavaScript toàn cục
         window.jwtToken = @Html.Raw(Json.Serialize(Context.Session.GetString("JWToken")));
+         window.CURRENT_USER_ID = '@Context.Session.GetString("UserId")';
     </script>
     <script src="~/js/apiServices.js" asp-append-version="true"></script>
 

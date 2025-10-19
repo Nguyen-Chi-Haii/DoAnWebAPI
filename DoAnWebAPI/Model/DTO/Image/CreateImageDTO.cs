@@ -24,5 +24,6 @@ namespace DoAnWebAPI.Model.DTO.Image
         // Gắn tag & topic
         public List<int> TagIds { get; set; } = new();
         public List<int> TopicIds { get; set; } = new();
+        public string? Status { get; set; }
     }
 }

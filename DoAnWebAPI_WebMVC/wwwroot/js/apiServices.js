@@ -177,7 +177,7 @@ const api = {
     users: {
         getAll: () => request('/users', 'GET'),
         getById: (id) => request(`/users/${id}`, 'GET'),
-        update: (id, formData) => request(`/users/${id}`, 'PUT', formData),
+        update: (id, data) => request(`/users/${id}`, 'PUT', data),
         delete: (id) => request(`/users/${id}`, 'DELETE'),
     },
     adminLogs: {

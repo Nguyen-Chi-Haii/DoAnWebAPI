@@ -191,7 +191,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             const newImage = await api.images.create(formData);
             alert(`✅ Ảnh "${newImage.title}" đã được thêm thành công!`);
-            window.location.href = '/Collection/Collection';
+            window.history.back();
         } catch (error) {
             alert(`❌ Lỗi: ${error.message}`);
             submitBtn.disabled = false;

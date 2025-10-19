@@ -36,12 +36,12 @@
                 @if (!string.IsNullOrEmpty(HttpContextAccessor.HttpContext.Session.GetString("JWToken")))
                 {
                     <div class="relative">
-                        <button id="user-menu-button" class="flex items-center gap-2 text-gray-800 font-medium px-4 py-2 rounded-lg hover:bg-gray-200 transition">
-
-                            <span>@HttpContextAccessor.HttpContext.Session.GetString("Username")</span>
-
+                        <button id="user-menu-button" class="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-200">
+                            <img id="user-avatar" src="/default-avatar.png" class="w-8 h-8 rounded-full border" />
+                            <span id="user-name">Đang tải...</span>
                             <div data-lucide="chevron-down" class="w-4 h-4"></div>
                         </button>
+
 
                         <div id="user-menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-20">
                             <div class="py-1">
@@ -85,16 +85,6 @@
                         <span>Đăng nhập</span>
                     </a>
                 }
-            </div>
-        </div>
-
-        <div id="mobile-nav" class="flex md:hidden items-center gap-2 px-4">
-            <div class="font-bold text-lg text-blue-600 min-w-min">Photo.AI</div>
-            <div class="flex-1">
-                <div class="flex items-center w-full border border-gray-300 rounded-lg transition focus-within:ring-2 focus-within:ring-blue-400 px-4">
-                    <div data-lucide="search" class="text-gray-500 w-4 h-4 mr-2 flex-shrink-0"></div>
-                    <input type="text" id="search-input-mobile" placeholder="Tìm kiếm..." class="w-full py-2 border-none bg-transparent focus:outline-none focus:ring-0" />
-                </div>
             </div>
         </div>
     </header>

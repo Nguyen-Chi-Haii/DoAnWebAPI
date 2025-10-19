@@ -16,17 +16,9 @@ namespace DoAnWebAPI.Services.Interface
 
         // GIỮ NGUYÊN: Chữ ký hàm CreateAsync đã đúng
         Task<ImageDTO> CreateAsync(
-            int userId,
-            string title,
-            string? description,
-            bool isPublic,
-            List<int> tagIds,
-            List<int> topicIds,
-            string fileUrl,
-            string thumbnailUrl,
-            long size,
-            int width,
-            int height
+            int userId, string title, string description, string fileUrl, string thumbnailUrl,
+                                     long size, int width, int height, bool isPublic,
+                                     List<int> tagIds, List<int> topicIds, string status = null
         );
 
         // GIỮ NGUYÊN:
