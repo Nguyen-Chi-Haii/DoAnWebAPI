@@ -28,19 +28,14 @@ namespace DoAnWebAPI.Controllers
         }
 
         // Helper để lấy ID người dùng đã xác thực
-        private int GetCurrentUserId()
+        private int? GetCurrentUserIdOrDefault()
         {
-            // Trong trường hợp sử dụng Firebase, ClaimTypes.NameIdentifier thường là Firebase UID (string), 
-            // nhưng code này đang cố gắng parse sang int. 
-            // Nếu User ID trong DB local là int, cần đảm bảo ClaimTypes.NameIdentifier cũng là int hoặc lấy ID từ Claim khác.
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            var userIdClaim = User.FindFirst("local_id");
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
             {
-                // Nếu không phải int, thử tìm claim khác hoặc dựa vào logic map Firebase UID sang DB local ID.
-                // Hiện tại, ta giữ nguyên logic, nếu fail sẽ throw UnauthorizedAccessException.
-                throw new UnauthorizedAccessException("Người dùng chưa được xác thực hoặc không tìm thấy ID.");
+                return userId;
             }
-            return userId;
+            return null;
         }
 
         // Helper để kiểm tra quyền Admin HOẶC chính người dùng đó
@@ -49,7 +44,8 @@ namespace DoAnWebAPI.Controllers
             if (User.IsInRole("Admin")) return true;
             try
             {
-                return GetCurrentUserId() == targetUserId;
+                var userId = GetCurrentUserIdOrDefault();
+                return userId == targetUserId;
             }
             catch { return false; }
         }
@@ -133,7 +129,7 @@ namespace DoAnWebAPI.Controllers
             {
                 try
                 {
-                    targetUserId = GetCurrentUserId(); // Lấy ID của user đang đăng nhập
+                    targetUserId = (int)GetCurrentUserIdOrDefault(); // Lấy ID của user đang đăng nhập
                 }
                 catch (UnauthorizedAccessException ex)
                 {
@@ -190,10 +186,10 @@ namespace DoAnWebAPI.Controllers
             // ✅ GHI LOG HÀNH ĐỘNG
             try
             {
-                var adminId = GetCurrentUserId(); // Lấy ID admin đang thực hiện
+                var adminId = GetCurrentUserIdOrDefault(); // Lấy ID admin đang thực hiện
                 var log = new AdminLog
                 {
-                    AdminId = adminId,
+                    AdminId = (int)adminId,
                     ActionType = "DELETE_USER",
                     Target = id,
                     Meta = $"Deleted user: {userToLog.Username} (Email: {userToLog.Email})",

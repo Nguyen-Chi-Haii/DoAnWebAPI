@@ -1,8 +1,6 @@
-﻿@{
-    {
-        ViewData["Title"] = "Bộ sưu tập";
+﻿@{      ViewData["Title"] = "Bộ sưu tập";
         Layout = "_CollectionLayout";
-    }
+
 }
 <div class="management-container">
     <div class="section-header">
@@ -27,13 +25,11 @@
 </div>
 
 @section Scripts {
-    {
     <script>
         // Truyền UserId từ Controller sang biến JavaScript
         const CURRENT_USER_ID = '@ViewBag.UserId';
     </script>
     <script src="~/js/ImageDetail.js" asp-append-version="true"></script>
     <script src="~/js/Collection.js" asp-append-version="true"></script>
-    }
 }
 @await Html.PartialAsync("~/Views/Image/ImageDetail.cshtml")

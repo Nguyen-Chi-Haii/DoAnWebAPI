@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function render() {
         // 1. Lọc dữ liệu (từ 'allUsers' thay vì 'mockUsers')
         const filteredUsers = allUsers.filter(u =>
-            // ✅ Đã sửa u.name thành u.username
+            // ✅ Đã sửa u.username thành u.username
             (u.username && u.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
             u.id.toString().includes(searchTerm)
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (displayedUsers.length === 0) {
             userTableBody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center text-gray-500 py-6 italic">
+                    <td colspan="7" class="text-center text-gray-500 py-6 italic">
                         Không có người dùng nào phù hợp.
                     </td>
                 </tr>
@@ -61,18 +61,56 @@ document.addEventListener('DOMContentLoaded', function () {
                 const role = user.role || 'Người dùng'; // Đảm bảo có giá trị
 
                 userRow.innerHTML = `
-                    <td class="px-4 py-3 font-medium">${user.id}</td>
-                    <td class="px-4 py-3">${user.username || 'N/A'}</td>
-                    <td class="px-4 py-3">${user.email || 'N/A'}</td>
-                    <td class="px-4 py-3">${role}</td>
-                    <td class="px-4 py-3">${joinDate}</td>
-                    <td class="px-4 py-3 text-center">
-                        <button data-id="${user.id}" class="delete-btn bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg flex items-center gap-1 text-xs transition mx-auto">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                             Xóa
-                        </button>
-                    </td>
-                `;
+                <td class="px-4 py-3 font-medium">${user.id}</td>
+                <td class="px-4 py-3">${user.username || 'N/A'}</td>
+                <td class="px-4 py-3">${user.email || 'N/A'}</td>
+
+                <td class="px-4 py-3">
+                <select
+                    class="role-select w-full border border-gray-300 rounded-md p-2 text-xs"
+                    data-id="${user.id}" 
+                    ${user.status === 'Banned' ? 'disabled' : ''}>
+                    <option value="User" ${user.role === 'User' ? 'selected' : ''}>User</option>
+                    <option value="Admin" ${user.role === 'Admin' ? 'selected' : ''}>Admin</option>
+                </select>
+            </td>
+
+            <td class="px-4 py-3">
+                <select 
+                    class="status-select w-full border border-gray-300 rounded-md p-2 text-xs" 
+                    data-id="${user.id}">
+                    <option value="Active" ${user.status === 'Active' || !user.status ? 'selected' : ''}>Active</option>
+                    <option value="Banned" ${user.status === 'Banned' ? 'selected' : ''}>Banned</option>
+                </select>
+            </td>
+                <td class="px-4 py-3">${joinDate}</td>
+
+                <td class="px-4 py-3 text-center">
+                    <button
+                        data-id="${user.id}" 
+                        class="save-btn bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg flex items-center justify-center gap-1 text-xs transition mx-auto 
+                               disabled:bg-gray-400 disabled:cursor-not-allowed" 
+                        disabled >
+                        <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            width="14" 
+                            height="14" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            stroke-width="2" 
+                            stroke-linecap="round" 
+                            stroke-linejoin="round"
+                        >
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                            <polyline points="17 21 17 13 7 13 7 21"/>
+                            <polyline points="7 3 7 8 15 8"/>
+                        </svg>
+                        Lưu
+                    </button>
+                </td>
+
+            `;
                 userTableBody.appendChild(userRow);
             });
         }
@@ -103,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function () {
     nextPageBtn.addEventListener('click', () => {
         // Tính lại totalPages dựa trên bộ lọc hiện tại
         const totalPages = Math.ceil(allUsers.filter(u =>
-            (u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (u.username && u.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
             u.id.toString().includes(searchTerm)
         ).length / usersPerPage);
@@ -116,32 +154,105 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Nút Xóa (dùng event delegation)
     userTableBody.addEventListener('click', async (e) => {
-        const deleteBtn = e.target.closest('.delete-btn');
-        if (deleteBtn) {
-            const id = deleteBtn.dataset.id;
-            if (confirm(`Bạn có chắc muốn xóa người dùng ID ${id}?`)) {
-                // Vô hiệu hóa nút để tránh click đúp
-                deleteBtn.disabled = true;
-                deleteBtn.textContent = 'Đang xóa...';
+        const saveBtn = e.target.closest('.save-btn');
+
+        // Chỉ chạy nếu có .save-btn và không bị disabled
+        if (saveBtn && !saveBtn.disabled) {
+            const id = saveBtn.dataset.id;
+            const row = saveBtn.closest('tr');
+            if (!row) return;
+
+            const roleSelect = row.querySelector('.role-select');
+            const statusSelect = row.querySelector('.status-select');
+            if (!roleSelect || !statusSelect) return;
+
+            const newRole = roleSelect.value;
+            const newStatus = statusSelect.value;
+
+            if (confirm(`Bạn có chắc muốn cập nhật Người dùng ID ${id}?\nVai trò: ${newRole}\nTrạng thái: ${newStatus}`)) {
+                // Hiển thị trạng thái đang lưu
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = `
+                <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 2a10 10 0 0 1 10 10" />
+                </svg>
+                Đang lưu...
+            `;
 
                 try {
-                    // ✅ GỌI API XÓA
-                    await api.users.delete(id);
+                    // Gửi dữ liệu cập nhật tới API
+                    const formData = new FormData();
+                    formData.append('Role', newRole);
+                    formData.append('Status', newStatus);
 
-                    // Xóa thành công, cập nhật lại mảng 'allUsers'
-                    allUsers = allUsers.filter(u => u.id !== parseInt(id));
+                    await api.users.update(id, formData);
 
-                    // Render lại bảng
-                    render();
+                    // Cập nhật lại mảng cache JS
+                    const userInCache = allUsers.find(u => u.id === parseInt(id));
+                    if (userInCache) {
+                        userInCache.role = newRole;
+                        userInCache.status = newStatus;
+                    }
+
+                    // === CẬP NHẬT GIÁ TRỊ GỐC CHO DATASET ===
+                    roleSelect.dataset.originalRole = newRole;
+                    statusSelect.dataset.originalStatus = newStatus;
+
+                    // === RESET NÚT LƯU VỀ TRẠNG THÁI MẶC ĐỊNH ===
+                    saveBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Lưu
+                `;
+                    saveBtn.disabled = true; // vô hiệu hóa lại nút sau khi lưu thành công
+
+                    alert('✅ Cập nhật thành công!');
                 } catch (error) {
-                    console.error('Lỗi khi xóa người dùng:', error);
-                    alert(`Không thể xóa người dùng: ${error.message}`);
-                    // Bật lại nút nếu lỗi
-                    deleteBtn.disabled = false;
-                    deleteBtn.innerHTML = `<svg...></svg> Xóa`; // (Khôi phục lại icon)
+                    console.error('Lỗi khi cập nhật người dùng:', error);
+                    alert(`❌ Không thể cập nhật: ${error.message}`);
+                    render(); // render lại nếu có lỗi
                 }
             }
         }
+    });
+
+    userTableBody.addEventListener('change', (e) => {
+        // Chỉ kích hoạt nếu là một trong 2 dropdown
+        const select = e.target.closest('.role-select, .status-select');
+        if (!select) return;
+
+        const row = select.closest('tr');
+        const roleSelect = row.querySelector('.role-select');
+        const statusSelect = row.querySelector('.status-select');
+        const saveBtn = row.querySelector('.save-btn');
+
+        // Logic 1: Xử lý Banned (từ yêu cầu trước)
+        if (select.classList.contains('status-select')) {
+            if (statusSelect.value === 'Banned') {
+                roleSelect.value = 'User';
+                roleSelect.disabled = true;
+            } else {
+                roleSelect.disabled = false;
+            }
+        }
+
+        // Logic 2: Kiểm tra thay đổi để bật/tắt nút Lưu
+        const originalRole = roleSelect.dataset.originalRole;
+        const originalStatus = statusSelect.dataset.originalStatus;
+
+        // Lấy giá trị *hiện tại* (sau khi logic 1 có thể đã can thiệp)
+        const currentRole = roleSelect.value;
+        const currentStatus = statusSelect.value;
+
+        const hasChanged = (currentRole !== originalRole) || (currentStatus !== originalStatus);
+
+        saveBtn.disabled = !hasChanged; // Bật nút nếu có thay đổi
     });
 
     // ======= HÀM TẢI DỮ LIỆU TỪ API =======
@@ -149,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             userTableBody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center text-gray-500 py-6 italic">
+                    <td colspan="7" class="text-center text-gray-500 py-6 italic">
                         Đang tải danh sách người dùng...
                     </td>
                 </tr>
@@ -166,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             userTableBody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center text-red-500 py-6 italic">
+                    <td colspan="7" class="text-center text-red-500 py-6 italic">
                         ${errorMessage}
                     </td>
                 </tr>

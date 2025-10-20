@@ -4,27 +4,37 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentPage = 1;
     let filters = {
         search: "",
-        topicId: "Tất cả", // Use topicId
+        topicName: "",
         tagName: "",     // Use tagName for filtering (API expects this)
         date: ""
     };
     const imagesPerPage = 10; // Corresponds to pageSize in API call
-    const userCache = {}; // Cache for user names
+    const userCache = {};
+    let allTopics = [];
+    let allTags = [];
 
     // ======= DOM ELEMENTS =======
     const imageListContainer = document.getElementById('image-list-container');
     const searchInput = document.getElementById('search-input');
     const noResults = document.getElementById('no-results');
+
     const prevPageBtn = document.getElementById('prev-page');
     const nextPageBtn = document.getElementById('next-page');
     const pageInfo = document.getElementById('page-info');
+
     const filterPopup = document.getElementById('filter-popup');
     const filterButton = document.getElementById('filter-button');
     const closeFilterPopupBtn = document.getElementById('close-filter-popup');
-    const topicFilterSelect = document.getElementById('topic-filter-select');
+
+    const topicFilterInput = document.getElementById('topic-filter-input');
+    const topicSuggestionsContainer = document.getElementById('topic-suggestions');
+
     const tagFilterInput = document.getElementById('tag-filter-input'); // Input for tag name
+    const tagSuggestionsContainer = document.getElementById('tag-suggestions'); // <-- THÊM DÒNG NÀY
+
     const dateFilterInput = document.getElementById('date-filter-input');
     const clearFiltersBtn = document.getElementById('clear-filters-btn');
+
     const applyFiltersBtn = document.getElementById('apply-filters-btn');
     const loadingSpinner = document.getElementById('loading-spinner'); // Get spinner element
 
@@ -55,10 +65,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (filters.search) {
                 filterParams.search = filters.search;
             }
-            // Chỉ thêm topicId nếu nó không phải "Tất cả"
-            if (filters.topicId && filters.topicId !== "Tất cả") {
-                // Đảm bảo API nhận đúng kiểu int?
-                filterParams.topicId = parseInt(filters.topicId);
+            if (filters.topicName) {
+                filterParams.topicName = filters.topicName;
             }
             if (filters.tagName) {
                 filterParams.tagName = filters.tagName; // Hoặc gửi tagId nếu API dùng int? tagId
@@ -159,28 +167,118 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Loads topics for the filter dropdown
-    async function loadFilterData() {
+    async function loadTopicsCache() {
         try {
             const topics = await api.topics.getAll();
-            topicFilterSelect.innerHTML = '<option value="Tất cả">All Topics</option>'; // Reset
             if (topics && topics.length > 0) {
-                topics.forEach(topic => {
-                    const option = document.createElement('option');
-                    option.value = topic.id; // Use topic ID as value
-                    option.textContent = topic.name;
-                    topicFilterSelect.appendChild(option);
-                });
+                allTopics = topics; // Lưu vào cache
             }
         } catch (error) {
-            console.error("Error loading topics:", error);
-            // Optionally display an error message to the user
+            console.error("Lỗi khi tải topics vào cache:", error);
         }
+    }
+    async function loadTagsCache() {
+        try {
+            // Giả sử bạn có api.tags.getAll() tương tự như topics
+            const tags = await api.tags.getAll();
+            if (tags && tags.length > 0) {
+                allTags = tags; // Lưu vào cache
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải tags vào cache:", error);
+        }
+    }
+    function renderTagSuggestions(tags) {
+        tagSuggestionsContainer.innerHTML = ''; // Xóa gợi ý cũ
+        if (tags.length === 0) {
+            tagSuggestionsContainer.innerHTML = '<div class="p-2 text-sm text-gray-500">Không tìm thấy tag.</div>';
+            return;
+        }
+
+        tags.forEach(tag => {
+            const item = document.createElement('div');
+            item.className = 'p-2 text-sm hover:bg-gray-100 cursor-pointer';
+            item.textContent = tag.name;
+
+            item.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                tagFilterInput.value = tag.name;
+                tagSuggestionsContainer.classList.add('hidden');
+            });
+            tagSuggestionsContainer.appendChild(item);
+        });
+
+        tagSuggestionsContainer.classList.remove('hidden');
+    }
+
+    // Hiển thị 3 gợi ý tag đầu tiên
+    function showInitialTagSuggestions() {
+        const initialTags = allTags.slice(0, 3); // Lấy 3 tag đầu tiên
+        renderTagSuggestions(initialTags);
+    }
+
+    // Lọc và hiển thị gợi ý tag khi người dùng gõ
+    function filterAndShowTagSuggestions() {
+        const query = tagFilterInput.value.toLowerCase();
+        if (!query) {
+            showInitialTagSuggestions();
+            return;
+        }
+        const filteredTags = allTags.filter(tag =>
+            tag.name.toLowerCase().includes(query)
+        );
+        renderTagSuggestions(filteredTags.slice(0, 10)); // Giới hạn 10 kết quả
+    }
+    function renderSuggestions(topics) {
+        topicSuggestionsContainer.innerHTML = ''; // Xóa gợi ý cũ
+        if (topics.length === 0) {
+            topicSuggestionsContainer.innerHTML = '<div class="p-2 text-sm text-gray-500">Không tìm thấy chủ đề.</div>';
+            return;
+        }
+
+        topics.forEach(topic => {
+            const item = document.createElement('div');
+            item.className = 'p-2 text-sm hover:bg-gray-100 cursor-pointer';
+            item.textContent = topic.name;
+
+            // Dùng 'mousedown' thay vì 'click'
+            // để nó chạy trước sự kiện 'blur' của input
+            item.addEventListener('mousedown', (e) => {
+                e.preventDefault(); // Ngăn input bị mất focus ngay
+                topicFilterInput.value = topic.name;
+                topicSuggestionsContainer.classList.add('hidden');
+            });
+            topicSuggestionsContainer.appendChild(item);
+        });
+
+        topicSuggestionsContainer.classList.remove('hidden');
+    }
+
+    // Hiển thị 3 gợi ý đầu tiên (theo yêu cầu của bạn)
+    function showInitialSuggestions() {
+        const initialTopics = allTopics.slice(0, 3); // Lấy 3 topic đầu tiên
+        renderSuggestions(initialTopics);
+    }
+
+    // Lọc và hiển thị gợi ý khi người dùng gõ
+    function filterAndShowSuggestions() {
+        const query = topicFilterInput.value.toLowerCase();
+        // Nếu input rỗng, hiển thị 3 gợi ý đầu
+        if (!query) {
+            showInitialSuggestions();
+            return;
+        }
+        // Nếu có gõ, lọc
+        const filteredTopics = allTopics.filter(topic =>
+            topic.name.toLowerCase().includes(query)
+        );
+        renderSuggestions(filteredTopics.slice(0, 10)); // Giới hạn 10 kết quả
     }
 
     // ======= EVENT HANDLERS =======
     function showFilterPopup() {
         // Pre-fill popup with current filter values
-        topicFilterSelect.value = filters.topicId;
+        topicFilterInput.value = filters.topicName;
         tagFilterInput.value = filters.tagName;
         dateFilterInput.value = filters.date;
         filterPopup.classList.remove('hidden');
@@ -193,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Applies filters from the popup and refreshes data
     function applyFilters() {
         filters = {
-            topicId: topicFilterSelect.value, // Get selected Topic ID
+            topicName: topicFilterInput.value.trim(),
             tagName: tagFilterInput.value.trim(), // Get tag name input
             date: dateFilterInput.value,
             search: searchInput.value.trim() // Keep existing search term
@@ -205,9 +303,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Clears all filters and refreshes data
     function clearFilters() {
-        filters = { topicId: "Tất cả", tagName: "", date: "", search: "" };
+        filters = { topicName: "", tagName: "", date: "", search: "" };
         // Reset form elements
-        topicFilterSelect.value = "Tất cả";
+        topicFilterInput.value = "";
         tagFilterInput.value = "";
         dateFilterInput.value = "";
         searchInput.value = ""; // Also clear search input
@@ -268,7 +366,26 @@ document.addEventListener('DOMContentLoaded', function () {
     closeFilterPopupBtn.addEventListener('click', hideFilterPopup);
     applyFiltersBtn.addEventListener('click', applyFilters);
     clearFiltersBtn.addEventListener('click', clearFilters);
+    topicFilterInput.addEventListener('focus', showInitialSuggestions);
+    tagFilterInput.addEventListener('focus', showInitialTagSuggestions);
+    tagFilterInput.addEventListener('input', filterAndShowTagSuggestions);
 
+    tagFilterInput.addEventListener('blur', () => {
+        setTimeout(() => {
+            tagSuggestionsContainer.classList.add('hidden');
+        }, 150);
+    });
+
+    // Lọc khi gõ phím
+    topicFilterInput.addEventListener('input', filterAndShowSuggestions);
+
+    // Ẩn gợi ý đi khi click ra ngoài (blur)
+    topicFilterInput.addEventListener('blur', () => {
+        // Thêm độ trễ nhỏ để sự kiện 'mousedown' trên gợi ý kịp chạy
+        setTimeout(() => {
+            topicSuggestionsContainer.classList.add('hidden');
+        }, 150);
+    });
     // Event delegation for delete buttons within the list container
     imageListContainer.addEventListener('click', (e) => {
         const deleteBtn = e.target.closest('.delete-btn');
@@ -289,6 +406,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // ======= INITIALIZATION =======
-    loadFilterData(); // Load topics into the dropdown first
+    loadTopicsCache();
+    loadTagsCache(); 
     fetchAndRenderData(); // Then fetch the initial image data
 });

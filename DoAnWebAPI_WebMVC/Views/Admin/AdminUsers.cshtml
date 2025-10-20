@@ -3,7 +3,6 @@
     ViewData["Title"] = "Quản lý Người dùng";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
-<main class="flex-1 overflow-y-auto p-4 sm:p-6 pt-20 lg:pt-6">
     <h1 class="text-2xl font-bold mb-4 flex items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
         Quản lý Người dùng
@@ -27,8 +26,9 @@
                     <th class="px-4 py-3">Tên người dùng</th>
                     <th class="px-4 py-3">Email</th>
                     <th class="px-4 py-3">Vai trò</th>
+                    <th class="px-4 py-3">Trạng thái</th>
                     <th class="px-4 py-3">Ngày tham gia</th>
-                    <th class="px-4 py-3 text-center">Hành động</th>
+                    <th class="px-4 py-3 text-center">Lưu thay đổi</th>
                 </tr>
             </thead>
             <tbody id="user-table-body">
@@ -49,5 +49,4 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
         </button>
     </div>
-</main>
-<script src="~/js//AdminUsers.js"></script>
+<script src="~/js/AdminUsers.js"></script>

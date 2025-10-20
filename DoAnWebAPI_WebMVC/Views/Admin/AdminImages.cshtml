@@ -65,20 +65,33 @@
                 </button>
             </div>
             <div class="space-y-4 text-sm">
-                <div>
+                <div class="relative">
                     <label class="font-medium">Chủ đề</label>
-                    <select id="topic-filter-select" class="w-full mt-1 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400">
-                        <option value="Tất cả">Tất cả chủ đề</option>
-                        <option value="Thiên nhiên">Thiên nhiên</option>
-                        <option value="Động vật">Động vật</option>
-                        <option value="Kiến trúc">Kiến trúc</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="font-medium">Tag</label>
-                    <input type="text" id="tag-filter-input" placeholder="Nhập tag, ví dụ: hoàng hôn" class="w-full mt-1 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400" />
+                    <input type="text"
+                           id="topic-filter-input"
+                           placeholder="Nhập tên chủ đề..."
+                           class="w-full mt-1 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400"
+                           autocomplete="off" />
+                    <div id="topic-suggestions"
+                         class="hidden absolute z-10 w-full bg-white border border-gray-300 rounded-b-lg shadow-lg max-h-48 overflow-y-auto mt-1">
+                    </div>
                 </div>
             </div>
+                <div class="relative">
+                    <label class="font-medium">Tag</label>
+                    <input type="text"
+                           id="tag-filter-input"
+                           placeholder="Nhập tên tag..."
+                           class="w-full mt-1 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400"
+                           autocomplete="off" />
+                    <div id="tag-suggestions"
+                         class="hidden absolute z-10 w-full bg-white border border-gray-300 rounded-b-lg shadow-lg max-h-48 overflow-y-auto mt-1">
+                    </div>
+                </div>
+                    <div>
+                        <label class="font-medium">Ngày tải lên</label>
+                        <input type="date" id="date-filter-input" class="w-full mt-1 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400" />
+                    </div>
             <div class="flex justify-end gap-2 mt-6">
                 <button id="clear-filters-btn" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition text-sm">
                     Xóa bộ lọc

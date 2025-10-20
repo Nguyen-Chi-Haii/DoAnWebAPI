@@ -30,6 +30,7 @@ namespace DoAnWebAPI.Services.Repositories
                 Email = user.Email,
                 AvatarUrl = user.AvatarUrl,
                 Role = user.Role,
+                Status = user.Status,
                 CreatedAt = DateTime.Parse(user.CreatedAt)
             };
         }
@@ -63,7 +64,7 @@ namespace DoAnWebAPI.Services.Repositories
                 Email = dto.Email,
                 PasswordHash = dto.Password,
                 Role = "User",
-                AvatarUrl = dto.AvatarUrl ?? "default_avatar.png",
+                AvatarUrl = dto.AvatarUrl ?? "Logo.png",
                 CreatedAt = DateTime.UtcNow.ToString("o"),
                 UpdatedAt = DateTime.UtcNow.ToString("o")
             };
@@ -100,7 +101,18 @@ namespace DoAnWebAPI.Services.Repositories
             {
                 existingUser.AvatarUrl = dto.AvatarUrl;
             }
-
+            if (!string.IsNullOrEmpty(dto.Role))
+            {
+                existingUser.Role = dto.Role;
+            }
+            if (!string.IsNullOrEmpty(dto.Status))
+            {
+                existingUser.Status = dto.Status;
+            }
+            if (existingUser.Status == "Banned")
+            {
+                existingUser.Role = "User";
+            }
             if (dto.NewPassword != null)
             {
                 existingUser.PasswordHash = dto.NewPassword;

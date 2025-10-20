@@ -60,7 +60,7 @@
                     avatarImg.src = user.avatarUrl;
                 } else {
                     // ⚠️ SỬA LỖI 404: Đã bỏ dấu '~'
-                    avatarImg.src = "/default-avatar.png";
+                    avatarImg.src = "~/Logo.png";
                 }
                 console.log("✅ Tải thông tin user thành công:", user.name);
             }

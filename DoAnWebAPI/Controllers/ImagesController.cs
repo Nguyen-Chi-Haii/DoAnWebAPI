@@ -52,14 +52,15 @@ namespace DoAnWebAPI.Controllers
         public async Task<ActionResult> GetAll(
              // === CÁC THAM SỐ CỦA BẠN ===
              [FromQuery] string? search = null,
-             [FromQuery] int? tagId = null,
-             [FromQuery] int? topicId = null,
+            [FromQuery] string? tagName = null,
+             [FromQuery] string? topicName = null,
              [FromQuery] int? userId = null,
 
              // === CÁC THAM SỐ MỚI BẠN VỪA YÊU CẦU ===
              [FromQuery] string? status = null, // (approved, pending, ...)
              [FromQuery] bool? isPublic = null, // (true, false)
 
+             [FromQuery] string? date = null,
              // === THAM SỐ PHÂN TRANG (RẤT QUAN TRỌNG) ===
              [FromQuery] int page = 1,
              [FromQuery] int pageSize = 10,
@@ -84,15 +85,18 @@ namespace DoAnWebAPI.Controllers
                     (i.Description != null && i.Description.Contains(search, StringComparison.OrdinalIgnoreCase))
                 );
             }
-            if (tagId.HasValue)
+            if (!string.IsNullOrEmpty(tagName))
             {
-                // DTO có List<TagDTO> Tags
-                query = query.Where(i => i.Tags != null && i.Tags.Any(t => t.Id == tagId.Value));
+                // Lọc theo Tên (Name) của Tag
+                query = query.Where(i => i.Tags != null &&
+                                   i.Tags.Any(t => t.Name.Contains(tagName, StringComparison.OrdinalIgnoreCase)));
             }
-            if (topicId.HasValue)
+            if (!string.IsNullOrEmpty(topicName))
             {
-                // DTO có List<TopicDTO> Topics
-                query = query.Where(i => i.Topics != null && i.Topics.Any(t => t.Id == topicId.Value));
+                // Lọc theo Tên (Name) thay vì Id
+                // Dùng Contains để tìm kiếm gần đúng, ví dụ "Thiên" sẽ ra "Thiên nhiên"
+                query = query.Where(i => i.Topics != null &&
+                                   i.Topics.Any(t => t.Name.Contains(topicName, StringComparison.OrdinalIgnoreCase)));
             }
             if (userId.HasValue)
             {
@@ -105,6 +109,12 @@ namespace DoAnWebAPI.Controllers
             if (!string.IsNullOrEmpty(status))
             {
                 query = query.Where(i => i.Status == status);
+            }
+
+            if (!string.IsNullOrEmpty(date) && DateTime.TryParse(date, out var parsedDate))
+            {
+                // So sánh chỉ phần Date (ngày/tháng/năm), bỏ qua Time (giờ/phút/giây)
+                query = query.Where(i => i.CreatedAt.Date == parsedDate.Date);
             }
             if (!string.IsNullOrEmpty(sortBy))
             {

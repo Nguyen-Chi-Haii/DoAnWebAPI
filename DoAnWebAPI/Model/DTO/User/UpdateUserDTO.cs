@@ -12,5 +12,8 @@ namespace DoAnWebAPI.Model.DTO.User
 
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Mật khẩu mới phải có ít nhất 6 ký tự.")]
         public string? NewPassword { get; set; }
+        public string Status { get; set; } = "Active";
+
+        public string? Role { get; set; }
     }
 }

@@ -85,7 +85,7 @@ namespace DoAnWebAPI.Controllers
                     Email = dto.Email,
                     Role = dto.Role,
                     PasswordHash = dto.Password,
-                    AvatarUrl = dto.AvatarUrl ?? "default-avatar.png",
+                    AvatarUrl = dto.AvatarUrl ?? "Logo.png",
                     CreatedAt = DateTime.UtcNow.ToString("o"),
                     UpdatedAt = DateTime.UtcNow.ToString("o")
                 };

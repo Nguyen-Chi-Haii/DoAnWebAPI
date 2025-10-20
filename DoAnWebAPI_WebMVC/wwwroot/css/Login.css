@@ -50,7 +50,39 @@ body {
     flex-direction: column;
     gap: 12px; /* gap-3 */
 }
+.input-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    /* Thêm một khoảng cách nhỏ giữa input và thông báo lỗi */
+    gap: 4px;
+}
 
+.error-message {
+    color: #ef4444; /* Màu đỏ (text-red-500) */
+    font-size: 0.75rem; /* 12px (text-xs), nhỏ hơn input một chút */
+    font-weight: 500; /* font-medium */
+    /* Đây là phần quan trọng nhất:
+      Chúng ta đặt một chiều cao tối thiểu cho vùng lỗi,
+      bằng khoảng chiều cao của 1 dòng chữ.
+      Nó sẽ "giữ chỗ" sẵn, ngay cả khi không có lỗi,
+      để form không bị "nhảy" khi lỗi xuất hiện.
+    */
+    min-height: 1.125rem; /* 18px */
+}
+
+/* Bonus: Đây là style cho phần .error-summary (validation summary)
+  Bạn cũng có class này trong file .cshtml
+*/
+.error-summary {
+    width: 100%;
+    color: #b91c1c; /* text-red-700 */
+    background-color: #fee2e2; /* bg-red-100 */
+    border: 1px solid #fca5a5; /* border-red-300 */
+    border-radius: 8px; /* rounded-lg */
+    padding: 12px; /* p-3 */
+    font-size: 0.875rem; /* text-sm */
+}
     .login-form input {
         width: 100%;
         border: 1px solid #d1d5db; /* border border-gray-300 */
