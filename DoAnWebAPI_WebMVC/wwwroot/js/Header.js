@@ -1,24 +1,26 @@
 ﻿// File: wwwroot/js/header.js
 // Logic cho header: dropdown menu, search, notification...
-
 (function () {
     // --- BIẾN TOÀN CỤC ---
     let searchTimer;
     let currentSearchQuery = "";
+  
 
     // --- HÀM TÌM KIẾM ---
-
     // Phát event tìm kiếm
-    const dispatchSearchEvent = (query) => {
-        currentSearchQuery = query;
+    // Phát event tìm kiếm
+    const dispatchSearchEvent = (filterData) => { // Sửa 'query' thành 'filterData'
+        // Cập nhật query hiện tại (chỉ lấy phần text để hiển thị)
+        currentSearchQuery = (typeof filterData === 'string') ? filterData : filterData.query;
+
         const searchEvent = new CustomEvent("searchChanged", {
-            detail: { query: query }
+            detail: filterData // Gửi toàn bộ object hoặc string
         });
         document.dispatchEvent(searchEvent);
-        console.log("🔍 searchChanged event fired:", query);
+        console.log("🔍 searchChanged event fired:", filterData);
 
-        // Cập nhật hiển thị search hiện tại (nếu có)
-        updateSearchDisplay(query);
+        // Cập nhật hiển thị search hiện tại
+        updateSearchDisplay(currentSearchQuery); // Chỉ hiển thị text
     };
 
     // Cập nhật text hiển thị tìm kiếm hiện tại
@@ -60,7 +62,7 @@
                     avatarImg.src = user.avatarUrl;
                 } else {
                     // ⚠️ SỬA LỖI 404: Đã bỏ dấu '~'
-                    avatarImg.src = "~/Logo.png";
+                    avatarImg.src = "/Logo.png";
                 }
                 console.log("✅ Tải thông tin user thành công:", user.name);
             }
@@ -87,69 +89,163 @@
         } else {
             console.warn("Không tìm thấy window.CURRENT_USER_ID. User có thể chưa đăng nhập.");
             // (Tùy chọn) Ẩn nút user hoặc hiển thị "Khách"
-            document.getElementById('user-name').textContent = "Khách";
-            // document.getElementById('user-menu-button').style.display = 'none';
-        }
-        // --- SEARCH INPUT ---
-        const searchInputDesktop = document.getElementById('search-input-desktop');
+            const userNameSpan = document.getElementById('user-name'); // Lấy element
+            if (userNameSpan) { // Chỉ cập nhật nếu element tồn tại
+                userNameSpan.textContent = "Khách";
+                // document.getElementById('user-menu-button').style.display = 'none';
+            }
+            // --- SEARCH INPUT ---
+            const searchInputDesktop = document.getElementById('search-input-desktop');
 
-        if (searchInputDesktop) {
-            searchInputDesktop.addEventListener('input', handleSearchInput);
-            console.log("✅ Desktop search input ready");
-        }
+            if (searchInputDesktop) {
+                searchInputDesktop.addEventListener('input', handleSearchInput);
+                console.log("✅ Desktop search input ready");
+            }
 
-        // --- DROPDOWN MENU USER ---
-        const userMenuButton = document.getElementById('user-menu-button');
-        const userMenuDropdown = document.getElementById('user-menu-dropdown');
+            // --- DROPDOWN MENU USER ---
+            const userMenuButton = document.getElementById('user-menu-button');
+            const userMenuDropdown = document.getElementById('user-menu-dropdown');
 
-        if (userMenuButton && userMenuDropdown) {
-            // Click vào avatar/button để toggle menu
-            userMenuButton.addEventListener('click', (event) => {
-                event.stopPropagation();
-                userMenuDropdown.classList.toggle('hidden');
-            });
+            if (userMenuButton && userMenuDropdown) {
+                // Click vào avatar/button để toggle menu
+                userMenuButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    userMenuDropdown.classList.toggle('hidden');
+                });
 
-            // Click ra ngoài để đóng menu
-            window.addEventListener('click', () => {
-                if (!userMenuDropdown.classList.contains('hidden')) {
-                    userMenuDropdown.classList.add('hidden');
+                // Click ra ngoài để đóng menu
+                window.addEventListener('click', () => {
+                    if (!userMenuDropdown.classList.contains('hidden')) {
+                        userMenuDropdown.classList.add('hidden');
+                    }
+                });
+
+                // Click vào bên trong dropdown không đóng menu
+                userMenuDropdown.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                });
+
+                console.log("✅ User menu dropdown ready");
+            }
+            const pillContainer = document.getElementById('pill-container');
+
+            async function loadAndRenderPills() {
+                if (!pillContainer) {
+                    console.warn("Không tìm thấy #pill-container.");
+                    return;
                 }
-            });
 
-            // Click vào bên trong dropdown không đóng menu
-            userMenuDropdown.addEventListener('click', (event) => {
-                event.stopPropagation();
-            });
+                try {
+                    // 1. Fetch dữ liệu song song
+                    const [topics, tags] = await Promise.all([
+                        api.topics.getAll(),
+                        api.tags.getAll() //
+                    ]);
 
-            console.log("✅ User menu dropdown ready");
-        }
+                    // 2. Map và Gộp dữ liệu
+                    const allFilters = [
+                        ...topics.map(t => ({ id: t.id, name: t.name, type: 'topic' })), // <-- Thêm id: t.id
+                        ...tags.map(t => ({ id: t.id, name: t.name, type: 'tag' }))    // <-- Thêm id: t.id
+                    ];
+
+                    // 3. Xáo trộn (Shuffle) - Thuật toán Fisher-Yates đơn giản
+                    for (let i = allFilters.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [allFilters[i], allFilters[j]] = [allFilters[j], allFilters[i]];
+                    }
+
+                    // 4. Chọn một số lượng giới hạn + thêm pill "Tất cả"
+                    const pillsToShow = [
+                        { name: "Tất cả", type: 'all' },
+                        ...allFilters.slice(0, 12) // Lấy ngẫu nhiên 12 cái
+                    ];
+
+                    // 5. Render Pills
+                    pillContainer.innerHTML = ''; // Xóa chữ "Đang tải..."
+                    pillsToShow.forEach((item, index) => {
+                        const pill = document.createElement('button');
+                        pill.className = 'filter-pill';
+                        pill.textContent = item.name;
+                        pill.dataset.type = item.type; // 'topic', 'tag', hoặc 'all'
+                        pill.dataset.id = item.id;     // ID của topic/tag (hoặc null cho 'all')
+                        pill.dataset.name = item.name; // Lưu tên vào data attribute
 
 
-        // --- NOTIFICATION DROPDOWN (nếu có) ---
-        const notificationButton = document.getElementById('notification-button');
-        const notificationDropdown = document.getElementById('notification-dropdown');
+                        // Pill "Tất cả" là active mặc định
+                        if (item.type === 'all') {
+                            pill.classList.add('active');
+                            pill.dataset.filter = ""; // Giá trị rỗng cho "Tất cả"
+                        }
 
-        if (notificationButton && notificationDropdown) {
-            notificationButton.addEventListener('click', (event) => {
-                event.stopPropagation();
-                notificationDropdown.classList.toggle('hidden');
-                // Đóng user menu nếu đang mở
-                if (userMenuDropdown && !userMenuDropdown.classList.contains('hidden')) {
-                    userMenuDropdown.classList.add('hidden');
+                        pillContainer.appendChild(pill);
+                    });
+
+                } catch (error) {
+                    console.error("Lỗi khi tải bộ lọc:", error);
+                    if (pillContainer) {
+                        pillContainer.innerHTML = '<span class="text-sm text-red-500 italic">Lỗi tải bộ lọc.</span>';
+                    }
                 }
-            });
+            }
 
-            window.addEventListener('click', () => {
-                if (!notificationDropdown.classList.contains('hidden')) {
-                    notificationDropdown.classList.add('hidden');
-                }
-            });
+            // Gọi hàm để tải và render pills
+            loadAndRenderPills();
 
-            notificationDropdown.addEventListener('click', (event) => {
-                event.stopPropagation();
-            });
+            // 6. Gắn Event Listener (Delegation) cho Pill Bar
+            const filterPillBar = document.getElementById('filter-pill-bar');
+            if (filterPillBar) {
+                filterPillBar.addEventListener('click', (e) => {
+                    const clickedPill = e.target.closest('.filter-pill');
+                    if (!clickedPill) return; // Bỏ qua nếu không click vào pill
 
-            console.log("✅ Notification dropdown ready");
+
+                    // Bỏ active ở pill cũ
+                    const currentActive = filterPillBar.querySelector('.filter-pill.active');
+                    if (currentActive) {
+                        currentActive.classList.remove('active');
+                    }
+
+                    // Thêm active cho pill mới click
+                    clickedPill.classList.add('active');
+
+                    // Lấy giá trị filter và gọi hàm setSearchQuery (đã có trong HeaderModule)
+                    const filterInfo = {
+                        type: clickedPill.dataset.type,
+                        id: clickedPill.dataset.id ? parseInt(clickedPill.dataset.id) : null, // Chuyển id sang số nếu có
+                        query: clickedPill.dataset.name // Vẫn gửi tên để hiển thị lên ô search
+                    };
+
+                    window.HeaderModule.setSearchQuery(filterInfo);
+                });
+            }
+
+
+            // --- NOTIFICATION DROPDOWN (nếu có) ---
+            const notificationButton = document.getElementById('notification-button');
+            const notificationDropdown = document.getElementById('notification-dropdown');
+
+            if (notificationButton && notificationDropdown) {
+                notificationButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    notificationDropdown.classList.toggle('hidden');
+                    // Đóng user menu nếu đang mở
+                    if (userMenuDropdown && !userMenuDropdown.classList.contains('hidden')) {
+                        userMenuDropdown.classList.add('hidden');
+                    }
+                });
+
+                window.addEventListener('click', () => {
+                    if (!notificationDropdown.classList.contains('hidden')) {
+                        notificationDropdown.classList.add('hidden');
+                    }
+                });
+
+                notificationDropdown.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                });
+
+                console.log("✅ Notification dropdown ready");
+            }
         }
     });
 
@@ -161,10 +257,28 @@
             if (searchInputDesktop) searchInputDesktop.value = "";
             dispatchSearchEvent("");
         },
-        setSearchQuery: (query) => {
+        setSearchQuery: (queryOrInfo) => {
             const searchInputDesktop = document.getElementById('search-input-desktop');
-            if (searchInputDesktop) searchInputDesktop.value = query;
-            dispatchSearchEvent(query);
+            let filterDataToSend;
+            let queryToDisplay;
+
+            if (typeof queryOrInfo === 'string') {
+                // Nếu là string (từ ô search), tạo object mặc định
+                filterDataToSend = { type: 'search', query: queryOrInfo, id: null };
+                queryToDisplay = queryOrInfo;
+            } else {
+                // Nếu là object (từ pill)
+                filterDataToSend = queryOrInfo;
+                // Nếu là pill "Tất cả", ô search hiển thị rỗng
+                queryToDisplay = (queryOrInfo.type === 'all') ? "" : queryOrInfo.query;
+            }
+
+            // Cập nhật giá trị ô search
+            if (searchInputDesktop) {
+                searchInputDesktop.value = queryToDisplay;
+            }
+            // Gửi sự kiện đi
+            dispatchSearchEvent(filterDataToSend);
         }
     };
 })();

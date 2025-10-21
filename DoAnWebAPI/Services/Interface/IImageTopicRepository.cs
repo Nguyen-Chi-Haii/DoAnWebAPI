@@ -7,5 +7,7 @@ namespace DoAnWebAPI.Services.Interface
         Task<List<ImageTopic>> GetTopicsByImageIdAsync(int imageId);
         Task<ImageTopic?> AddTopicToImageAsync(int imageId, int topicId);
         Task<bool> RemoveTopicFromImageAsync(int imageId, int topicId);
+
+        Task<List<ImageTopic>> GetAllAsync();
     }
 }

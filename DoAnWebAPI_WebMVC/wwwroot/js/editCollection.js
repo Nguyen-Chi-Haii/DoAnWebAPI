@@ -167,7 +167,7 @@
             };
             await api.collections.update(collectionId, updateDto);
             alert("✅ Cập nhật bộ sưu tập thành công!");
-            window.location.href = "/Collection/Collection";
+            window.history.back();
         } catch (error) {
             alert(`❌ Lỗi khi cập nhật: ${error.message}`);
             submitBtn.disabled = false;

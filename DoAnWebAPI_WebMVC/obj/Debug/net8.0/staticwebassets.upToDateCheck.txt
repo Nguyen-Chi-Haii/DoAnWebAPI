@@ -18,18 +18,16 @@ wwwroot\js\AddCollection.js
 wwwroot\js\addImage.js
 wwwroot\js\AdminApproval.js
 wwwroot\js\AdminHome.js
-wwwroot\js\AdminImages.js
 wwwroot\js\AdminLogs.js
 wwwroot\js\AdminStats.js
 wwwroot\js\AdminTags_Topics.js
+wwwroot\js\AdminUsers.js
 wwwroot\js\apiServices.js
 wwwroot\js\Collection.js
 wwwroot\js\CollectionDetail.js
 wwwroot\js\editCollection.js
 wwwroot\js\editImage.js
 wwwroot\js\Footer.js
-wwwroot\js\Header.js
-wwwroot\js\HomeBody.js
 wwwroot\js\ImageDetail.js
 wwwroot\js\Login.js
 wwwroot\js\Setting.js
@@ -94,4 +92,6 @@ wwwroot\lib\jquery\dist\jquery.min.js
 wwwroot\lib\jquery\dist\jquery.min.map
 wwwroot\lib\jquery\LICENSE.txt
 wwwroot\Logo.png
-wwwroot\js\AdminUsers.js
+wwwroot\js\AdminImages.js
+wwwroot\js\Header.js
+wwwroot\js\HomeBody.js

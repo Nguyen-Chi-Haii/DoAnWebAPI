@@ -87,6 +87,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             el.onclick = () => onAdd(item);
             container.appendChild(el);
         });
+        container.style.display = suggestions.length > 0 ? 'block' : 'none';
     };
 
     // ✅ HÀM ĐÃ ĐƯỢC VIẾT LẠI HOÀN TOÀN
@@ -128,10 +129,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     const updateTagSuggestions = () => {
         const query = tagInput.value.toLowerCase();
         const selectedIds = formState.tags.map(t => t.id);
-        const filtered = query ? allTags.filter(
-            t => !selectedIds.includes(t.id) && t.name.toLowerCase().includes(query)
-        ) : [];
-        renderSuggestions(tagSuggestionsEl, filtered, addTag);
+
+        // 1. Lọc ra các tag chưa chọn
+        let availableTags = allTags.filter(
+            t => !selectedIds.includes(t.id)
+        );
+
+        // 2. Lọc theo query (nếu có), hoặc dùng tất cả tag có sẵn (nếu rỗng)
+        const filtered = query
+            ? availableTags.filter(t => t.name.toLowerCase().includes(query))
+            : availableTags; // <-- SỬA LỖI Ở ĐÂY
+
+        // Giới hạn hiển thị 10 kết quả
+        renderSuggestions(tagSuggestionsEl, filtered.slice(0, 10), addTag);
     };
 
     const addTopic = (topicObject) => {
@@ -149,10 +159,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     const updateTopicSuggestions = () => {
         const query = topicInput.value.toLowerCase();
         const selectedIds = formState.topics.map(t => t.id);
-        const filtered = query ? allTopics.filter(
-            t => !selectedIds.includes(t.id) && t.name.toLowerCase().includes(query)
-        ) : [];
-        renderSuggestions(topicSuggestionsEl, filtered, addTopic);
+
+        // 1. Lọc ra các topic chưa chọn
+        let availableTopics = allTopics.filter(
+            t => !selectedIds.includes(t.id)
+        );
+
+        // 2. Lọc theo query (nếu có), hoặc dùng tất cả topic có sẵn (nếu rỗng)
+        const filtered = query
+            ? availableTopics.filter(t => t.name.toLowerCase().includes(query))
+            : availableTopics; // <-- SỬA LỖI Ở ĐÂY
+
+        // Giới hạn hiển thị 10 kết quả
+        renderSuggestions(topicSuggestionsEl, filtered.slice(0, 10), addTopic);
     };
 
     function handleImageUpload(event) {
@@ -213,7 +232,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (tagInput) {
+        tagInput.addEventListener('focus', updateTagSuggestions);
         tagInput.addEventListener('input', updateTagSuggestions);
+        tagInput.addEventListener('blur', () => {
+            // Thêm độ trễ nhỏ để sự kiện click vào gợi ý kịp chạy
+            setTimeout(() => tagSuggestionsEl.style.display = 'none', 150);
+        });
         tagInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -223,7 +247,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (topicInput) {
+        topicInput.addEventListener('focus', updateTopicSuggestions);
         topicInput.addEventListener('input', updateTopicSuggestions);
+        topicInput.addEventListener('blur', () => {
+            setTimeout(() => topicSuggestionsEl.style.display = 'none', 150);
+        });
         topicInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();

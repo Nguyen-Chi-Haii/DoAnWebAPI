@@ -87,7 +87,7 @@
 
                 row.innerHTML = `
                     <td class="px-4 py-3 font-medium text-gray-900">${log.id}</td>
-                    <td class="px-4 py-3">${log.adminUsername} (ID: ${log.AdminId})</td>
+                    <td class="px-4 py-3">${log.adminUsername}</td>
                     <td class="px-4 py-3">
                         <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
                             ${log.actionType}

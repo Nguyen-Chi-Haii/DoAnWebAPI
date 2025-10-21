@@ -4,5 +4,37 @@
     font-family: 'Inter', sans-serif;
     background-color: #f4f4f7;
 }
+/* --- Filter Pill Bar Styles --- */
+#filter-pill-bar {
+    /* Tùy chọn: Ẩn thanh cuộn ngang một cách trực quan */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+    #filter-pill-bar::-webkit-scrollbar {
+        display: none; /* Safari and Chrome */
+    }
+
+.filter-pill {
+    display: inline-block; /* Để các pill nằm trên một hàng */
+    padding: 4px 12px; /* Top/Bottom 4px, Left/Right 12px */
+    border-radius: 9999px; /* Bo tròn hoàn toàn */
+    background-color: #e5e7eb; /* bg-gray-200 */
+    color: #374151; /* text-gray-700 */
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500; /* font-medium */
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    white-space: nowrap; /* Ngăn text xuống dòng */
+}
+
+    .filter-pill:hover {
+        background-color: #d1d5db; /* bg-gray-300 */
+    }
+
+    .filter-pill.active {
+        background-color: #3b82f6; /* bg-blue-500 */
+        color: #ffffff; /* text-white */
+    }
 
 /* Bạn có thể override Tailwind nếu cần */

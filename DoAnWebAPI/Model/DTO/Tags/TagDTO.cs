@@ -6,7 +6,9 @@ namespace DoAnWebAPI.Model.DTO.Tag
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        
+
         public List<ImageDTO> Images { get; set; }
-        }
+        public DateTime? CreatedAt { get; internal set; }
+        public int ImageCount { get; internal set; }
+    }
 }

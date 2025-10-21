@@ -44,10 +44,10 @@
                 id: t.id,
                 name: t.name,
                 type: 'Chủ đề',
-                // Lưu ý: TopicsController của bạn không trả về count hoặc ngày tạo
-                count: null,
-                created: null,
-                isTopic: true // Flag để phân biệt khi Xóa/Sửa
+                // SỬA 2 DÒNG NÀY:
+                count: t.imageCount || 0, // Đọc 'imageCount' từ API
+                created: t.createdAt,     // Đọc 'createdAt' từ API
+                isTopic: true
             }));
 
             const mappedTags = tags.map(t => ({

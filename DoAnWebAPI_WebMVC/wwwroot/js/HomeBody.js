@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const imagesPerPage = 8;
 
     let currentSearchQuery = "";
+    let currentTagId = null;     // <-- THÊM DÒNG NÀY
+    let currentTopicId = null;
     // --- LẤY PHẦN TỬ DOM ---
     const imageGrid = document.getElementById('image-grid');
     const loadingIndicator = document.getElementById('loading-indicator');
@@ -25,8 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- HÀM CHÍNH ---
 
-    async function fetchAndRenderImages(page = 1, query = "") {
+    async function fetchAndRenderImages(page = 1, query = "", tagId = null, topicId = null) {
         if (loadingIndicator) loadingIndicator.classList.remove('hidden');
+        imageGrid.innerHTML = '';
         try {
             const params = {
                 status: "approved",
@@ -35,7 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 pageSize: imagesPerPage
             };
 
-            if (query) params.search = query; // 👈 thêm query tìm kiếm nếu có
+            if (tagId) {
+                params.tagId = tagId; // Gửi tagId nếu có
+            } else if (topicId) {
+                params.topicId = topicId; // Gửi topicId nếu có
+            } else if (query) {
+                params.search = query; // Chỉ gửi search nếu không có tagId/topicId
+            }
 
             const pagedResult = await api.images.getAll(params);
 
@@ -266,11 +275,43 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- KHỞI TẠO ---
     fetchAndRenderImages();
     // ✅ Lắng nghe ngay khi script được load
+    // ✅ Lắng nghe ngay khi script được load
     document.addEventListener("searchChanged", (e) => {
-        const query = e.detail.query;
-        currentSearchQuery = query;
-        currentPage = 1;
-        fetchAndRenderImages(currentPage, currentSearchQuery);
+        const filterInfo = e.detail;
+        currentPage = 1; // Luôn reset về trang 1
+
+        // Reset các bộ lọc cũ
+        currentSearchQuery = "";
+        currentTagId = null;
+        currentTopicId = null;
+
+        // Áp dụng bộ lọc mới dựa trên type
+        if (typeof filterInfo === 'string') { // Trường hợp dự phòng nếu chỉ gửi string
+            currentSearchQuery = filterInfo;
+        } else {
+            switch (filterInfo.type) {
+                case 'tag':
+                    currentTagId = filterInfo.id;
+                    currentSearchQuery = filterInfo.query; // Vẫn giữ query để hiển thị
+                    break;
+                case 'topic':
+                    currentTopicId = filterInfo.id;
+                    currentSearchQuery = filterInfo.query; // Vẫn giữ query để hiển thị
+                    break;
+                case 'all':
+                    // Không cần làm gì, các bộ lọc đã được reset
+                    currentSearchQuery = ""; // Đảm bảo ô search cũng trống
+                    break;
+                case 'search': // Từ ô input search
+                default:
+                    currentSearchQuery = filterInfo.query;
+                    break;
+            }
+        }
+
+
+        // Gọi fetch với các tham số lọc mới
+        fetchAndRenderImages(currentPage, currentSearchQuery, currentTagId, currentTopicId);
     });
 });
 

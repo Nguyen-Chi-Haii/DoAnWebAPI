@@ -4,6 +4,7 @@ using DoAnWebAPI.Model;
 using DoAnWebAPI.Model.DTO.Image;
 using DoAnWebAPI.Model.DTO.Tag;
 using DoAnWebAPI.Model.DTO.Topics;
+using DoAnWebAPI.Repositories;
 using DoAnWebAPI.Services.Interface;
 using DoAnWebAPI.Services.Repositories;
 using FirebaseWebApi.Repositories;
@@ -26,13 +27,23 @@ namespace DoAnWebAPI.Controllers
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IStatRepository _statRepository;
         private readonly IAdminLogRepository _adminLogRepository;
+        private readonly IImageTagRepository _imageTagRepository;
+        private readonly IImageTopicRepository _imageTopicRepository;
 
-        public ImagesController(IImageRepository repository, ICloudinaryService cloudinaryService, IStatRepository statRepository,IAdminLogRepository adminLogRepository)
+        public ImagesController(
+            IImageRepository repository,
+            ICloudinaryService cloudinaryService,
+            IStatRepository statRepository,
+            IAdminLogRepository adminLogRepository,
+            IImageTagRepository imageTagRepository,
+            IImageTopicRepository imageTopicRepository)
         {
             _repository = repository;
             _cloudinaryService = cloudinaryService;
             _statRepository = statRepository;
             _adminLogRepository = adminLogRepository;
+            _imageTagRepository = imageTagRepository;      // <-- Gán
+            _imageTopicRepository = imageTopicRepository;
         }
 
         private int? GetCurrentUserIdOrDefault()
@@ -52,8 +63,8 @@ namespace DoAnWebAPI.Controllers
         public async Task<ActionResult> GetAll(
              // === CÁC THAM SỐ CỦA BẠN ===
              [FromQuery] string? search = null,
-            [FromQuery] string? tagName = null,
-             [FromQuery] string? topicName = null,
+            [FromQuery] int? tagId = null,   
+             [FromQuery] int? topicId = null,
              [FromQuery] int? userId = null,
 
              // === CÁC THAM SỐ MỚI BẠN VỪA YÊU CẦU ===
@@ -85,18 +96,17 @@ namespace DoAnWebAPI.Controllers
                     (i.Description != null && i.Description.Contains(search, StringComparison.OrdinalIgnoreCase))
                 );
             }
-            if (!string.IsNullOrEmpty(tagName))
+            // DÙNG KHỐI NÀY THAY THẾ
+            if (tagId.HasValue)
             {
-                // Lọc theo Tên (Name) của Tag
-                query = query.Where(i => i.Tags != null &&
-                                   i.Tags.Any(t => t.Name.Contains(tagName, StringComparison.OrdinalIgnoreCase)));
+                // Lọc trực tiếp trên DTO: Kiểm tra xem list 'Tags' của ảnh
+                // có 'bất kỳ' (Any) tag nào có Id trùng với tagId không.
+                query = query.Where(i => i.Tags.Any(t => t.Id == tagId.Value));
             }
-            if (!string.IsNullOrEmpty(topicName))
+            else if (topicId.HasValue)
             {
-                // Lọc theo Tên (Name) thay vì Id
-                // Dùng Contains để tìm kiếm gần đúng, ví dụ "Thiên" sẽ ra "Thiên nhiên"
-                query = query.Where(i => i.Topics != null &&
-                                   i.Topics.Any(t => t.Name.Contains(topicName, StringComparison.OrdinalIgnoreCase)));
+                // Tương tự, lọc trực tiếp trên list 'Topics' của ảnh
+                query = query.Where(i => i.Topics.Any(t => t.Id == topicId.Value));
             }
             if (userId.HasValue)
             {

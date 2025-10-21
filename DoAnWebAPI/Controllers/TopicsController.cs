@@ -15,11 +15,13 @@ namespace DoAnWebAPI.Controllers
     {
         private readonly ITopicRepository _topicRepository;
         private readonly IAdminLogRepository _adminLogRepository;
+        private readonly IImageTopicRepository _imageTopicRepository;
 
-        public TopicsController(ITopicRepository topicRepository, IAdminLogRepository adminLogRepository)
+        public TopicsController(ITopicRepository topicRepository, IAdminLogRepository adminLogRepository, IImageTopicRepository imageTopicRepository)
         {
             _topicRepository = topicRepository;
             _adminLogRepository = adminLogRepository;
+            _imageTopicRepository = imageTopicRepository;
         }
         private int GetCurrentUserId()
         {
@@ -39,8 +41,27 @@ namespace DoAnWebAPI.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<List<TopicDTO>>> GetAll()
         {
+            // 1. Lấy tất cả topics
             var topics = await _topicRepository.GetAllAsync();
-            var dtos = topics.Select(t => new TopicDTO { Id = t.Id, Name = t.Name }).ToList();
+
+            // 2. Lấy tất cả liên kết image-topic (dùng hàm mới tạo)
+            var allImageTopics = await _imageTopicRepository.GetAllAsync();
+
+            // 3. Đếm và nhóm
+            var topicCounts = allImageTopics
+                .GroupBy(it => it.TopicId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // 4. Map sang DTO, thêm 2 trường mới
+            var dtos = topics.Select(t => new TopicDTO
+            {
+                Id = t.Id,
+                Name = t.Name,
+                // Giả định Model.Topic của bạn có 'CreatedAt' kiểu string
+                CreatedAt = t.CreatedAt != null ? t.CreatedAt : (DateTime?)null,
+                ImageCount = topicCounts.GetValueOrDefault(t.Id, 0)
+            }).ToList();
+
             return Ok(dtos);
         }
 

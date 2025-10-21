@@ -164,7 +164,7 @@
     form.addEventListener('submit', handleSubmit);
     cancelBtn.addEventListener('click', () => {
         if (confirm("Bạn có chắc muốn hủy? Mọi thay đổi sẽ bị mất.")) {
-            window.location.href = "/Collection/Collection";
+            window.history.back();
         }
     });
 

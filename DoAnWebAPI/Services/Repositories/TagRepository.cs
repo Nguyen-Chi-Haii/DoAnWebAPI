@@ -1,13 +1,14 @@
 ﻿using DoAnWebAPI.Model;
 using DoAnWebAPI.Model.DTO.Image;
 using DoAnWebAPI.Model.DTO.Tag;
+using DoAnWebAPI.Repositories;
 using DoAnWebAPI.Services.Interface;
 using FireSharp; // ✅ THÊM using FireSharp
 using FireSharp.Response; // ✅ THÊM using FireSharp.Response
-using System.Linq;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 // Giả định Tag model nằm trong DoAnWebAPI.Model.Domain hoặc tương đương
 
 namespace DoAnWebAPI.Services.Repositories
@@ -16,10 +17,12 @@ namespace DoAnWebAPI.Services.Repositories
     {
         private readonly FireSharp.FirebaseClient _firebase; // ✅ FIX: Dùng FireSharp.FirebaseClient
         private const string Collection = "tags";
+        private readonly IImageTagRepository _imageTagRepository;
 
-        public TagRepository(FireSharp.FirebaseClient firebase) // ✅ FIX: Dùng FireSharp.FirebaseClient
+        public TagRepository(FireSharp.FirebaseClient firebase, IImageTagRepository imageTagRepository) // ✅ FIX: Dùng FireSharp.FirebaseClient
         {
             _firebase = firebase;
+            _imageTagRepository = imageTagRepository;
         }
 
         private string GetPath(int id) => $"{Collection}/{id}";
@@ -27,19 +30,30 @@ namespace DoAnWebAPI.Services.Repositories
 
         public async Task<IEnumerable<TagDTO>> GetAllAsync()
         {
-            // ✅ FIX: Sử dụng FireSharp GetAsync
+            // 1. Lấy tất cả tags (như cũ)
             var response = await _firebase.GetAsync(GetCollectionPath());
-
             if (response.Body == "null") return new List<TagDTO>();
-
             var data = response.ResultAs<Dictionary<string, Model.Tag>>();
+            if (data == null) return new List<TagDTO>();
 
-            return data?.Values.Select(d => new TagDTO
+            // 2. Lấy tất cả liên kết image-tag (1 lần gọi duy nhất)
+            var allImageTags = await _imageTagRepository.GetAllAsync();
+
+            // 3. Đếm và nhóm chúng vào một Dictionary để tra cứu nhanh
+            var tagCounts = allImageTags
+                .GroupBy(it => it.TagId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // 4. Map sang DTO, thêm 2 trường mới
+            return data.Values.Select(d => new TagDTO
             {
                 Id = d.Id,
                 Name = d.Name,
-                Images = new List<ImageDTO>()
-            }).ToList() ?? new List<TagDTO>();
+                // Giả định Model.Tag của bạn có 'CreatedAt' kiểu string
+                CreatedAt = d.CreatedAt != null ? d.CreatedAt : (DateTime?)null,
+                ImageCount = tagCounts.GetValueOrDefault(d.Id, 0)
+                // 'Images' không cần thiết cho trang này
+            }).ToList();
         }
 
         public async Task<TagDTO?> GetByIdAsync(int id)
@@ -64,17 +78,17 @@ namespace DoAnWebAPI.Services.Repositories
             var tag = new Model.Tag
             {
                 Id = new Random().Next(1, 999999),
-                Name = dto.Name
+                Name = dto.Name,
+                CreatedAt = DateTime.UtcNow // THÊM DÒNG NÀY
             };
 
-            // ✅ FIX: Sử dụng FireSharp SetAsync
             await _firebase.SetAsync(GetPath(tag.Id), tag);
-
             return new TagDTO
             {
                 Id = tag.Id,
                 Name = tag.Name,
-                Images = new List<ImageDTO>()
+                CreatedAt = tag.CreatedAt, // Trả về ngày tạo
+                ImageCount = 0
             };
         }
 

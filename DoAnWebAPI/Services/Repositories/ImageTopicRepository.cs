@@ -11,6 +11,20 @@ namespace DoAnWebAPI.Services.Repositories
         {
             _firebaseService = firebaseService;
         }
+        public async Task<List<ImageTopic>> GetAllAsync()
+        {
+            try
+            {
+                var dict = await _firebaseService.GetDataAsync<Dictionary<string, ImageTopic>>(Collection);
+                if (dict == null) return new List<ImageTopic>();
+                return dict.Values.ToList();
+            }
+            catch (Exception ex)
+            {
+                // Log và return empty
+                return new List<ImageTopic>();
+            }
+        }
         public async Task<List<ImageTopic>> GetTopicsByImageIdAsync(int imageId)
         {
             try

@@ -4,8 +4,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentPage = 1;
     let filters = {
         search: "",
-        topicName: "",
-        tagName: "",     // Use tagName for filtering (API expects this)
+        topicId: null, // <-- SỬA TỪ 'topicName'
+        tagId: null,   // <-- SỬA TỪ 'tagName'
         date: ""
     };
     const imagesPerPage = 10; // Corresponds to pageSize in API call
@@ -65,12 +65,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (filters.search) {
                 filterParams.search = filters.search;
             }
-            if (filters.topicName) {
-                filterParams.topicName = filters.topicName;
+            // ==== SỬA KHỐI NÀY ====
+            if (filters.topicId !== null) { // Kiểm tra khác null
+                filterParams.topicId = filters.topicId; // Gửi topicId (số)
             }
-            if (filters.tagName) {
-                filterParams.tagName = filters.tagName; // Hoặc gửi tagId nếu API dùng int? tagId
+            if (filters.tagId !== null) { // Kiểm tra khác null
+                filterParams.tagId = filters.tagId; // Gửi tagId (số)
             }
+            // ==== KẾT THÚC ====
             if (filters.date) {
                 filterParams.date = filters.date;
             }
@@ -244,9 +246,19 @@ document.addEventListener('DOMContentLoaded', function () {
             // Dùng 'mousedown' thay vì 'click'
             // để nó chạy trước sự kiện 'blur' của input
             item.addEventListener('mousedown', (e) => {
-                e.preventDefault(); // Ngăn input bị mất focus ngay
-                topicFilterInput.value = topic.name;
-                topicSuggestionsContainer.classList.add('hidden');
+                e.preventDefault();
+                onSelect(item.name); // Vẫn gọi callback cũ để điền tên vào input
+
+                // ==== THÊM LOGIC LƯU ID VÀO STATE ====
+                // Kiểm tra xem container là của topic hay tag để lưu đúng chỗ
+                if (container === topicSuggestionsContainer) {
+                    filters.topicId = item.id; // Lưu Topic ID
+                } else if (container === tagSuggestionsContainer) {
+                    filters.tagId = item.id; // Lưu Tag ID
+                }
+                // =====================================
+
+                container.classList.add('hidden');
             });
             topicSuggestionsContainer.appendChild(item);
         });
@@ -276,10 +288,21 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ======= EVENT HANDLERS =======
+    // ======= EVENT HANDERS =======
     function showFilterPopup() {
         // Pre-fill popup with current filter values
-        topicFilterInput.value = filters.topicName;
-        tagFilterInput.value = filters.tagName;
+
+        // SỬA LOGIC LẤY TÊN TỪ ID:
+        const currentTopicName = filters.topicId
+            ? allTopics.find(t => t.id === filters.topicId)?.name || ""
+            : "";
+        topicFilterInput.value = currentTopicName;
+
+        const currentTagName = filters.tagId
+            ? allTags.find(t => t.id === filters.tagId)?.name || ""
+            : "";
+        tagFilterInput.value = currentTagName;
+
         dateFilterInput.value = filters.date;
         filterPopup.classList.remove('hidden');
     }
@@ -288,22 +311,38 @@ document.addEventListener('DOMContentLoaded', function () {
         filterPopup.classList.add('hidden');
     }
 
-    // Applies filters from the popup and refreshes data
+
     function applyFilters() {
-        filters = {
-            topicName: topicFilterInput.value.trim(),
-            tagName: tagFilterInput.value.trim(), // Get tag name input
-            date: dateFilterInput.value,
-            search: searchInput.value.trim() // Keep existing search term
-        };
-        currentPage = 1; // Reset to page 1 when filters change
-        fetchAndRenderData(); // Fetch data with new filters
+        // Cập nhật lại search và date từ input (vì chúng không có autocomplete)
+        filters.search = searchInput.value.trim();
+        filters.date = dateFilterInput.value;
+        if (currentTopicName && filters.topicId === null) {
+            const foundTopic = allTopics.find(t => t.name.toLowerCase() === currentTopicName.toLowerCase());
+            if (foundTopic) filters.topicId = foundTopic.id;
+        } else if (!currentTopicName) {
+            filters.topicId = null;
+        }
+
+        const currentTagName = tagFilterInput.value.trim();
+        if (currentTagName && filters.tagId === null) {
+            const foundTag = allTags.find(t => t.name.toLowerCase() === currentTagName.toLowerCase());
+            if (foundTag) filters.tagId = foundTag.id;
+
+        } else if (!currentTagName) {
+            filters.tagId = null;
+        }
+
+
+        currentPage = 1;
+        fetchAndRenderData(); 
         hideFilterPopup();
     }
 
-    // Clears all filters and refreshes data
+
     function clearFilters() {
-        filters = { topicName: "", tagName: "", date: "", search: "" };
+        // SỬA DÒNG NÀY:
+        filters = { topicId: null, tagId: null, date: "", search: "" };
+
         // Reset form elements
         topicFilterInput.value = "";
         tagFilterInput.value = "";
@@ -373,17 +412,45 @@ document.addEventListener('DOMContentLoaded', function () {
     tagFilterInput.addEventListener('blur', () => {
         setTimeout(() => {
             tagSuggestionsContainer.classList.add('hidden');
+
+            // KIỂM TRA KHI BLUR:
+            const currentTagName = tagFilterInput.value.trim();
+            if (currentTagName) { // Nếu có text
+                const foundTag = allTags.find(t => t.name.toLowerCase() === currentTagName.toLowerCase());
+                if (!foundTag) { // Nếu text không khớp với tag nào
+                    tagFilterInput.value = ""; // Xóa text
+                    filters.tagId = null;     // Reset ID
+                } else if (filters.tagId !== foundTag.id) {
+                    filters.tagId = foundTag.id; // Gán ID nếu chưa có
+                }
+            } else { // Nếu input rỗng
+                filters.tagId = null; // Reset ID
+            }
         }, 150);
     });
-
     // Lọc khi gõ phím
     topicFilterInput.addEventListener('input', filterAndShowSuggestions);
 
     // Ẩn gợi ý đi khi click ra ngoài (blur)
     topicFilterInput.addEventListener('blur', () => {
-        // Thêm độ trễ nhỏ để sự kiện 'mousedown' trên gợi ý kịp chạy
         setTimeout(() => {
             topicSuggestionsContainer.classList.add('hidden');
+
+            // KIỂM TRA KHI BLUR:
+            const currentTopicName = topicFilterInput.value.trim();
+            if (currentTopicName) { // Nếu có text
+                const foundTopic = allTopics.find(t => t.name.toLowerCase() === currentTopicName.toLowerCase());
+                if (!foundTopic) { // Nếu text không khớp với topic nào
+                    topicFilterInput.value = ""; // Xóa text
+                    filters.topicId = null;     // Reset ID
+                } else if (filters.topicId !== foundTopic.id) {
+                    // Trường hợp người dùng gõ đúng tên nhưng chưa chọn (ID chưa được set)
+                    filters.topicId = foundTopic.id;
+                }
+            } else { // Nếu input rỗng
+                filters.topicId = null; // Reset ID
+            }
+
         }, 150);
     });
     // Event delegation for delete buttons within the list container
