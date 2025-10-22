@@ -21,12 +21,33 @@
         // --- CÁC HÀM RENDER --- (Giữ nguyên, không thay đổi)
 
         const renderButtons = () => {
+            // ✅ CHUYỂN 'isBanned' VÀO ĐÂY
+            // Đọc trạng thái Banned từ biến global (đã khai báo trong Collection.cshtml)
+            const isBanned = window.IS_USER_BANNED === true;
+
             if (mode === 'normal') {
-                buttonsContainer.innerHTML = `
-                    <a href="${config.addUrl}" class="button button-blue"><i data-lucide="plus"></i><span>Thêm</span></a>
+                let buttonsHTML = '';
+
+                // ✅ SỬA LẠI LOGIC 'allowAdd'
+                let allowAdd = true; // Mặc định là cho phép
+
+                // Chỉ chặn 'Thêm' NẾU đây là section 'images' VÀ user bị banned
+                if (config.gridId === 'images-grid' && isBanned) {
+                    allowAdd = false;
+                }
+
+                // Nếu được phép (allowAdd là true), thì mới render nút Thêm
+                if (allowAdd) {
+                    buttonsHTML += `<a href="${config.addUrl}" class="button button-blue"><i data-lucide="plus"></i><span>Thêm</span></a>`;
+                }
+
+                // Nút Sửa và Xóa vẫn giữ nguyên
+                buttonsHTML += `
                     <button class="button button-gray" data-action="edit"><i data-lucide="edit-3"></i><span>Sửa</span></button>
                     <button class="button button-red" data-action="delete"><i data-lucide="trash-2"></i><span>Xóa</span></button>
                 `;
+
+                buttonsContainer.innerHTML = buttonsHTML;
             } else {
                 buttonsContainer.innerHTML = `
                     <button class="button button-gray" data-action="cancel"><i data-lucide="x"></i><span>Hủy</span></button>
@@ -195,7 +216,7 @@
         },
         renderItem: (item, mode) => `
             <div class="item-card" data-id="${item.id}">
-                <img src="${item.thumbnailUrl || 'https://via.placeholder.com/300x200'}" alt="${item.name}" />
+                <img src="${item.thumbnailUrl || '/Logo.png'}" alt="${item.name}" />
                 <div class="item-card-title">${item.name}</div>
                 <div class="item-card-info">${item.imageCount || 0} ảnh</div>
                 ${(mode !== 'normal') ? `

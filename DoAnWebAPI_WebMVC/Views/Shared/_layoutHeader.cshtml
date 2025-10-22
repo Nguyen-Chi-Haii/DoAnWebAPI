@@ -16,18 +16,16 @@
             </div>
 
             <div class="flex items-center gap-3 min-w-[200px] justify-end">
-                @if (!string.IsNullOrEmpty(HttpContextAccessor.HttpContext.Session.GetString("JWToken")))
-                {
-                    // Người dùng đã đăng nhập: Dẫn đến trang tải ảnh
-                    <a href="/Image/AddImage" class="flex items-center gap-1 bg-blue-500 text-white font-medium px-4 py-2 rounded-lg hover:bg-blue-600 transition shadow-md">
-                        <i data-lucide="upload"></i>
-                        <span>Tải ảnh lên</span>
-                    </a>
+                @{
+                    var userStatus = HttpContextAccessor.HttpContext.Session.GetString("UserStatus");
                 }
-                else
+
+                @if (!string.IsNullOrEmpty(HttpContextAccessor.HttpContext.Session.GetString("JWToken"))
+                                && userStatus != "Banned")
                 {
-                    // Người dùng chưa đăng nhập: Dẫn đến trang đăng nhập
-                    <a asp-controller="Account" asp-action="Login" class="flex items-center gap-1 bg-blue-500 text-white font-medium px-4 py-2 rounded-lg hover:bg-blue-600 transition shadow-md">
+                    <!-- Người dùng đã đăng nhập VÀ KHÔNG BỊ BAN: Hiển thị nút -->
+                    <a href="/Image/AddImage"
+                       class="flex items-center gap-1 bg-blue-500 text-white font-medium px-4 py-2 rounded-lg hover:bg-blue-600 transition shadow-md">
                         <i data-lucide="upload"></i>
                         <span>Tải ảnh lên</span>
                     </a>
@@ -89,8 +87,17 @@
         </div>
     </header>
 </div>
-<div id="filter-pill-bar" class="px-4 py-2 border-b bg-gray-50 overflow-x-auto whitespace-nowrap">
-    <div id="pill-container" class="flex items-center gap-2">
-        <span class="text-sm text-gray-500 italic">Đang tải bộ lọc...</span>
+@{
+    // Lấy tên controller của trang hiện tại
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+}
+
+@if (currentController != "Collection")
+{
+    // Chỉ hiển thị thanh pill bar NẾU controller KHÔNG PHẢI là "Collection"
+    <div id="filter-pill-bar" class="px-4 py-2 border-b bg-gray-50 overflow-x-auto whitespace-nowrap">
+        <div id="pill-container" class="flex items-center gap-2">
+            <span class="text-sm text-gray-500 italic">Đang tải bộ lọc...</span>
+        </div>
     </div>
-</div>
+}

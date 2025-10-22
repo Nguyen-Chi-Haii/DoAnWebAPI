@@ -31,6 +31,7 @@
         // "Tiêm" token từ Session vào biến JavaScript toàn cục
         window.jwtToken = @Html.Raw(Json.Serialize(Context.Session.GetString("JWToken")));
          window.CURRENT_USER_ID = '@Context.Session.GetString("UserId")';
+         const IS_USER_BANNED = @(Context.Session.GetString("UserStatus") == "Banned" ? "true" : "false");
     </script>
     <script src="~/js/apiServices.js" asp-append-version="true"></script>
 

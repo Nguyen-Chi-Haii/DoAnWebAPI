@@ -51,6 +51,7 @@ namespace DoAnWebAPI_WebMVC.Controllers
                 HttpContext.Session.SetString("Username", authResponse.Username);
                 HttpContext.Session.SetString("UserId", authResponse.UserId);
                 HttpContext.Session.SetString("UserRole", authResponse.Role);
+                HttpContext.Session.SetString("UserStatus", authResponse.Status);
                 return RedirectToAction("Index", "Home");
             }
             else
@@ -145,6 +146,7 @@ namespace DoAnWebAPI_WebMVC.Controllers
             HttpContext.Session.Remove("Username");
             HttpContext.Session.Remove("UserId");
             HttpContext.Session.Remove("UserRole");
+            HttpContext.Session.Remove("UserStatus");
             return RedirectToAction("Login", "Account");
         }
 
@@ -182,10 +184,24 @@ namespace DoAnWebAPI_WebMVC.Controllers
 
         private class AuthResponseDTO
         {
+            [JsonProperty("token")] // Thêm cho Token
             public string Token { get; set; }
+
+            [JsonProperty("userId")] // Thêm cho UserId
             public string UserId { get; set; }
+
+            [JsonProperty("username")] // Thêm cho Username
             public string Username { get; set; }
+
+            [JsonProperty("role")] // Thêm cho Role
             public string Role { get; set; }
+
+            // ✅ THÊM DÒNG NÀY ĐỂ KHỚP VỚI JSON
+            [JsonProperty("status")]
+            public string Status { get; internal set; }
+
+            [JsonProperty("expiresAt")] // Thêm cho ExpiresAt
+            public DateTime ExpiresAt { get; internal set; }
         }
     }
 }

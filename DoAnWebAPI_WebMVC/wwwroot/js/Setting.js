@@ -72,8 +72,13 @@
 
             profileName.value = user.username;
             profileEmail.value = user.email;
-            if (user.avatarUrl) {
-                avatarPreview.src = user.avatarUrl;
+            // Sửa khối if/else này
+            if (user.avatarUrl && user.avatarUrl !== "default-avatar.png") {
+                // Nếu có avatarUrl VÀ nó KHÔNG PHẢI là 'default-avatar.png'
+                avatarImg.src = user.avatarUrl;
+            } else {
+                // Ngược lại (nếu avatarUrl là null, rỗng, HOẶC là 'default-avatar.png')
+                avatarImg.src = "/Logo.png";
             }
         } catch (error) {
             console.error("Lỗi khi tải hồ sơ:", error);

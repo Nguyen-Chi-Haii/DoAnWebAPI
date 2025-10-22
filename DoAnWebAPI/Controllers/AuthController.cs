@@ -175,7 +175,8 @@ namespace DoAnWebAPI.Controllers
                     UserId = user?.Id.ToString() ?? localId,
                     Username = user?.Username ?? dto.Email,
                     Role = user?.Role ?? "User",
-                    ExpiresAt = DateTime.UtcNow.AddHours(1)
+                    ExpiresAt = DateTime.UtcNow.AddHours(1),
+                    Status = user?.Status ?? "Active"
                 });
             }
             catch (Exception ex)
